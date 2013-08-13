@@ -34,6 +34,9 @@ public class DerivativeOptions {
     @Option(name = "-s", usage = "shapefile to do spatial analysis with")
     public File shapefile = null;
     
+    @Option(name = "-attr", usage = "attribute to get id to use in spatial analysis")
+    public String attribute = null;
+    
     @Option(name = "-p", required = true, usage = "which derivative process to run at this step")
     public Process process = null;
     

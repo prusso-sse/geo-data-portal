@@ -82,21 +82,20 @@ public class RunDerivatives {
                         calculateP1DDerivatives(options);
                         break;
                     case P1M:
-                        //calculateP1MAverage(options);
-                        //break;
+                        calculateP1MAverage(options);
+                        break;
                     case P1Y:
-                        //calculateP1YDerivativeEnsembleAverage(options);
-                        //break;
+                        calculateP1YDerivativeEnsembleAverage(options);
+                        break;
                     case P1Y30D:
-                        //calculateP1YAverageOverP30Y(options);
-                        //break;
+                        calculateP1YAverageOverP30Y(options);
+                        break;
                     case P30Y:
-                        //calculateP30YDerivatives(options);
-                        //break;
+                        calculateP30YDerivatives(options);
+                        break;
                     case SPATIAL:
-                        throw new UnsupportedOperationException("not yet implemented");
-                        //calculateDerivativeFeatureWeightedGridStatistics(options);
-                        //break;
+                        calculateDerivativeFeatureWeightedGridStatistics(options);
+                        break;
                     default:
                         throw new CmdLineException(parser, "Unable to determine process type");
                 }
@@ -178,22 +177,22 @@ public class RunDerivatives {
                     }));
 
                     if (options.lowMemory) {
-                        System.out.println("GCM/Scenario " + gsName + " P1Y HDD");
+                        LOGGER.info("GCM/Scenario " + gsName + " P1Y HDD");
                         t.traverse(Arrays.asList(new GridVisitor[]{
                             new HeatingDegreeDayVisitor(options.outputDir)
                         }));
-                        System.out.println("GCM/Scenario " + gsName + " P1Y CDD");
+                        LOGGER.info("GCM/Scenario " + gsName + " P1Y CDD");
                         t.traverse(Arrays.asList(new GridVisitor[]{
                             new CoolingDegreeDayVisitor(options.outputDir)
                         }));
-                        System.out.println("GCM/Scenario " + gsName + " P1Y GDD");
+                        LOGGER.info("GCM/Scenario " + gsName + " P1Y GDD");
                         t.traverse(Arrays.asList(new GridVisitor[]{
                             new GrowingDegreeDayVisitor(options.outputDir)
                         }));
                     } else {
-                        LOGGER.debug("GCM/Scenario " + gsName + " P1Y HDD");
-                        LOGGER.debug("GCM/Scenario " + gsName + " P1Y CDD");
-                        LOGGER.debug("GCM/Scenario " + gsName + " P1Y GDD");
+                        LOGGER.info("GCM/Scenario " + gsName + " P1Y HDD");
+                        LOGGER.info("GCM/Scenario " + gsName + " P1Y CDD");
+                        LOGGER.info("GCM/Scenario " + gsName + " P1Y GDD");
                         t.traverse(Arrays.asList(new GridVisitor[]{
                             new HeatingDegreeDayVisitor(options.outputDir),
                             new CoolingDegreeDayVisitor(options.outputDir),
@@ -216,78 +215,75 @@ public class RunDerivatives {
     public static void calculateP1YDerivativeEnsembleAverage(DerivativeOptions options) throws IOException {
         FeatureDataset fds = null;
 
-        List<String> gridP1YList = Arrays.asList(
-                new String[]{
-            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.pr.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.tmax.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-days_below_threshold.tmin.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_above_threshold.tmax.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_below_threshold.pr.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-heating_degree_days.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-cooling_degree_days.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-growing_degree_days.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-growing_season_length.ncml",});
+//              Removing this in favor of parameter, keeping for reference
+//            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.pr.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.tmax.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-days_below_threshold.tmin.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_above_threshold.tmax.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_below_threshold.pr.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-heating_degree_days.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-cooling_degree_days.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-growing_degree_days.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-growing_season_length.ncml",});
 
-        for (String gridP1Y : gridP1YList) {
-            try {
+        try {
 
-                fds = FeatureDatasetFactoryManager.open(
-                        FeatureType.GRID,
-                        gridP1Y,
-                        null,
-                        new Formatter(System.err));
-                if (fds instanceof GridDataset) {
-                    GridDataset gds = (GridDataset) fds;
-                    List<GridDatatype> gdtl = gds.getGrids();
+            fds = FeatureDatasetFactoryManager.open(
+                    FeatureType.GRID,
+                    options.datasetLocation,
+                    null,
+                    new Formatter(System.err));
+            if (fds instanceof GridDataset) {
+                GridDataset gds = (GridDataset) fds;
+                List<GridDatatype> gdtl = gds.getGrids();
 
 
-                    List<GridDatatype> a1bList = new ArrayList<GridDatatype>();
-                    List<GridDatatype> a1fiList = new ArrayList<GridDatatype>();
-                    List<GridDatatype> a2List = new ArrayList<GridDatatype>();
-                    List<GridDatatype> b1List = new ArrayList<GridDatatype>();
-                    for (GridDatatype gdt : gdtl) {
-                        String name = gdt.getName();
-                        if (!name.contains("ensemble")) {
-                            if (name.contains("a1b")) {
-                                a1bList.add(gdt);
-                            }
-                            if (name.contains("a1fi")) {
-                                a1fiList.add(gdt);
-                            }
-                            if (name.contains("a2")) {
-                                a2List.add(gdt);
-                            }
-                            if (name.contains("b1")) {
-                                b1List.add(gdt);
-                            }
+                List<GridDatatype> a1bList = new ArrayList<GridDatatype>();
+                List<GridDatatype> a1fiList = new ArrayList<GridDatatype>();
+                List<GridDatatype> a2List = new ArrayList<GridDatatype>();
+                List<GridDatatype> b1List = new ArrayList<GridDatatype>();
+                for (GridDatatype gdt : gdtl) {
+                    String name = gdt.getName();
+                    if (!name.contains("ensemble")) {
+                        if (name.contains("a1b")) {
+                            a1bList.add(gdt);
+                        }
+                        if (name.contains("a1fi")) {
+                            a1fiList.add(gdt);
+                        }
+                        if (name.contains("a2")) {
+                            a2List.add(gdt);
+                        }
+                        if (name.contains("b1")) {
+                            b1List.add(gdt);
                         }
                     }
-                    {
-                        GridTraverser t = new GridTraverser(a1bList);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1b");
-                        t.traverse(v);
-                    }
-                    {
-                        GridTraverser t = new GridTraverser(a1fiList);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1fi");
-                        t.traverse(v);
-                    }
-                    {
-                        GridTraverser t = new GridTraverser(a2List);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a2");
-                        t.traverse(v);
-                    }
-                    {
-                        GridTraverser t = new GridTraverser(b1List);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("b1");
-                        t.traverse(v);
-                    }
                 }
+                {
+                    GridTraverser t = new GridTraverser(a1bList);
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1b");
+                    t.traverse(v);
+                }
+                {
+                    GridTraverser t = new GridTraverser(a1fiList);
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1fi");
+                    t.traverse(v);
+                }
+                {
+                    GridTraverser t = new GridTraverser(a2List);
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a2");
+                    t.traverse(v);
+                }
+                {
+                    GridTraverser t = new GridTraverser(b1List);
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("b1");
+                    t.traverse(v);
+                }
+            }
 
-            } finally {
-                if (fds != null) {
-                    fds.close();
-                }
+        } finally {
+            if (fds != null) {
+                fds.close();
             }
         }
     }
@@ -295,46 +291,43 @@ public class RunDerivatives {
     public static void calculateP1YAverageOverP30Y(DerivativeOptions options) throws IOException {
         FeatureDataset fds = null;
 
-        List<String> gridP1YList = Arrays.asList(
-                new String[]{
-            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.pr.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.tmax.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-days_below_threshold.tmin.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_above_threshold.tmax.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_below_threshold.pr.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-heating_degree_days.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-cooling_degree_days.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-growing_degree_days.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-growing_season_length.ncml",});
+//              changing out for parameterized version, keeping for now for reference
+//            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.pr.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.tmax.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-days_below_threshold.tmin.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_above_threshold.tmax.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_below_threshold.pr.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-heating_degree_days.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-cooling_degree_days.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-growing_degree_days.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-growing_season_length.ncml",});
 
-        for (String gridP1Y : gridP1YList) {
-            try {
+        try {
 
-                fds = FeatureDatasetFactoryManager.open(
-                        FeatureType.GRID,
-                        gridP1Y,
-                        null,
-                        new Formatter(System.err));
-                if (fds instanceof GridDataset) {
-                    GridDataset gds = (GridDataset) fds;
-                    List<GridDatatype> gdtl = gds.getGrids();
-                    for (GridDatatype gdt : gdtl) {
-                        System.out.println("running " + gdt.getName());
-                        GridTraverser t = new GridTraverser(gdt);
-                        GridVisitor v = new IntervalTimeStepAveragingVisitor(
-                                Arrays.asList(new Interval[]{
-                            new Interval("1961-01-01TZ/1991-01-01TZ"),
-                            new Interval("2011-01-01TZ/2041-01-01TZ"),
-                            new Interval("2041-01-01TZ/2071-01-01TZ"),
-                            new Interval("2071-01-01TZ/2100-01-01TZ"),}));
-                        t.traverse(v);
-                    }
+            fds = FeatureDatasetFactoryManager.open(
+                    FeatureType.GRID,
+                    options.datasetLocation,
+                    null,
+                    new Formatter(System.err));
+            if (fds instanceof GridDataset) {
+                GridDataset gds = (GridDataset) fds;
+                List<GridDatatype> gdtl = gds.getGrids();
+                for (GridDatatype gdt : gdtl) {
+                    LOGGER.info("running " + gdt.getName());
+                    GridTraverser t = new GridTraverser(gdt);
+                    GridVisitor v = new IntervalTimeStepAveragingVisitor(
+                            Arrays.asList(new Interval[]{
+                        new Interval("1961-01-01TZ/1991-01-01TZ"),
+                        new Interval("2011-01-01TZ/2041-01-01TZ"),
+                        new Interval("2041-01-01TZ/2071-01-01TZ"),
+                        new Interval("2071-01-01TZ/2100-01-01TZ"),}));
+                    t.traverse(v);
                 }
+            }
 
-            } finally {
-                if (fds != null) {
-                    fds.close();
-                }
+        } finally {
+            if (fds != null) {
+                fds.close();
             }
         }
     }
@@ -342,41 +335,38 @@ public class RunDerivatives {
     public static void calculateP30YDerivatives(DerivativeOptions options) throws IOException {
         FeatureDataset fds = null;
 
-        List<String> gridP30YList = Arrays.asList(
-                new String[]{
-            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.pr.P30Y.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.tmax.P30Y.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-days_below_threshold.tmin.P30Y.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_above_threshold.tmax.P30Y.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_below_threshold.pr.P30Y.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-heating_degree_days.P30Y.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-cooling_degree_days.P30Y.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-growing_degree_days.P30Y.ncml",
-            "/Users/tkunicki/Downloads/derivatives/derivative-growing_season_length.P30Y.ncml",});
+//              removing this for parameterized version, keeping for reference
+//            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.pr.P30Y.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.tmax.P30Y.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-days_below_threshold.tmin.P30Y.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_above_threshold.tmax.P30Y.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_below_threshold.pr.P30Y.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-heating_degree_days.P30Y.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-cooling_degree_days.P30Y.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-growing_degree_days.P30Y.ncml",
+//            "/Users/tkunicki/Downloads/derivatives/derivative-growing_season_length.P30Y.ncml",});
 
-        for (String gridP30Y : gridP30YList) {
-            try {
+        try {
 
-                fds = FeatureDatasetFactoryManager.open(
-                        FeatureType.GRID,
-                        gridP30Y,
-                        null,
-                        new Formatter(System.err));
-                if (fds instanceof GridDataset) {
-                    GridDataset gds = (GridDataset) fds;
-                    List<GridDatatype> gdtl = gds.getGrids();
-                    for (GridDatatype gdt : gdtl) {
-                        System.out.println("running " + gdt.getName());
-                        GridTraverser t = new GridTraverser(gdt);
-                        GridVisitor v = new TimeStepDeltaVisitor();
-                        t.traverse(v);
-                    }
+            fds = FeatureDatasetFactoryManager.open(
+                    FeatureType.GRID,
+                    options.datasetLocation,
+                    null,
+                    new Formatter(System.err));
+            if (fds instanceof GridDataset) {
+                GridDataset gds = (GridDataset) fds;
+                List<GridDatatype> gdtl = gds.getGrids();
+                for (GridDatatype gdt : gdtl) {
+                    LOGGER.info("running " + gdt.getName());
+                    GridTraverser t = new GridTraverser(gdt);
+                    GridVisitor v = new TimeStepDeltaVisitor();
+                    t.traverse(v);
                 }
+            }
 
-            } finally {
-                if (fds != null) {
-                    fds.close();
-                }
+        } finally {
+            if (fds != null) {
+                fds.close();
             }
         }
     }
@@ -389,7 +379,7 @@ public class RunDerivatives {
     // #########################################################################
     public static void calculateDerivativeFeatureWeightedGridStatistics(DerivativeOptions options) throws FactoryException, TransformException, SchemaException {
 
-        File spatialDirectory = new File("/Users/tkunicki/Downloads/derivatives/spatial");
+        File spatialDirectory = new File(options.outputDir);
         if (!spatialDirectory.exists()) {
             spatialDirectory.mkdirs();
             if (!spatialDirectory.exists()) {
@@ -398,128 +388,120 @@ public class RunDerivatives {
             LOGGER.debug("created spatial data directory {}", spatialDirectory.getPath());
         }
 
-        Map<String, String> shapefileMap = new LinkedHashMap<String, String>();
-        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/CONUS_States.shp", "STATE");
-        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/US_Counties.shp", "FIPS");
-        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/Level_III_Ecoregions.shp", "LEVEL3_NAM");
-        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/wbdhu8_alb_simp.shp", "HUC_8");
-        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/FWS_LCC.shp", "area_names");
-        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/NCA_Regions.shp", "NCA_Region");
+//      move this to shapefile and attr parameter in options
+//        Map<String, String> shapefileMap = new LinkedHashMap<String, String>();
+//        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/CONUS_States.shp", "STATE");
+//        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/US_Counties.shp", "FIPS");
+//        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/Level_III_Ecoregions.shp", "LEVEL3_NAM");
+//        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/wbdhu8_alb_simp.shp", "HUC_8");
+//        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/FWS_LCC.shp", "area_names");
+//        shapefileMap.put("file:///Users/tkunicki/Downloads/derivatives/Shapefiles/NCA_Regions.shp", "NCA_Region");
 
-        for (Map.Entry<String, String> shapefileEntry : shapefileMap.entrySet()) {
-            String shapefile = shapefileEntry.getKey();
-            String shapefileAttribute = shapefileEntry.getValue();
-            ShapefileDataStore f = null;
-            try {
-                f = new ShapefileDataStore(new URL(shapefile));
-            } catch (MalformedURLException e) {
-                LOGGER.error("unable to open shapefile: {}", shapefile, e);
-                continue;
-            }
-            if (f == null) {
-                LOGGER.error("unable to open shapefile: {}", shapefile);
-                continue;
-            }
-
-            FeatureCollection<SimpleFeatureType, SimpleFeature> fc = null;
-            try {
-                fc = f.getFeatureSource().getFeatures();
-            } catch (IOException e) {
-                LOGGER.error("unable to extract feature collection: {}", shapefile);
-                continue;
-            }
-
-            String shapeFileBaseName = (new File(shapefile)).getName().replaceAll(".shp", "");
-
-            List<String> gridP1YList = Arrays.asList(
-                    new String[]{
-                "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.pr.ncml",
-                "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.tmax.ncml",
-                "/Users/tkunicki/Downloads/derivatives/derivative-days_below_threshold.tmin.ncml",
-                "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_above_threshold.tmax.ncml",
-                "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_below_threshold.pr.ncml",
-                "/Users/tkunicki/Downloads/derivatives/derivative-heating_degree_days.ncml",
-                "/Users/tkunicki/Downloads/derivatives/derivative-cooling_degree_days.ncml",
-                "/Users/tkunicki/Downloads/derivatives/derivative-growing_degree_days.ncml",
-                "/Users/tkunicki/Downloads/derivatives/derivative-growing_season_length.ncml",});
-
-            File shapefileDirectory = new File(spatialDirectory, shapeFileBaseName);
-            if (!shapefileDirectory.exists()) {
-                shapefileDirectory.mkdirs();
-                if (!shapefileDirectory.exists()) {
-                    throw new RuntimeException("Unable to create shapefile data directory: " + shapefileDirectory.getPath());
-                }
-                LOGGER.debug("created shapefile data directory {}", shapefileDirectory.getPath());
-            }
-
-            for (String dataset : gridP1YList) {
-                try {
-                    FeatureDataset fd = null;
-                    try {
-                        fd = FeatureDatasetFactoryManager.open(
-                                FeatureType.GRID,
-                                dataset,
-                                null,
-                                new Formatter(System.out));
-                    } catch (IOException e) {
-                        LOGGER.error("error opening feature dataset: {}", dataset, e);
-                        continue;
-                    }
-                    if (fd == null) {
-                        LOGGER.error("error opening feature dataset: {}", dataset);
-                        continue;
-                    }
-                    if (!(fd instanceof GridDataset)) {
-                        LOGGER.error("feature dataset not instance of grid: {}", dataset);
-                        continue;
-                    }
-
-                    GridDataset gd = (GridDataset) fd;
-
-                    try {
-
-                        for (GridDatatype gdt : gd.getGrids()) {
-                            GridCoordSystem gcs = gdt.getCoordinateSystem();
-                            CoordinateAxis1D zAxis = gcs.getVerticalAxis();
-                            Range zRange = zAxis.getRanges().get(0);
-
-
-
-                            for (int zIndex = zRange.first(); zIndex <= zRange.last(); zIndex += zRange.stride()) {
-                                double zValue = zAxis.getCoordValue(zIndex);
-
-                                File outputFile = new File(
-                                        shapefileDirectory,
-                                        Joiner.on(",").join(gdt.getName(), zValue, "dsg") + ".nc");
-                                String outputFileName = outputFile.getPath();
-
-                                LOGGER.debug("Generating {} ", outputFileName);
-
-                                GridDatatype zgdt = gdt.makeSubset(null, new Range(zIndex, zIndex), null, 1, 1, 1);
-
-                                DerivativeFeatureCoverageWeightedGridStatistics.execute(
-                                        fc,
-                                        shapefileAttribute,
-                                        zgdt,
-                                        null,
-                                        Arrays.asList(new Statistics1DWriter.Statistic[]{Statistics1DWriter.Statistic.MEAN}),
-                                        false,
-                                        outputFile);
-                            }
-                        }
-                    } catch (IOException e) {
-                        LOGGER.error(String.format("error creating output files for grid: %s, %s", dataset, shapefile), e);
-                    } catch (InvalidRangeException e) {
-                        LOGGER.error(String.format("error creating output files for grid: %s, %s", dataset, shapefile), e);
-                    }
-
-                    fd.close();
-                } catch (IOException e) {
-                    LOGGER.error("error closing feature dataset: {}", dataset, e);
-                }
-            }
-            f.dispose();
+        String shapefile = options.shapefile.toURI().toString();
+        String shapefileAttribute = options.attribute;
+        ShapefileDataStore f = null;
+        try {
+            f = new ShapefileDataStore(new URL(shapefile));
+        } catch (MalformedURLException e) {
+            LOGGER.error("unable to open shapefile: {}", shapefile, e);
+            throw new RuntimeException("unable to open shapefile: " + shapefile, e);
         }
+
+        FeatureCollection<SimpleFeatureType, SimpleFeature> fc = null;
+        try {
+            fc = f.getFeatureSource().getFeatures();
+        } catch (IOException e) {
+            LOGGER.error("unable to extract feature collection: {}", shapefile);
+            throw new RuntimeException("unable to extract feature collection: " + shapefile, e);
+        }
+
+        String shapeFileBaseName = (new File(shapefile)).getName().replaceAll(".shp", "");
+
+//              again, these are the dataset locations, 
+//                "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.pr.ncml",
+//                "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.tmax.ncml",
+//                "/Users/tkunicki/Downloads/derivatives/derivative-days_below_threshold.tmin.ncml",
+//                "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_above_threshold.tmax.ncml",
+//                "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_below_threshold.pr.ncml",
+//                "/Users/tkunicki/Downloads/derivatives/derivative-heating_degree_days.ncml",
+//                "/Users/tkunicki/Downloads/derivatives/derivative-cooling_degree_days.ncml",
+//                "/Users/tkunicki/Downloads/derivatives/derivative-growing_degree_days.ncml",
+//                "/Users/tkunicki/Downloads/derivatives/derivative-growing_season_length.ncml",});
+
+        File shapefileDirectory = new File(spatialDirectory, shapeFileBaseName);
+        if (!shapefileDirectory.exists()) {
+            shapefileDirectory.mkdirs();
+            if (!shapefileDirectory.exists()) {
+                throw new RuntimeException("Unable to create shapefile data directory: " + shapefileDirectory.getPath());
+            }
+            LOGGER.debug("created shapefile data directory {}", shapefileDirectory.getPath());
+        }
+
+        try {
+            FeatureDataset fd = null;
+            try {
+                fd = FeatureDatasetFactoryManager.open(
+                        FeatureType.GRID,
+                        options.datasetLocation,
+                        null,
+                        new Formatter(System.out));
+            } catch (IOException e) {
+                LOGGER.error("error opening feature dataset: {}", options.datasetLocation, e);
+                throw new RuntimeException("error opening feature dataset: " + options.datasetLocation);
+            }
+            if (fd == null) {
+                LOGGER.error("error opening feature dataset: {}", options.datasetLocation);
+                throw new RuntimeException("error opening feature dataset: " + options.datasetLocation);
+            }
+            if (!(fd instanceof GridDataset)) {
+                LOGGER.error("feature dataset not instance of grid: {}", options.datasetLocation);
+                throw new RuntimeException("feature dataset not instance of grid: " + options.datasetLocation);
+            }
+
+            GridDataset gd = (GridDataset) fd;
+
+            try {
+
+                for (GridDatatype gdt : gd.getGrids()) {
+                    GridCoordSystem gcs = gdt.getCoordinateSystem();
+                    CoordinateAxis1D zAxis = gcs.getVerticalAxis();
+                    Range zRange = zAxis.getRanges().get(0);
+
+
+
+                    for (int zIndex = zRange.first(); zIndex <= zRange.last(); zIndex += zRange.stride()) {
+                        double zValue = zAxis.getCoordValue(zIndex);
+
+                        File outputFile = new File(
+                                shapefileDirectory,
+                                Joiner.on(",").join(gdt.getName(), zValue, "dsg") + ".nc");
+                        String outputFileName = outputFile.getPath();
+
+                        LOGGER.debug("Generating {} ", outputFileName);
+
+                        GridDatatype zgdt = gdt.makeSubset(null, new Range(zIndex, zIndex), null, 1, 1, 1);
+
+                        DerivativeFeatureCoverageWeightedGridStatistics.execute(
+                                fc,
+                                shapefileAttribute,
+                                zgdt,
+                                null,
+                                Arrays.asList(new Statistics1DWriter.Statistic[]{Statistics1DWriter.Statistic.MEAN}),
+                                false,
+                                outputFile);
+                    }
+                }
+            } catch (IOException e) {
+                LOGGER.error(String.format("error creating output files for grid: %s, %s", options.datasetLocation, shapefile), e);
+            } catch (InvalidRangeException e) {
+                LOGGER.error(String.format("error creating output files for grid: %s, %s", options.datasetLocation, shapefile), e);
+            }
+
+            fd.close();
+        } catch (IOException e) {
+            LOGGER.error("error closing feature dataset: {}", options.datasetLocation, e);
+        }
+        f.dispose();
     }
 
     // #########################################################################
@@ -531,36 +513,32 @@ public class RunDerivatives {
     public static void calculateP1MAverage(DerivativeOptions options) throws IOException {
         FeatureDataset fds = null;
 
-        List<String> gridFileList = Arrays.asList(
-                new String[]{
-            "/Users/tkunicki/Data/thredds/misc/markstro_grid/union.ncml"
-        });
+//          Leaving markstro_grid file for reference
+//            "/Users/tkunicki/Data/thredds/misc/markstro_grid/union.ncml"
 
-        for (String gridFile : gridFileList) {
-            try {
+        try {
 
-                fds = FeatureDatasetFactoryManager.open(
-                        FeatureType.GRID,
-                        gridFile,
-                        null,
-                        new Formatter(System.err));
-                if (fds instanceof GridDataset) {
-                    GridDataset gds = (GridDataset) fds;
-                    List<GridDatatype> gdtl = gds.getGrids();
-                    for (GridDatatype gdt : gdtl) {
-                        if (gdt.getName().startsWith("x")) {
-                            System.out.println("running " + gdt.getName());
-                            GridTraverser t = new GridTraverser(gdt);
-                            GridVisitor v = new RepeatingPeriodTimeStepAveragingVisitor(Period.months(1));
-                            t.traverse(v);
-                        }
+            fds = FeatureDatasetFactoryManager.open(
+                    FeatureType.GRID,
+                    options.datasetLocation,
+                    null,
+                    new Formatter(System.err));
+            if (fds instanceof GridDataset) {
+                GridDataset gds = (GridDataset) fds;
+                List<GridDatatype> gdtl = gds.getGrids();
+                for (GridDatatype gdt : gdtl) {
+                    if (gdt.getName().startsWith("x")) {
+                        System.out.println("running " + gdt.getName());
+                        GridTraverser t = new GridTraverser(gdt);
+                        GridVisitor v = new RepeatingPeriodTimeStepAveragingVisitor(Period.months(1));
+                        t.traverse(v);
                     }
                 }
+            }
 
-            } finally {
-                if (fds != null) {
-                    fds.close();
-                }
+        } finally {
+            if (fds != null) {
+                fds.close();
             }
         }
     }
