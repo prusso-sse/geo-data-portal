@@ -32,8 +32,13 @@ public class AnnualScenarioEnsembleAveragingVisitor extends DerivativeGridVisito
 
     private final String scenario;
     
-    public AnnualScenarioEnsembleAveragingVisitor(String scenario) {
+    public AnnualScenarioEnsembleAveragingVisitor(String scenario, String outputDir) {
         this.scenario = scenario;
+        if (outputDir != null) {
+            this.outputDir = outputDir;
+        } else {
+            this.outputDir = DerivativeUtil.DEFAULT_P1Y_PATH;
+        }
     }
     
     protected String generateDerivativeOutputVariableName(List<GridDatatype> gridDatatypeList) {
@@ -86,7 +91,7 @@ public class AnnualScenarioEnsembleAveragingVisitor extends DerivativeGridVisito
 
     @Override
     protected String getOutputFilePath() {
-        return DerivativeUtil.DEFAULT_P1Y_PATH;
+        return this.outputDir;
     }
 
     @Override

@@ -194,22 +194,22 @@ public class DerivativeAnalysisTest {
                     }
                     {
                         GridTraverser t = new GridTraverser(a1bList);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1b");
+                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1b", DerivativeUtil.DEFAULT_P1Y_PATH);
                         t.traverse(v);
                     }
                     {
                         GridTraverser t = new GridTraverser(a1fiList);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1fi");
+                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1fi", DerivativeUtil.DEFAULT_P1Y_PATH);
                         t.traverse(v);
                     }
                     {
                         GridTraverser t = new GridTraverser(a2List);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a2");
+                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a2", DerivativeUtil.DEFAULT_P1Y_PATH);
                         t.traverse(v);
                     }
                     {
                         GridTraverser t = new GridTraverser(b1List);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("b1");
+                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("b1", DerivativeUtil.DEFAULT_P1Y_PATH);
                         t.traverse(v);
                     }
                 }

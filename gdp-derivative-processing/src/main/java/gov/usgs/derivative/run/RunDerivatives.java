@@ -261,22 +261,22 @@ public class RunDerivatives {
                 }
                 {
                     GridTraverser t = new GridTraverser(a1bList);
-                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1b");
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1b", options.outputDir);
                     t.traverse(v);
                 }
                 {
                     GridTraverser t = new GridTraverser(a1fiList);
-                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1fi");
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1fi", options.outputDir);
                     t.traverse(v);
                 }
                 {
                     GridTraverser t = new GridTraverser(a2List);
-                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a2");
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a2", options.outputDir);
                     t.traverse(v);
                 }
                 {
                     GridTraverser t = new GridTraverser(b1List);
-                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("b1");
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("b1", options.outputDir);
                     t.traverse(v);
                 }
             }
@@ -320,7 +320,8 @@ public class RunDerivatives {
                         new Interval("1961-01-01TZ/1991-01-01TZ"),
                         new Interval("2011-01-01TZ/2041-01-01TZ"),
                         new Interval("2041-01-01TZ/2071-01-01TZ"),
-                        new Interval("2071-01-01TZ/2100-01-01TZ"),}));
+                        new Interval("2071-01-01TZ/2100-01-01TZ")
+                    }));
                     t.traverse(v);
                 }
             }
