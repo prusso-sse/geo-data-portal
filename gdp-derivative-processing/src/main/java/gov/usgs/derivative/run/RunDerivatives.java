@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -87,10 +86,10 @@ public class RunDerivatives {
                     case P1Y:
                         calculateP1YDerivativeEnsembleAverage(options);
                         break;
-                    case P1Y30D:
+                    case P1YAVG30Y:
                         calculateP1YAverageOverP30Y(options);
                         break;
-                    case P30Y:
+                    case P30YDELTA:
                         calculateP30YDerivatives(options);
                         break;
                     case SPATIAL:
@@ -321,7 +320,7 @@ public class RunDerivatives {
                         new Interval("2011-01-01TZ/2041-01-01TZ"),
                         new Interval("2041-01-01TZ/2071-01-01TZ"),
                         new Interval("2071-01-01TZ/2100-01-01TZ")
-                    }));
+                    }), options.outputDir);
                     t.traverse(v);
                 }
             }
@@ -360,7 +359,7 @@ public class RunDerivatives {
                 for (GridDatatype gdt : gdtl) {
                     LOGGER.info("running " + gdt.getName());
                     GridTraverser t = new GridTraverser(gdt);
-                    GridVisitor v = new TimeStepDeltaVisitor();
+                    GridVisitor v = new TimeStepDeltaVisitor(options.outputDir);
                     t.traverse(v);
                 }
             }
@@ -531,7 +530,7 @@ public class RunDerivatives {
                     if (gdt.getName().startsWith("x")) {
                         System.out.println("running " + gdt.getName());
                         GridTraverser t = new GridTraverser(gdt);
-                        GridVisitor v = new RepeatingPeriodTimeStepAveragingVisitor(Period.months(1));
+                        GridVisitor v = new RepeatingPeriodTimeStepAveragingVisitor(Period.months(1), options.outputDir);
                         t.traverse(v);
                     }
                 }

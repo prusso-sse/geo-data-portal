@@ -32,7 +32,7 @@ public abstract class AbstractTimeStepAveragingVisitor extends DerivativeGridVis
         
     @Override
     protected String getOutputFilePath() {
-        return DerivativeUtil.DEFAULT_P30Y_PATH;
+        return outputDir;
     }
 
     @Override

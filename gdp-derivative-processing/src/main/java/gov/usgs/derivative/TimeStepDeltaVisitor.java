@@ -35,10 +35,18 @@ public final class TimeStepDeltaVisitor extends DerivativeGridVisitor {
     private final static Logger LOGGER = LoggerFactory.getLogger(TimeStepDeltaVisitor.class);
     
     private DerivativeKernel mykernel;
+    
+    public TimeStepDeltaVisitor(String outputDir) {
+        if (outputDir != null) {
+            this.outputDir = outputDir;
+        } else {
+            this.outputDir = DerivativeUtil.DEFAULT_P30Y_DELTA_PATH;
+        }
+    }
 
     @Override
     protected String getOutputFilePath() {
-        return DerivativeUtil.DEFAULT_P30Y_DELTA_PATH;
+        return outputDir;
     }
 
     @Override

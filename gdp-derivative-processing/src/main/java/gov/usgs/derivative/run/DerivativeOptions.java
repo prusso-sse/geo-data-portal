@@ -13,8 +13,8 @@ public class DerivativeOptions {
     public enum Process {
         P1D,
         P1Y,
-        P1Y30D,
-        P30Y,
+        P1YAVG30Y,
+        P30YDELTA,
         P1M,
         SPATIAL;
     }

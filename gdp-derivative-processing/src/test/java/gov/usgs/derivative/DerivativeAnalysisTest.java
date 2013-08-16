@@ -258,7 +258,7 @@ public class DerivativeAnalysisTest {
                                     new Interval("2011-01-01TZ/2041-01-01TZ"),
                                     new Interval("2041-01-01TZ/2071-01-01TZ"),
                                     new Interval("2071-01-01TZ/2100-01-01TZ"),
-                                }));
+                                }), null);
                         t.traverse(v);
                     }
                 }
@@ -301,7 +301,7 @@ public class DerivativeAnalysisTest {
                     for (GridDatatype gdt : gdtl) { 
                         System.out.println("running " + gdt.getName());
                         GridTraverser t = new GridTraverser(gdt);
-                        GridVisitor v = new TimeStepDeltaVisitor();
+                        GridVisitor v = new TimeStepDeltaVisitor(null);
                         t.traverse(v);
                     }
                 }
