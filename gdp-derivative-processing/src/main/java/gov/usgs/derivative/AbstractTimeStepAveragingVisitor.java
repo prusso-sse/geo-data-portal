@@ -20,6 +20,8 @@ import ucar.nc2.dataset.CoordinateAxis1D;
 import ucar.nc2.dataset.CoordinateAxis1DTime;
 import ucar.nc2.dt.GridCoordSystem;
 import ucar.nc2.dt.GridDatatype;
+import ucar.nc2.time.Calendar;
+import ucar.nc2.time.CalendarDate;
 import ucar.units.ConversionException;
 
 /**
@@ -111,6 +113,9 @@ public abstract class AbstractTimeStepAveragingVisitor extends DerivativeGridVis
         for (int inputTimeStepIndex = 0; inputTimeStepIndex < inputTimeStepCount; ++inputTimeStepIndex) {
             Date inputTimeStepDate = tAxis.getTimeDate(inputTimeStepIndex);
             int outputTimeStepIndex = getTimeStepDescriptor().getOutputTimeStepIndex(toDateTimeUTC(inputTimeStepDate));
+            if (outputTimeStepIndex < 0) {
+                continue; // skip missing time steps
+            }
             inputTimeStepCountForOutputTimeStep[outputTimeStepIndex]++;
         }
         int tCountMax = 0;
