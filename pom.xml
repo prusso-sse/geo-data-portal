@@ -4,7 +4,7 @@
 	<groupId>gov.usgs.cida.gdp</groupId>
 	<artifactId>gdp</artifactId>
 	<packaging>pom</packaging>
-	<version>22-SNAPSHOT</version>
+	<version>23-SNAPSHOT</version>
 	<name>GDP</name>
 	<modules>
 		<module>gdp-common-utilities</module>
@@ -88,10 +88,9 @@
 		<url>http://igsarm-cida-hudson1.er.usgs.gov:8080/hudson/job/GeoDataPortal/</url>
 	</ciManagement>
 	<scm>
-		<url>http://github.com/USGS-CIDA/geo-data-portal</url>
+		<url>https://github.com/USGS-CIDA/geo-data-portal</url>
 		<connection>scm:git:git@github.com:USGS-CIDA/geo-data-portal.git</connection>
 		<developerConnection>scm:git:git@github.com:USGS-CIDA/geo-data-portal.git</developerConnection>
-		<tag>HEAD</tag>
 	</scm>
 	<issueManagement>
 		<system>JIRA</system>
@@ -126,7 +125,7 @@
 		<repository>
 			<id>n52-releases</id>
 			<name>52 North Releases</name>
-			<url>https://52north.org/maven/repo/releases</url>
+			<url>http://52north.org/maven/repo/releases</url>
 		</repository>
 	</repositories>
 	<dependencies>
@@ -170,19 +169,19 @@
 			<dependency>
 				<groupId>gov.usgs.cida.jslibs</groupId>
 				<artifactId>geoext</artifactId>
-				<version>1.1-8-SNAPSHOT</version>
+				<version>1.1-8</version>
 				<type>war</type>
 			</dependency>
 			<dependency>
 				<groupId>gov.usgs.cida.jslibs</groupId>
 				<artifactId>dygraphs-core</artifactId>
-				<version>20130314-3-SNAPSHOT</version>
+				<version>20130314-3</version>
 				<type>war</type>
 			</dependency>
 			<dependency>
 				<groupId>gov.usgs.cida.jslibs</groupId>
 				<artifactId>dygraphs-export</artifactId>
-				<version>20130314-3-SNAPSHOT</version>
+				<version>20130314-3</version>
 				<type>war</type>
 			</dependency>
 			<dependency>
@@ -295,7 +294,7 @@
 			<dependency>
 				<groupId>gov.usgs.cida.netcdf.iosp</groupId>
 				<artifactId>geotiff-iosp</artifactId>
-				<version>1.2-SNAPSHOT</version>
+				<version>1.2</version>
 			</dependency>
 			<dependency>
 				<groupId>gov.usgs.cida.owsutils</groupId>
@@ -502,7 +501,7 @@
 			<dependency>
 				<groupId>gov.usgs.cida.jmx</groupId>
 				<artifactId>jmx-log4j</artifactId>
-				<version>1.1-SNAPSHOT</version>
+				<version>1.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.santuario</groupId>
@@ -571,6 +570,11 @@
 				<version>7.6.11.v20130520</version>
 				<scope>test</scope>
 				<type>jar</type>
+			</dependency>
+			<dependency>
+				<groupId>gov.usgs.cida.owsutils</groupId>
+				<artifactId>cida-owsutils-geonetwork</artifactId>
+				<version>1.0</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

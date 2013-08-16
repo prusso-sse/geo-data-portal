@@ -4,7 +4,7 @@
     <parent>
         <artifactId>gdp</artifactId>
         <groupId>gov.usgs.cida.gdp</groupId>
-        <version>22-SNAPSHOT</version>
+        <version>23-SNAPSHOT</version>
     </parent>
     <artifactId>gdp-process-wps</artifactId>
     <packaging>war</packaging>
@@ -31,30 +31,6 @@
     <build>
         <finalName>gdp-process-wps</finalName>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>patch-via-WEB-INF-classes</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>${project.groupId}</groupId>
-                                    <artifactId>gdp-52n-wps-patches</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>jar</type>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>   
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -141,18 +117,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>gdp-data-access</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.usgs.cida.gdp</groupId>
-            <artifactId>gdp-52n-wps-patches</artifactId>
-            <version>${project.version}</version>
-            <!-- extracted to WEB-INF/classes -->
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>gov.usgs.cida.gdp</groupId>
-            <artifactId>gdp-52n-wps-extensions</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

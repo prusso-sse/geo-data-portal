@@ -4,7 +4,7 @@
 	<parent>
 		<artifactId>gdp</artifactId>
 		<groupId>gov.usgs.cida.gdp</groupId>
-		<version>22-SNAPSHOT</version>
+		<version>23-SNAPSHOT</version>
 	</parent>
 	<artifactId>gdp-derivative-ui</artifactId>
 	<packaging>war</packaging>
@@ -106,7 +106,6 @@
         <dependency>
             <groupId>gov.usgs.cida.owsutils</groupId>
             <artifactId>cida-owsutils-geonetwork</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
 	</dependencies>
 	<build>
