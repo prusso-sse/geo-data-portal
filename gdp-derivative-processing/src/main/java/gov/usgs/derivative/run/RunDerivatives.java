@@ -260,22 +260,22 @@ public class RunDerivatives {
                 }
                 {
                     GridTraverser t = new GridTraverser(a1bList);
-                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1b", options.outputDir);
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1b", a1bList.size(), options.outputDir);
                     t.traverse(v);
                 }
                 {
                     GridTraverser t = new GridTraverser(a1fiList);
-                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1fi", options.outputDir);
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1fi", a1fiList.size(), options.outputDir);
                     t.traverse(v);
                 }
                 {
                     GridTraverser t = new GridTraverser(a2List);
-                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a2", options.outputDir);
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a2", a2List.size(), options.outputDir);
                     t.traverse(v);
                 }
                 {
                     GridTraverser t = new GridTraverser(b1List);
-                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("b1", options.outputDir);
+                    GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("b1", b1List.size(), options.outputDir);
                     t.traverse(v);
                 }
             }
