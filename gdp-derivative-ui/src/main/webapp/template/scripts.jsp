@@ -66,6 +66,7 @@
     GDP.PROXY_PREFIX = '<%= props.getProperty("derivative/PROXY_PREFIX", "proxy/")%>';
     GDP.DEFAULT_LEGEND_NAME = '<%= props.getProperty("derivative/DEFAULT_LEGEND_NAME", "boxfill/occam")%>';
     GDP.CSW_QUERY_CONSTRAINT_FILTER_VALUE = '<%= props.getProperty("derivative/CSW_QUERY_CONSTRAINT_FILTER_VALUE", "a0a3c56c-2be5-4d45-9924-72b13e348919")%>';
+	GDP.WMS_URL = GDP.PROXY_PREFIX + '<%= props.getProperty("derivative/WMS_URL", "http://cida-wiwsc-gdp1qa.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1")%>';
 	GDP.FOI_GETCAPS_URL = GDP.PROXY_PREFIX + '<%= props.getProperty("derivative/FOI_GETCAPS_URL", "http://cida-wiwsc-gdp2qa.er.usgs.gov:8082/geoserver/derivative/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetCapabilities")%>';
     
                 Ext.override(Ext.data.Connection, { timeout: 60000 });
