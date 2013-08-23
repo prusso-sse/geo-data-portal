@@ -15,6 +15,7 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
     gcmCombo : undefined,
     layerCombo : undefined,
     leafRecordStore : undefined,
+	leafRecordStoreLoaded : undefined,
     parentRecordStore : undefined,
     scenarioStore : undefined,
     scenarioCombo : undefined,
@@ -235,18 +236,18 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
             LOG.debug('DatasetConfigPanel: Catalog store has encountered an exception.');
             this.controller.getRecordsExceptionOccurred();
         }, this);
-        this.derivativeCombo.on('select', function (combo, record, index) {
+        this.derivativeCombo.on('select', function (combo, record) {
             this.controller.requestDerivative(record);
         }, this);
-        this.featureOfInterestCombo.on('select', function (combo, record, index) {
+        this.featureOfInterestCombo.on('select', function (combo, record) {
             this.controller.requestFeatureOfInterest(record);
             var foiName = record.get('name');
             this.controller.currentFOI = foiName.substr(foiName.indexOf(":") + 1);
         }, this);
-        this.scenarioCombo.on('select', function (combo, record, index) {
+        this.scenarioCombo.on('select', function (combo, record) {
             this.controller.requestScenario(record);
         }, this);
-        this.gcmCombo.on('select', function (combo, record, index) {
+        this.gcmCombo.on('select', function (combo, record) {
             this.controller.requestGcm(record);
         }, this);
         this.controller.on('selected-dataset', function (args) {
@@ -281,9 +282,9 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
             LOG.debug('DatasetConfigPanel: Observed "changederiv".');
             this.onChangeDerivative();
         }, this);
-        this.controller.on('changescenario', function () {
+        this.controller.on('changescenario', function (record) {
             LOG.debug('DatasetConfigPanel: Observed "changescenario".');
-            this.onChangeScenario();
+            this.onChangeScenario(record);
         }, this);
         this.controller.on('changegcm', function () {
             LOG.debug('DatasetConfigPanel: Observed "changegcm".');
@@ -327,20 +328,30 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
             record : derivStore.getAt(0)
         });
     },
-    leafStoreOnLoad : function (leafStore) {
+    leafStoreOnLoad : function (store) {
         LOG.debug("DatasetConfigPanel: leafStoreOnLoad()");
         this.controller.loadedLeafStore({
-            record : leafStore.getAt(0)
+            store : store
         });
     },
     onSelectedDataset : function (args) {
         LOG.debug("DatasetConfigPanel: onSelectedDataset()");
+		
+		args = args || {};
+		
+		var record = args.record || this.leafRecordStore.getAt(0);
+		var url = args.url ||  GDP.PROXY_PREFIX + record.get("wms");
+		
+        this.gcmStore.removeAll();
+        this.gcmStore.loadData(record.get("gcms"), true);
+		
+		this.controller.setOPeNDAPEndpoint(record.get("opendap"));
 
         if (this.controller.getShowChange()) {
-            this.capabilitiesStore.proxy.setApi(Ext.data.Api.actions.read, args.url + '_delta');
+            this.capabilitiesStore.proxy.setApi(Ext.data.Api.actions.read, url + '_delta');
             this.capabilitiesStore.load();
         } else {
-            this.capabilitiesStore.proxy.setApi(Ext.data.Api.actions.read, args.url);
+            this.capabilitiesStore.proxy.setApi(Ext.data.Api.actions.read, url);
             this.capabilitiesStore.load();
         }
     },
@@ -375,17 +386,14 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
         LOG.debug("DatasetConfigPanel: onLoadedDerivStore()");
         this.derivRecordStoreLoaded = true;
         this.controller.sosEndpoint = args.record.get("sos");
-        this.loadLeafRecordStore();
+        this.loadLeafRecordStore({
+			scenarios : args.record.get('scenarios')
+		});
     },
-    onLoadedLeafStore : function (args) {
+    onLoadedLeafStore : function () {
         LOG.debug("DatasetConfigPanel: onLoadedLeafStore()");
-        this.gcmStore.removeAll();
-        this.gcmStore.loadData(args.record.get("gcms"), true);
-		this.controller.setOPeNDAPEndpoint(args.record.get("opendap"));
-        this.controller.fireEvent('selected-dataset', {
-            url : GDP.PROXY_PREFIX + args.record.get("wms")
-        });
-
+		this.leafRecordStoreLoaded = true;
+        this.controller.fireEvent('selected-dataset');
     },
     onChangeLayer : function () {
         LOG.debug("DatasetConfigPanel: onChangeLayer()");
@@ -460,10 +468,23 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
         LOG.debug("DatasetConfigPanel: onChangeDerivative()");
         this.loadDerivRecordStore();
     },
-    onChangeScenario : function () {
+    onChangeScenario : function (args) {
         LOG.debug("DatasetConfigPanel: onChangeScenario()");
+		// Derivative record store needs to be loaded first
         if (this.derivRecordStoreLoaded) {
-            this.loadLeafRecordStore();
+			if (this.leafRecordStoreLoaded) {
+				// A user has really selected a scenario. Use the leafRecordStore
+				// to populate downstream events instead of calling out to CSW
+				// again
+				var scenario = args.record.data.scenario;
+				var leafRecord = this.leafRecordStore.getAt(this.leafRecordStore.find('scenarios', scenario));
+				this.controller.fireEvent('selected-dataset', {
+					record : leafRecord
+				});
+			} else {
+				// We're in the app init phase
+				this.loadLeafRecordStore();
+			}
         }
     },
     onChangeGcm : function () {
@@ -493,6 +514,7 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
         }
         return false;
     },
+			
     loadDerivRecordStore : function () {
         LOG.debug("DatasetConfigPanel: loadDerivRecordStore()");
         // TODO fail nicely if this fails
@@ -545,12 +567,40 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
         });
         this.derivRecordStore.load();
     },
+	
+	/**
+	 * Loads one or more CSW records based on identifier and an array of scenarios
+	 * @argument {Object} args 
+	 *	parentIdentifier - CSW fileIdentifier for derivative
+	 *	scenarios - Array of scenario names
+	 *	callbacks - {
+	 *		success : [
+	 *			function(GDP.CSWGetRecordsStore) {}
+	 *		],
+	 *		error : [
+	 *			function() {}
+	 *		]
+	 *	}
+	 */
 	loadLeafRecordStore: function (args) {
 		LOG.debug("DatasetConfigPanel: loadLeafRecordStore()");
 		args = args || {};
 		var parentIdentifier = args.parentIdentifier || this.derivRecordStore.getAt(0).get("identifier");
 		var scenarios = args.scenarios || [this.controller.getScenario().get('scenario')];
 		var scenarioFilters = (function(scenarios) {
+			// It's possible that the incoming argument is an array of arrays of strings.
+			// We need an array of strings
+			var cleanedScenarios = (function(scenarios) {
+				scenarios = scenarios || [];
+				var cleanedScenarios = [];
+				if (Object.prototype.toString.call( scenarios[0] ) === '[object Array]') {
+							Ext.each(scenarios, function(scenario) {
+								this.push(scenario[0]);
+							}, cleanedScenarios);
+						}
+				return cleanedScenarios;
+			}(scenarios));
+			
 			var scenariosArray = [
 				{
 					type: "==",
@@ -558,9 +608,9 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 					value: 'scenario'
 				}
 			];
-
-			Ext.each(scenarios, function(scenario) {
-				scenariosArray.push({
+			
+			Ext.each(cleanedScenarios, function(scenario) {
+				this.push({
 					type: "==",
 					property: 'Subject',
 					value: scenario
@@ -571,8 +621,8 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 		}(scenarios));
 		var callbacks = args.callbacks || {
 			success: [
-				function (leafStore) {
-					this.leafStoreOnLoad(leafStore);
+				function (store) {
+					this.leafStoreOnLoad(store);
 				}
 			],
 			error: [
