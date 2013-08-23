@@ -217,11 +217,8 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 
         GDP.DatasetConfigPanel.superclass.constructor.call(this, config);
         LOG.debug('DatasetConfigPanel:constructor: Construction complete.');
-        this.parentRecordStore.load();
-        this.capabilitiesStore.on('beforeload', function () {
-            var url = this.capabilitiesStore.url;
-            this.capabilitiesStore.url = url;
-        }, this);
+		
+		 // Attach event handlers
         this.capabilitiesStore.on('load', function (capStore) {
             LOG.debug('DatasetConfigPanel: Capabilities store has finished loading.');
             this.capStoreOnLoad(capStore);
@@ -299,6 +296,9 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
         this.controller.on('exception-catstore', function () {
             this.collapse();
         }, this);
+		
+		// Event handlers connected. Load the parent store
+		this.parentRecordStore.load();
     },
     capStoreOnLoad : function (capStore) {
         LOG.debug("DatasetConfigPanel: capStoreOnLoad()");
@@ -317,6 +317,12 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
     },
     derivStoreOnLoad : function (derivStore) {
         LOG.debug("DatasetConfigPanel: derivStoreOnLoad()");
+		
+		// Create an array of available scenarios for this derivative
+		var scenarioArray = derivStore.getAt(0).get('scenarios').map(function (scenario) {
+			return scenario[0];
+		});
+		
         this.controller.loadedDerivStore({
             record : derivStore.getAt(0)
         });
@@ -367,7 +373,6 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
     },
     onLoadedDerivStore : function (args) {
         LOG.debug("DatasetConfigPanel: onLoadedDerivStore()");
-        // this might be where I gray out some of the options
         this.derivRecordStoreLoaded = true;
         this.controller.sosEndpoint = args.record.get("sos");
         this.loadLeafRecordStore();
@@ -527,9 +532,9 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
                 }
             },
             listeners : {
-                load : function (catStore) {
+                load : function (derivStore) {
                     LOG.debug('DatasetConfigPanel: Catalog store has finished loading.');
-                    this.derivStoreOnLoad(catStore);
+                    this.derivStoreOnLoad(derivStore);
                 },
                 exception : function () {
                     LOG.debug('DatasetConfigPanel: Catalog store has encountered an exception.');
@@ -540,10 +545,44 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
         });
         this.derivRecordStore.load();
     },
-    loadLeafRecordStore: function () {
+	loadLeafRecordStore: function (args) {
 		LOG.debug("DatasetConfigPanel: loadLeafRecordStore()");
-		var scenario = this.controller.getScenario();
-		if (scenario) {
+		args = args || {};
+		var parentIdentifier = args.parentIdentifier || this.derivRecordStore.getAt(0).get("identifier");
+		var scenarios = args.scenarios || [this.controller.getScenario().get('scenario')];
+		var scenarioFilters = (function(scenarios) {
+			var scenariosArray = [
+				{
+					type: "==",
+					property: 'KeywordType',
+					value: 'scenario'
+				}
+			];
+
+			Ext.each(scenarios, function(scenario) {
+				scenariosArray.push({
+					type: "==",
+					property: 'Subject',
+					value: scenario
+				});
+			}, scenariosArray);
+
+			return scenariosArray;
+		}(scenarios));
+		var callbacks = args.callbacks || {
+			success: [
+				function (leafStore) {
+					this.leafStoreOnLoad(leafStore);
+				}
+			],
+			error: [
+				function () {
+					this.controller.getRecordsExceptionOccurred();
+				}
+			]
+		};
+
+		if (scenarios && scenarios.length) {
 			this.leafRecordStore = new GDP.CSWGetRecordsStore({
 				url: "geonetwork/csw",
 				storeId: 'cswStore',
@@ -558,34 +597,30 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 							Filter: {
 								type: '&&',
 								filters: [{
-									type: "==",
-									property: 'ParentIdentifier',
-									value: this.derivRecordStore.getAt(0).get("identifier")
-									}, {
-									type: "&&",
-									filters: [{
 										type: "==",
-										property: 'KeywordType',
-										value: 'scenario'
+										property: 'ParentIdentifier',
+										value: parentIdentifier
 									}, {
-										type: "==",
-										property: 'Subject',
-										value: scenario.get('scenario')
+										type: "||",
+										filters: scenarioFilters
 									}]
-								}]
 							},
 							version: '1.1.0'
 						}
 					}
 				},
 				listeners: {
-					load: function (catStore) {
+					load: function(leafStore) {
 						LOG.debug('DatasetConfigPanel: Catalog store has finished loading.');
-						this.leafStoreOnLoad(catStore);
+						for (var sCallback = 0; sCallback < callbacks.success.length; sCallback++) {
+							callbacks.success[sCallback].call(this, leafStore);
+						}
 					},
 					exception: function() {
 						LOG.debug('DatasetConfigPanel: Catalog store has encountered an exception.');
-						this.controller.getRecordsExceptionOccurred();
+						for (var sCallback = 0; sCallback < callbacks.success.length; sCallback++) {
+							callbacks.error[sCallback].call(this);
+						}
 					},
 					scope: this
 				}

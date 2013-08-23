@@ -1,9 +1,6 @@
 var LOG;
 var NOTIFY;
 var LOADMASK;
-// TODO- We may want to begin preloading images here. At least over a VPN connection
-// it seems to take ages to load action/toolbar icons. This happens due to map tiles
-// loading at the same time.
 
 if (Ext.isIE) { // http://www.mail-archive.com/users@openlayers.org/msg01838.html
     document.namespaces;
@@ -341,7 +338,6 @@ function initializeMapping() {
         autoShow: true,
         contentEl: 'usgs-footer-panel'
     });
-    
     var viewPort = new Ext.Viewport({
         renderTo : document.body,
         items : [headerPanel, centerPanel, configPanel, footerPanel], 
@@ -359,7 +355,6 @@ function initializeMapping() {
         }
         viewPort.doLayout();
     }, this);
-    
 }
 
 function initializeQuickTips() {
