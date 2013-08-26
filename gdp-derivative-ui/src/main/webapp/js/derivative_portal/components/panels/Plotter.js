@@ -2,8 +2,10 @@ Ext.ns("GDP");
 
 GDP.Plotter = Ext.extend(Ext.Panel, {
     sosStore : [],
+	leafStore : undefined,
     plotterData : [],
     scenarioGcmJSON : {},
+	origScenarioGcmJSON : {},
     yLabels : [],
     plotterYMin : 10000000,
     plotterYMax : 0,
@@ -71,6 +73,10 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             LOG.debug('Plotter:onLoadedCatstore');
             this.onLoadedCatstore(args);
         }, this);
+        this.controller.on('loaded-leafstore', function(args) {
+            LOG.debug('Plotter:onLoadedCatstore');
+            this.onLoadedLeafstore(args);
+        }, this);
         this.controller.on('exception-catstore', function() {
             this.collapse();
         }, this);
@@ -96,17 +102,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         if (this.sosStore) {
             this.sosStore = new Array();
         }
-        // TODO- Figure out how to clear the graph (and memory).
-        // Leaving this in causes the graph object to lose its 
-        // maindiv_ variable which causes errors when clicking on a second
-        // feature of interest.
-        //        if (this.graph) {
-        //            this.graph.destroy();
-        //        }
-        //        
-        //        else {
-            Ext.get(this.plotterDiv).dom.innerHTML = '';
-        //        }
+		Ext.get(this.plotterDiv).dom.innerHTML = '';
         var height = Math.round(0.5 * parseInt(Ext.get(this.plotterDiv).dom.style.height));
         LOADMASK = new Ext.LoadMask(Ext.get(this.plotterDiv).dom, {
             msg: '<div id="cida-load-msg">Loading...</div><img height="' + height + '" src="images/cida-anim.gif" />', 
@@ -255,7 +251,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             item.on('click', function(obj) {
                 this.graph.setVisibility(obj.sequencePosition, obj.pressed );
                 this.visibility[obj.sequencePosition] = obj.pressed;
-            }, this)
+            }, this);
         }
         this.topToolbar["plotter-toolbar-errorbars-button"].on('click', function(obj) {
             this.graph.updateOptions({
@@ -272,7 +268,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         
         Ext.iterate(this.scenarioGcmJSON, function(scenario, object) {
             Ext.iterate(object, function(gcm) {
-                if (gcm != 'ensemble') {
+                if (gcm !== 'ensemble') {
                     this.scenarioGcmJSON[scenario][gcm] = new Array();
                     var meta = {};
                     var url = endpoint.replace("{shapefile}", this.controller.getCurrentFOI());
@@ -288,6 +284,33 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         }, this);
         this.resizePlotter();
     },
+	
+	/**
+	 * Using the leaf store, test whether or not it contains a scenario and 
+	 * whether or not that scenario contains a given gcm
+	 * 
+	 * @argument {Object} args "store" - {Object} The leaf store, "scenario" - {String} , "gcm" - {String}
+	 */
+	testScenarioGCMComboExists : function (args) {
+		args = args || {};
+		var store = args.store;
+		var scenario = args.scenario;
+		var gcm = args.gcm;
+		
+		var scenarioGCMComboExists = false;
+
+		// This should always be true, unless we selectively don't have scenarios
+		var scenarioIndex = store.find('scenarios', scenario);
+		if (scenarioIndex > -1) {
+			var gcmArray = this.leafStore.getAt(scenarioIndex).get('gcms').map(function(gcm) {
+				return gcm[0].toLowerCase();
+			});
+			scenarioGCMComboExists = gcmArray.indexOf(gcm.toLowerCase()) > -1;
+		}
+		
+		return scenarioGCMComboExists;
+	},
+	
     resizePlotter : function() {
         LOG.debug('Plotter:resizePlotter()');
         var divPlotter = Ext.get(this.plotterDiv);
@@ -300,18 +323,21 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             this.graph.resize(divPlotter.getWidth(), divPlotter.getHeight());
         }
     },
+	cloneScenarioGcmJSON : function() {
+		return Ext.util.JSON.decode(Ext.util.JSON.encode(this.origScenarioGcmJSON));
+	},
     onLoadedCatstore : function(args) {
         Ext.each(args.record.get("scenarios"), function(scenario) {
             var scenarioKey = this.cleanUpIdentifiers(scenario[0]);
-            this.scenarioGcmJSON[scenarioKey] = {};
+            this.origScenarioGcmJSON[scenarioKey] = {};
             Ext.each(args.record.get("gcms"), function(gcm) {
-                if (gcm[0] != 'Ensemble') {
+                if (gcm[0] !== 'Ensemble') {
                     var gcmKey = this.cleanUpIdentifiers(gcm[0]);
-                    this.scenarioGcmJSON[scenarioKey][gcmKey] = [];
+                    this.origScenarioGcmJSON[scenarioKey][gcmKey] = [];
                 }
             }, this);
         }, this);
-        
+		
         // Set up the text for the initial view of the plotter panel
         Ext.DomHelper.append(Ext.DomQuery.selectNode("div[id='dygraph-content']"), {
             tag : 'div', 
@@ -324,6 +350,28 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         // This tooltip will show up to the right of any title text
         this.titleTipText = '&nbsp;&nbsp;<span ext:qtip="'+args.record.get('helptext')['plotHelp']+'" class="x-combo-list-item"><img class="quicktip-img" src="images/info.gif" /></span>';
     },
+	
+	onLoadedLeafstore : function (args) {
+		this.scenarioGcmJSON = this.cloneScenarioGcmJSON();
+		this.leafStore = args.store;
+		Ext.iterate(this.scenarioGcmJSON, function(scenario, gcms, scenarioGcmJSON) {
+			for (var gcm in gcms) {
+				var hasGCM = this.testScenarioGCMComboExists({
+					store : this.leafStore,
+					gcm : gcm,
+					scenario : scenario
+				});
+
+				if (!hasGCM) {
+					delete scenarioGcmJSON[scenario][gcm];
+					if (Object.isEmpty(scenarioGcmJSON[scenario])) {
+						delete scenarioGcmJSON[scenario];
+					}
+				}
+			}
+        }, this);
+	},
+	
     loadSOSStore : function(meta, offering) {
         var url = "proxy/" + meta.url + "?service=SOS&request=GetObservation&version=1.0.0&offering=" + encodeURIComponent(encodeURIComponent(offering)) + "&observedProperty=mean";
         
