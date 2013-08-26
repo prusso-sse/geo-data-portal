@@ -466,17 +466,19 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 Ext.each(scenarios, function(scenario) {
                     var scenarioArray = [];
                     Ext.each(gcms, function(gcm) {
-                        scenarioArray.push(this.scenarioGcmJSON[scenario][gcm][i][1]);
+						if (this.scenarioGcmJSON[scenario][gcm]) {
+							scenarioArray.push(this.scenarioGcmJSON[scenario][gcm][i][1]);
+						}
                     }, this);
                     var min = Array.min(scenarioArray);
                     var mean = Array.mean(scenarioArray);
                     var max = Array.max(scenarioArray);
                     this.plotterData[i].push([min, mean, max]);
                     if (min < this.plotterYMin) {
-                        this.plotterYMin = min
+                        this.plotterYMin = min;
                     }
                     if (max > this.plotterYMax) {
-                        this.plotterYMax = max
+                        this.plotterYMax = max;
                     }
                 }, this);
             }
@@ -515,7 +517,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                         Ext.iterate(scope.scenarioGcmJSON, function(scenario, value) {
                             scenarios.push(scenario);
                             Ext.iterate(value, function(gcm, value) {
-                                if(gcms.indexOf(gcm) == -1 && gcm != 'ensemble') {
+                                if(gcms.indexOf(gcm) === -1 && gcm !== 'ensemble') {
                                     gcms.push(gcm);
                                 }
                                 if (!observationsLength) {
@@ -525,10 +527,12 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                         });
                     
                         var csv = '#' + scope.plotterTitle + ' calculated by ' + window.location + '\n';
-                        var line = 'date, '
+                        var line = 'date, ';
                         Ext.each(scenarios, function(scenario) {
                             Ext.each(gcms, function(gcm) {
-                                line += gcm + " " + scenario + ",";
+								if (scope.scenarioGcmJSON[scenario][gcm]) {
+									line += gcm + " " + scenario + ",";
+								}
                             }, this);
                         }, this);
                         csv += line.substr(0, line.length - 1) + "\n";
@@ -539,7 +543,9 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 
                             Ext.each(scenarios, function(scenario) {
                                 Ext.each(gcms, function(gcm) {
-                                    line2 += scope.scenarioGcmJSON[scenario][gcm][i][1] + ",";
+									if (scope.scenarioGcmJSON[scenario][gcm]) {
+										line2 += scope.scenarioGcmJSON[scenario][gcm][i][1] + ",";
+									}
                                 }, this);
                             }, this);
                             csv += line2.substr(0, line2.length - 1) + "\n";
