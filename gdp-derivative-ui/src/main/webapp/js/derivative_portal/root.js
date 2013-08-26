@@ -1,9 +1,6 @@
 var LOG;
 var NOTIFY;
 var LOADMASK;
-// TODO- We may want to begin preloading images here. At least over a VPN connection
-// it seems to take ages to load action/toolbar icons. This happens due to map tiles
-// loading at the same time.
 
 if (Ext.isIE) { // http://www.mail-archive.com/users@openlayers.org/msg01838.html
     document.namespaces;
@@ -60,7 +57,7 @@ function initializeNotification() {
     /**
      * ERROR
      */
-    var _notifyError = function(args) {
+    var _notifyError = function (args) {
         LOG.trace('Derivative Portal: Showing error popup');
         var config = args || {};
 	
@@ -89,55 +86,55 @@ function initializeNotification() {
         }
 		
         notifyError.show(document);
-    }
+    };
 	
     /**
      * SUCCESS
      */
-    var _notifySuccess = function(msg) {
+    var _notifySuccess = function (msg) {
         LOG.trace('Derivative Portal: Showing success popup');
         new Ext.ux.Notify(Ext.applyIf({
             title: 'Success!',
             titleIconCls: 'titleicon-success',
             msg: msg.msg || 'Data saved successfully.'
         }, defaultConfig)).show(document);
-    }
+    };
 	
     /**
      * DEBUG NOTIFY
      */    
-    var _notifyDebug = function(msg) {
+    var _notifyDebug = function (msg) {
         LOG.debug('Derivative Portal: Showing debug popup');
         new Ext.ux.Notify(Ext.applyIf({
             title: 'DEBUG',
             titleIconCls: 'titleicon-debug',
             msg: msg.msg || ''
         }, defaultConfig)).show(document);
-    }
+    };
     
     /**
      * WARNING
      */
-    var _notifyWarning = function(msg) {
+    var _notifyWarning = function (msg) {
         LOG.debug('Derivative Portal: Showing warning popup');
         new Ext.ux.Notify(Ext.applyIf({
             title: 'WARNING',
             titleIconCls: 'titleicon-warning',
             msg: msg.msg || ''
         }, defaultConfig)).show(document);
-    }
+    };
     
     /**
      * INFO
      */
-    var _notifyInfo = function(msg) {
+    var _notifyInfo = function (msg) {
         LOG.debug('Derivative Portal: Showing info popup');
         new Ext.ux.Notify(Ext.applyIf({
             title: 'INFO',
             titleIconCls: 'titleicon-info',
             msg: msg.msg || ''
         }, defaultConfig)).show(document);
-    }    
+    };    
     
     NOTIFY = {
         debug : _notifyDebug,
@@ -248,15 +245,8 @@ function initializeMapping() {
 
     layerController.requestBaseLayer(layerController.getBaseLayer());
     
-    var endpointUrls = [
-        ['http://cida-wiwsc-gdp1qa.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1'],
-        ['http://igsarmewmaccave:8081/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1'],
-        ['http://igsarm-cida-thredds1.er.usgs.gov:8080/thredds/wms/gmo/GMO_w_meta.ncml?service=WMS&version=1.1.1&request=GetCapabilities'],
-        ['http://igsarm-cida-gdp2.er.usgs.gov:8081/geonetwork/srv/en/csw']
-    ];
-    var proxyUrl = GDP.PROXY_PREFIX + endpointUrls[0];
     var capabilitiesStore = new GeoExt.data.WMSCapabilitiesStore({
-        url : proxyUrl,
+        url : GDP.WMS_URL,
         storeId : 'capabilitiesStore'
     });
     
@@ -348,7 +338,6 @@ function initializeMapping() {
         autoShow: true,
         contentEl: 'usgs-footer-panel'
     });
-    
     var viewPort = new Ext.Viewport({
         renderTo : document.body,
         items : [headerPanel, centerPanel, configPanel, footerPanel], 
@@ -365,8 +354,7 @@ function initializeMapping() {
             footerPanel.show();
         }
         viewPort.doLayout();
-    }, this)
-    
+    }, this);
 }
 
 function initializeQuickTips() {

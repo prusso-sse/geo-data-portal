@@ -127,6 +127,7 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
             "loaded-capstore",
             "loaded-catstore",
             "loaded-derivstore",
+			"loaded-leafstore",
             "requestfoi",
             "submit-bounds",
             "selected-dataset",
@@ -135,6 +136,14 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
         );
         this.requestBaseLayer(config.baseLayer);
     },
+    requestBaseLayer : function (baseLayer) {
+        LOG.debug('LayerController:requestBaseLayer');
+        if (baseLayer) {
+			this.baseLayer = baseLayer;
+			LOG.debug('LayerController:requestBaseLayer: Added new base layer to LayerController. Firing "changebaselayer"');
+			this.fireEvent('changebaselayer');
+		}
+    },
     requestApplicationResize : function (expand) {
         LOG.debug('LayerController:requestApplicationResize: Expand: ' + expand);
         this.fireEvent('application-resize', expand);
@@ -142,14 +151,6 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
     onChangeProductToggled : function (pressed) {
         this.showChange = pressed;
         this.fireEvent('changescenario');
-    },
-    requestBaseLayer : function (baseLayer) {
-        LOG.debug('LayerController:requestBaseLayer');
-        if (baseLayer) {
-			this.baseLayer = baseLayer;
-			LOG.debug('LayerController:requestBaseLayer: Added new base layer to LayerController. Firing "changebaselayer".');
-			this.fireEvent('changebaselayer');
-		}
     },
     requestLayer : function (layerRecord) {
         LOG.debug('LayerController:requestLayer');
