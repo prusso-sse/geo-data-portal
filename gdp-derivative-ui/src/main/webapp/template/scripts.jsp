@@ -114,6 +114,15 @@
                     }
                     return date;
                 };
+				
+				Object.isEmpty = function (object) {
+					for(var i in object) 
+					if(object.hasOwnProperty(i)) {
+					  return false;
+					}
+ 
+					return true;
+				};
 
     
                 Ext.BLANK_IMAGE_URL = 'images/s.gif';
