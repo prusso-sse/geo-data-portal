@@ -127,6 +127,7 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
             "loaded-capstore",
             "loaded-catstore",
             "loaded-derivstore",
+			"loaded-leafstore",
             "requestfoi",
             "submit-bounds",
             "selected-dataset",
