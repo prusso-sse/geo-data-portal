@@ -170,55 +170,55 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
             });
 		}, this);
 
-        config = Ext.apply({
-            id : 'dataset-configuration-panel',
-            title : 'Dataset Configuration',
-            width : config.width || undefined,
-            animate : true,
-            border : false,
-            items : [{
-                xtype: 'fieldset',
-                labelAlign : 'top',
-                autoHeight : true,
-                ref : 'derivativeFieldSet',
-                defaultType: 'combo',
-                layout : 'form',
-                items : [
+		config = Ext.apply({
+			id: 'dataset-configuration-panel',
+			title: 'Dataset Configuration',
+			width: config.width || undefined,
+			animate: true,
+			border: false,
+			items: [{
+				xtype: 'fieldset',
+				labelAlign: 'top',
+				autoHeight: true,
+				ref: 'derivativeFieldSet',
+				defaultType: 'combo',
+				layout: 'form',
+				items: [
 					this.derivativeCombo,
 					this.zlayerCombo
-                ]
-            }, {
-                xtype: 'fieldset',
-                labelAlign : 'top',
-                title: 'Map',
-                autoHeight : true,
-                ref : 'mapFieldSet',
-                defaultType: 'combo',
-                layout : 'form',
-                items : [
+				]
+			}, {
+				xtype: 'fieldset',
+				labelAlign: 'top',
+				title: 'Map',
+				autoHeight: true,
+				ref: 'mapFieldSet',
+				defaultType: 'combo',
+				layout: 'form',
+				items: [
 					this.scenarioCombo,
 					this.gcmCombo,
 					this.timestepCombo
-                ]
-            }, {
+				]
+			}, {
 				xtype: 'fieldset',
-				id : 'plotFieldSet',
-				labelAlign : 'top',
-				ref : 'plotFieldSet',
+				id: 'plotFieldSet',
+				labelAlign: 'top',
+				ref: 'plotFieldSet',
 				title: 'Plot',
-				autoHeight : true,
+				autoHeight: true,
 				defaultType: 'combo',
-				layout : 'form',
-				items : [
+				layout: 'form',
+				items: [
 					this.featureOfInterestCombo
 				]
-				}
-			]
+			}
+				]
 		}, config);
 
         GDP.DatasetConfigPanel.superclass.constructor.call(this, config);
         LOG.debug('DatasetConfigPanel:constructor: Construction complete.');
-		
+
 		 // Attach event handlers
         this.capabilitiesStore.on('load', function (capStore) {
             LOG.debug('DatasetConfigPanel: Capabilities store has finished loading.');
@@ -297,7 +297,7 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
         this.controller.on('exception-catstore', function () {
             this.collapse();
         }, this);
-		
+
 		// Event handlers connected. Load the parent store
 		this.parentRecordStore.load();
     },
@@ -318,12 +318,12 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
     },
     derivStoreOnLoad : function (derivStore) {
         LOG.debug("DatasetConfigPanel: derivStoreOnLoad()");
-		
+
 		// Create an array of available scenarios for this derivative
 		var scenarioArray = derivStore.getAt(0).get('scenarios').map(function (scenario) {
 			return scenario[0];
 		});
-		
+
         this.controller.loadedDerivStore({
             record : derivStore.getAt(0)
         });
@@ -336,15 +336,30 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
     },
     onSelectedDataset : function (args) {
         LOG.debug("DatasetConfigPanel: onSelectedDataset()");
-		
+
 		args = args || {};
-		
-		var record = args.record || this.leafRecordStore.getAt(0);
-		var url = args.url ||  GDP.PROXY_PREFIX + record.get("wms");
-		
+
+		var record = args.record,
+			url = args.url,
+			recordIndex;
+
+		// A record was not passed in with the args - find the leaf record to 
+		// populate the combobox by querying on the scenario combobox to get the 
+		// right set of records for the GCM combo
+		if (!record) {
+			recordIndex = this.leafRecordStore.data.findIndexBy(function (record) {
+				return this.scenarioCombo.getValue() === record.data.scenarios[0][0];
+			}, this);
+			record = this.leafRecordStore.getAt(recordIndex);
+		}
+
+		if (!url) {
+			url = GDP.PROXY_PREFIX + record.get("wms");
+		}
+
         this.gcmStore.removeAll();
         this.gcmStore.loadData(record.get("gcms"), true);
-		
+
 		this.controller.setOPeNDAPEndpoint(record.get("opendap"));
 
         if (this.controller.getShowChange()) {
@@ -355,7 +370,7 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
             this.capabilitiesStore.load();
         }
     },
-    onLoadedCapstore : function (args) {
+    onLoadedCapstore : function () {
         LOG.debug("DatasetConfigPanel: onLoadedCapStore()");
         this.controller.fireEvent('changegcm');
         this.controller.fireEvent('changelayer');
@@ -390,10 +405,10 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 			scenarios : args.record.get('scenarios')
 		});
     },
-    onLoadedLeafStore : function () {
+    onLoadedLeafStore : function (args) {
         LOG.debug("DatasetConfigPanel: onLoadedLeafStore()");
 		this.leafRecordStoreLoaded = true;
-        this.controller.fireEvent('selected-dataset');
+        this.controller.fireEvent('selected-dataset', args);
     },
     onChangeLayer : function () {
         LOG.debug("DatasetConfigPanel: onChangeLayer()");
@@ -476,8 +491,9 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 				// A user has really selected a scenario. Use the leafRecordStore
 				// to populate downstream events instead of calling out to CSW
 				// again
-				var scenario = args.record.data.scenario;
-				var leafRecord = this.leafRecordStore.getAt(this.leafRecordStore.find('scenarios', scenario));
+				var scenario = args.record.data.scenario,
+					leafRecord = this.leafRecordStore.getAt(this.leafRecordStore.find('scenarios', scenario));
+
 				this.controller.fireEvent('selected-dataset', {
 					record : leafRecord
 				});
@@ -514,7 +530,7 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
         }
         return false;
     },
-			
+
     loadDerivRecordStore : function () {
         LOG.debug("DatasetConfigPanel: loadDerivRecordStore()");
         // TODO fail nicely if this fails
@@ -567,7 +583,7 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
         });
         this.derivRecordStore.load();
     },
-	
+
 	/**
 	 * Loads one or more CSW records based on identifier and an array of scenarios
 	 * @argument {Object} args 
@@ -585,52 +601,51 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 	loadLeafRecordStore: function (args) {
 		LOG.debug("DatasetConfigPanel: loadLeafRecordStore()");
 		args = args || {};
-		var parentIdentifier = args.parentIdentifier || this.derivRecordStore.getAt(0).get("identifier");
-		var scenarios = args.scenarios || [this.controller.getScenario().get('scenario')];
-		var scenarioFilters = (function(scenarios) {
-			// It's possible that the incoming argument is an array of arrays of strings.
-			// We need an array of strings
-			var cleanedScenarios = (function(scenarios) {
-				scenarios = scenarios || [];
-				var cleanedScenarios = [];
-				if (Object.prototype.toString.call( scenarios[0] ) === '[object Array]') {
-							Ext.each(scenarios, function(scenario) {
-								this.push(scenario[0]);
-							}, cleanedScenarios);
+		var parentIdentifier = args.parentIdentifier || this.derivRecordStore.getAt(0).get("identifier"),
+			scenarios = args.scenarios || [this.controller.getScenario().get('scenario')],
+			scenarioFilters = (function (scenarios) {
+				// It's possible that the incoming argument is an array of arrays of strings.
+				// We need an array of strings
+				var cleanedScenarios = (function (scenarios) {
+					scenarios = scenarios || [];
+					var cleanedScenarios = [];
+					if (Object.prototype.toString.call(scenarios[0]) === '[object Array]') {
+						Ext.each(scenarios, function (scenario) {
+							this.push(scenario[0]);
+						}, cleanedScenarios);
+					}
+					return cleanedScenarios;
+				}(scenarios)),
+					scenariosArray = [
+						{
+							type: "==",
+							property: 'KeywordType',
+							value: 'scenario'
 						}
-				return cleanedScenarios;
-			}(scenarios));
-			
-			var scenariosArray = [
-				{
-					type: "==",
-					property: 'KeywordType',
-					value: 'scenario'
-				}
-			];
-			
-			Ext.each(cleanedScenarios, function(scenario) {
-				this.push({
-					type: "==",
-					property: 'Subject',
-					value: scenario
-				});
-			}, scenariosArray);
+					];
 
-			return scenariosArray;
-		}(scenarios));
-		var callbacks = args.callbacks || {
-			success: [
-				function (store) {
-					this.leafStoreOnLoad(store);
-				}
-			],
-			error: [
-				function () {
-					this.controller.getRecordsExceptionOccurred();
-				}
-			]
-		};
+				Ext.each(cleanedScenarios, function (scenario) {
+					this.push({
+						type: "==",
+						property: 'Subject',
+						value: scenario
+					});
+				}, scenariosArray);
+
+				return scenariosArray;
+			}(scenarios)),
+			callbacks = args.callbacks || {
+				success: [
+					function (store) {
+						this.leafStoreOnLoad(store);
+					}
+				],
+				error: [
+					function () {
+						this.controller.getRecordsExceptionOccurred();
+					}
+				]
+			};
 
 		if (scenarios && scenarios.length) {
 			this.leafRecordStore = new GDP.CSWGetRecordsStore({
@@ -647,22 +662,22 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 							Filter: {
 								type: '&&',
 								filters: [{
-										type: "==",
-										property: 'ParentIdentifier',
-										value: parentIdentifier
-									}, {
-										type: "||",
-										filters: scenarioFilters
-									}]
+									type: "==",
+									property: 'ParentIdentifier',
+									value: parentIdentifier
+								}, {
+									type: "||",
+									filters: scenarioFilters
+								}]
 							},
 							version: '1.1.0'
 						}
 					}
 				},
 				listeners: {
-					load: function(leafStore) {
+					load: function (leafStore) {
 						LOG.debug('DatasetConfigPanel: Catalog store has finished loading.');
-						for (var sCallback = 0; sCallback < callbacks.success.length; sCallback++) {
+						for (var sCallback = 0;sCallback < callbacks.success.length; sCallback++) {
 							callbacks.success[sCallback].call(this, leafStore);
 						}
 					},
