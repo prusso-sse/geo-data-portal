@@ -12,7 +12,8 @@
 <link rel="stylesheet" href="css/jgrowl/jquery.jgrowl.css" type="text/css" />
 <link rel="stylesheet" href="css/jgrowl-override.css" type="text/css" />
 <link rel="stylesheet" href="css/tiptip/tipTip.css" type="text/css" />
-<link rel="stylesheet" href="css/excat/cswclient.css" type="text/css" />
+<link rel="stylesheet" href="lib/css/cswclient.css" type="text/css" />
+<link rel="stylesheet" href="css/excat/cswclient-overlay.css" type="text/css" />
 <link rel="stylesheet" href="css/common.css" type="text/css" />
 <link rel="stylesheet" href="css/area_of_interest.css" type="text/css" />
 <link rel="stylesheet" href="css/dataset.css" type="text/css" />
