@@ -35,11 +35,11 @@ var CSWClient = function () {
  
     function handleCSWResponse(request, xml) {
 
-        var stylesheet = "js/excat/xsl/prettyxml.xsl";
+        var stylesheet = "lib/xsl/prettyxml.xsl";
         if (request === "getrecords" & document.theForm.displaymode.value !== "xml") {
-            stylesheet = "js/excat/xsl/csw-results.xsl";
+            stylesheet = "lib/xsl/csw-results.xsl";
         } else if (request === "getrecordbyid" & document.theForm.displaymode.value !== "xml") {
-            stylesheet = "js/excat/xsl/csw-metadata.xsl";
+            stylesheet = "lib/xsl/csw-metadata.xsl";
         }
 
         var xslt = loadDocument(stylesheet);
@@ -166,10 +166,10 @@ var CSWClient = function () {
     }
 
     function writeClient(divId) {
-        var client_xml = loadDocument("js/excat/xml/cswclient.xml");
+        var client_xml = loadDocument("lib/xml/cswclient.xml");
         /* if no default cswhost has been defined we provide the user with optional csw hosts */
         if (cswhost === null) {
-            var cswhosts_xml = loadDocument("js/excat/xml/csw-hosts.xml");
+            var cswhosts_xml = loadDocument("lib/xml/csw-hosts.xml");
             var span = client_xml.selectSingleNode("//span[@id='csw-hosts']");
             importNode = client_xml.importNode(cswhosts_xml.documentElement, true);
             span.appendChild(importNode);
@@ -323,9 +323,9 @@ var CSWClient = function () {
                 proxy = host + Constant.endpoint.proxy;
             }
 
-            getrecords_xsl = loadDocument("js/excat/xsl/getrecords.xsl");
-            getrecordbyid_xsl = loadDocument("js/excat/xsl/getrecordbyid.xsl");
-            defaults_xml = loadDocument("js/excat/xml/defaults.xml");
+            getrecords_xsl = loadDocument("lib/xsl/getrecords.xsl");
+            getrecordbyid_xsl = loadDocument("lib/xsl/getrecordbyid.xsl");
+            defaults_xml = loadDocument("lib/xml/defaults.xml");
             defaultschema = defaults_xml.selectSingleNode("/defaults/outputschema/text()").nodeValue;
             writeClient('csw-wrapper');
         },
@@ -492,7 +492,7 @@ var CSWClient = function () {
         displayMultipleOpenDAPSelection : function(id) {
             var csw_response = getRecordById(id);
             
-            var stylesheet = "js/excat/xsl/multi-service-endpoint.xsl";
+            var stylesheet = "lib/xsl/multi-service-endpoint.xsl";
 
             var xslt = loadDocument(stylesheet);
             var processor = new XSLTProcessor();
