@@ -113,7 +113,6 @@
 		<dependency>
 			<groupId>gov.usgs.cida.jslibs</groupId>
 			<artifactId>excat-csw-client-simple</artifactId>
-			<version>20090129-1-SNAPSHOT</version>
 			<type>jar</type>
 		</dependency>
 		<!-- /JS LIBS -->
