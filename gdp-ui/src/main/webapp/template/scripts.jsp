@@ -39,8 +39,8 @@
 <script type="text/javascript" src="js/dataset.js"></script>
 <script type="text/javascript" src="js/map.js"></script>
 <script type="text/javascript" src="js/tiptip/jquery.tipTip.js"></script>
-<script type="text/javascript" src="js/excat/scripts/sarissa.js"></script>
-<script type="text/javascript" src="js/excat/scripts/sarissa_ieemu_xpath.js"></script>
+<script type="text/javascript" src="js/sarissa/sarissa.js"></script>
+<script type="text/javascript" src="js/sarissa/sarissa_ieemu_xpath.js"></script>
 <script type="text/javascript" src="js/excat/scripts/cswclient.js"></script>
 <script type="text/javascript">
     var incomingParams = {};
