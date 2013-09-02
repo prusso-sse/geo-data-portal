@@ -5,6 +5,18 @@
  * Author: Ivan Suftin (isuftin@usgs.gov)
  */
 
+// JSLint pre-conditions
+/*global window */
+/*global document */
+/*global CSWClient: true */
+/*global Sarissa */
+/*global XMLHttpRequest */
+/*global XSLTProcessor */
+/*global XMLSerializer */
+/*global ActiveXObject */
+/*global DOMParser */
+/*jslint sloppy : true */
+
 // We need to override the constructor for this object. In order to do that, 
 // I am going to borrow the prototype for this object as it's been set up by the
 // stock CSW script
@@ -20,9 +32,8 @@ CSWClient = function (cswhost, host) {
 	this.defaults_xml = this.loadDocument("lib/xml/defaults.xml");
 	this.defaultschema = this.defaults_xml.selectSingleNode("/defaults/outputschema/text()").nodeValue;
 	this.capabilitiesMap = {};
-	this.useProxy = true;
 	this.context = null;
-	this.sbEndpoint = Constant.endpoint['sciencebase-csw'];
+	this.sbEndpoint = null;
 	this.sbConstraintFeature = false;
 	this.sbConstraintCoverage = false;
 	this.currentSBFeatureSearch = null;
@@ -31,8 +42,10 @@ CSWClient = function (cswhost, host) {
 };
 
 // Now that the object has a new constructor, I go ahead and slap on the old
-// prototype on it and delete the variable to clean up
+// prototype on it
 CSWClient.prototype = oldCSWProto;
+
+// Delete the variable to clean up
 oldCSWProto = undefined;
 
 /**
@@ -49,7 +62,7 @@ CSWClient.prototype.sendCSWRequest = function (request) {
 
 	xml.async = false;
 
-	if (this.useProxy) {
+	if (this.use_proxy) {
 		xmlhttp.open("POST", cswProxy, false);
 	} else {
 		xmlhttp.open("POST", this.cswhost, false);
@@ -125,6 +138,7 @@ CSWClient.prototype.handleCSWResponse = function (request, xml) {
 	XmlDom = processor.transformToDocument(xml);
 	output = serializer.serializeToString(XmlDom.documentElement);
 	outputDiv.innerHTML = output;
+	return output;
 };
 
 /**
@@ -228,19 +242,29 @@ CSWClient.prototype.getRecords = function (start) {
 
 	importNode = results_xml.importNode(csw_response.documentElement, true);
 	results_xml.documentElement.appendChild(importNode);
-	return this.handleCSWResponse("getrecords", results_xml);
+	this.handleCSWResponse("getrecords", results_xml);
+	return results_xml;
 };
 
+/**
+ * Uses an ID to fetch and display metadata
+ * 
+ * @param {type} id
+ * @returns {unresolved}
+ */
 CSWClient.prototype.popupMetadataById = function (id) {
 	var csw_response = this.getRecordById(id);
-	return this.handleCSWResponse("getrecordbyid", csw_response);
+	this.handleCSWResponse("getrecordbyid", csw_response);
+	return csw_response;
 };
 
+/**
+ * This exists due to being triggered by in-line javascript dynamically created
+ * in HTML popup windows
+ * 
+ * @param {type} context
+ * @returns {undefined}
+ */
 CSWClient.prototype.setContext = function (context) {
 	this.context = context;
-};
-
-CSWClient.prototype.hideDiv = function (div) {
-	document.getElementById('overlay').style.visibility = "hidden";
-	div.style.visibility = "hidden";
 };
