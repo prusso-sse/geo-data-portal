@@ -148,8 +148,9 @@ function initializeSteps() {
 
 	cswEndpoint = ScienceBase.useSB ? Constant.endpoint['sciencebase-csw'] :  Constant.endpoint.csw;
 	GDPCSWClient = new CSWClient(cswEndpoint, Constant.endpoint.proxy);
+	GDPCSWClient.sbEndpoint = Constant.endpoint['sciencebase-csw'];
 	GDPCSWClient.writeClient('csw-wrapper');
-
+	
     steps = [AOI, Dataset];
 
     logger.debug('GDP: Moving all steps content into respective page content sections');
