@@ -1,7 +1,7 @@
 
 <div id="cswclient">
     <div>
-        <form name="theForm" method="POST" action="javascript:CSWClient.setContext('wcs');CSWClient.getRecords();">
+        <form name="theForm" method="POST" action="GDPCSWClient.setContext('wcs');GDPCSWClient.getRecords();Dataset.createCSWResponseDialog();">
             <span>Search:</span>
             <select id="queryable" name="queryable">
                 <option value="anytext">AnyText</option>
@@ -23,7 +23,7 @@
                 <option value="title">Title</option>
             </select>
             <input type="hidden" name="displaymode" value="html"/>
-            <input id="dataset_search_submit_button" type="button" value="Search" class="button" onClick="javascript:CSWClient.setContext('wcs');CSWClient.getRecords();"/>
+            <input id="dataset_search_submit_button" type="button" value="Search" class="button" onClick="GDPCSWClient.setContext('wcs');GDPCSWClient.getRecords();Dataset.createCSWResponseDialog();"/>
         </form>
     </div>
 		   
@@ -37,7 +37,7 @@
 
     <div id="popup">
         <div class="close">
-            <a href="javascript:void(CSWClient.hideDiv(document.getElementById('popup')))">[close]</a>
+            <a href="javascript:void(GDPCSWClient.hideDiv(document.getElementById('popup')))">[close]</a>
         </div>
         <div id="popup2">
             <div class="csw-content2">

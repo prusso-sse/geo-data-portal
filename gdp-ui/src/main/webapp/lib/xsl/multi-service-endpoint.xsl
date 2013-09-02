@@ -50,7 +50,7 @@
                 </xsl:attribute>
                 
                 <xsl:attribute name="href">
-                    <xsl:text>javascript:CSWClient.selectSubdataset</xsl:text>
+                    <xsl:text>javascript:Dataset.selectSubdataset</xsl:text>
                     
                     <!-- dataset URL -->
                     <xsl:text>('</xsl:text>
