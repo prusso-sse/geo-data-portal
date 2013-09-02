@@ -1,4 +1,12 @@
-var MAXIMUM_STEPS = 2; 
+// JSLint cleanup
+/*jslint sloppy : true */
+/*global log4javascript */
+/*global $ */
+/*global cookie */
+/*global window */
+/*global CSWClient */
+
+var MAXIMUM_STEPS = 2;
 var AJAX_TIMEOUT = 5 * 60 * 1000;
 var CURRENT_STEP = 0;
 var MINIMUM_MAP_HEIGHT = 400; //px
@@ -25,52 +33,18 @@ var Dataset;
 var Submit;
 var Constant;
 var Algorithm;
-var CSWClient;
+var GDPCSWClient;
+var excatCSWClient;
+var ScienceBase;
 var WFS;
 var WPS;
-
-
-$(document).ready(function() {
-    try {
-        initializeLogging();
-
-        if (init()) {
-            logger.debug("GDP: Application initialized successfully.");
-            removeOverlay();
-        } else {
-            logger.error("GDP: A non-fatal error occured while loading the application.");
-        }
-        
-    } catch(err) {
-        handleException(err);
-    }
-});
-
-function init() {
-    logger.info("GDP:root.js::init(): Beginning application initialization.");
-    
-    $(window).load(function() {
-        // initMap() has to be done here instead of in $(document).ready due to IE8 bug
-        initMap();
-    });
-    
-    // Add htmlDecode function to the JS String object
-    String.prototype.htmlDecode = function() {
-        var e = document.createElement('div');
-        e.innerHTML = this;
-        return e.childNodes[0].nodeValue;
-    };
-    
-    return initializeOverlay() 
-        && initializeAjax() 
-        && initializeSteps() 
-        && initializeView();
-}
+var CSW;
 
 function initializeLogging() {
     logger = log4javascript.getLogger();
-    var layout = new log4javascript.PatternLayout("%rms - %d{HH:mm:ss.SSS} %-5p - %m%n");
-    var appender = new log4javascript.BrowserConsoleAppender();
+    var layout = new log4javascript.PatternLayout("%rms - %d{HH:mm:ss.SSS} %-5p - %m%n"),
+		appender = new log4javascript.BrowserConsoleAppender();
+
     appender.setLayout(layout);
     logger.addAppender(appender);
     logger.info('GDP: Logging initialized.');
@@ -78,28 +52,87 @@ function initializeLogging() {
 
 function initializeOverlay() {
     logger.info("GDP: Initializing overlay.");
-    
+
     logger.trace("GDP: Adding CSS rules to the overlay content");
     $(OVERLAY_CONTENT).css({
         "left": ($(window).width() / 2.5) + "px",
         "top": ($(window).height() / 2) + "px"
     });
-    
+
     logger.trace("GDP: Adding text and image to overlay.");
     $(OVERLAY_CONTENT).append(
         "Loading...&nbsp;&nbsp;&nbsp;&nbsp;",
-        $('<img></img>').attr('src','images/ajax-loader.gif')
-        );
-        
+        $('<img></img>').attr('src', 'images/ajax-loader.gif')
+	);
+
+    return true;
+}
+
+/**
+ * @See http://internal.cida.usgs.gov/jira/browse/GDP-188
+ * @param {type} popupText
+ * @param {type} overrideCookie
+ * @returns {Boolean}
+ */
+function createPopupView(popupText, overrideCookie) {
+    logger.trace('GDP:root.js::createPopupView(): Showing popup to user');
+    // Create the div
+    var popupDiv = $(Constant.divString).attr('id', 'info_popup_modal_window').append(popupText);
+
+    if (!overrideCookie) {
+        if (cookie.get('gdp-hide-popup')) {
+			return true;
+		}
+        $(popupDiv).append(
+            $(Constant.divString).attr('id', 'info_popup_modal_window_hide_popup_option').append(
+                "Do not show this again?",
+                $(Constant.inputString).attr({
+                    'type': 'checkbox',
+                    'id' : 'dont-show-again-check'
+                })
+			)
+		);
+        $('#dont-show-again-check').live('change', function (action) {
+            if (action.target.checked) {
+                cookie.set('gdp-hide-popup', 'true', '');
+            } else {
+                cookie.del('gdp-hide-popup');
+            }
+        });
+    }
+
+    $('body').append(popupDiv);
+    $('#info_popup_modal_window').dialog({
+        buttons: {
+            'OK' : function () {
+                $(this).dialog("close");
+                // Take the div out of the dom.
+                // This is a one-time-only event
+                $('#info_popup_modal_window').remove();
+                return true;
+            }
+        },
+        title: 'Geo Data Portal Information',
+        width: '80%',
+        height: 'auto',
+        modal: true,
+        resizable: false,
+        draggable: false,
+        zIndex: 9999,
+        // GDP-383
+        open: function () {
+            $(".ui-dialog-titlebar-close").hide();
+        }
+    });
     return true;
 }
 
 function removeOverlay() {
-    $(OVERLAY).fadeOut(Constant.ui.fadespeed, function() {
+    $(OVERLAY).fadeOut(Constant.ui.fadespeed, function () {
         logger.info('GDP:root.js::removeOverlay(): Application initialization has completed. Removing overlay.');
         $(OVERLAY).remove();
-        
-        if (parseInt(Constant.ui.view_popup_info) && Constant.ui.view_popup_info_txt.length > 0) {
+
+        if (parseInt(Constant.ui.view_popup_info, 10) && Constant.ui.view_popup_info_txt.length > 0) {
             createPopupView(Constant.ui.view_popup_info_txt);
         }
     });
@@ -108,21 +141,27 @@ function removeOverlay() {
 
 function initializeSteps() {
     logger.info('GDP:root.js:initializeSteps():Initializing steps (creating global JS objects)');
-    
+    var cswEndpoint;
+
     Constant = new Constant(); // important that this gets initialized first
     WPS = WPS();
     WFS = WFS();
+	CSW = CSW();
+
     Algorithm = new Algorithm();
-    CSWClient = new CSWClient();
     AOI = new AOI();
     Dataset = new Dataset();
     ScienceBase = new ScienceBase();
-    
+
     Constant.init();
     ScienceBase.init();
     Algorithm.init();
-    CSWClient.init(ScienceBase.useSB ? Constant.endpoint['sciencebase-csw'] : 'undefined');
-    
+
+	cswEndpoint = ScienceBase.useSB ? Constant.endpoint['sciencebase-csw'] :  Constant.endpoint.csw;
+	GDPCSWClient = new CSWClient(cswEndpoint, Constant.endpoint.proxy);
+	GDPCSWClient.sbEndpoint = Constant.endpoint['sciencebase-csw'];
+	GDPCSWClient.writeClient('csw-wrapper');
+
     steps = [AOI, Dataset];
 
     logger.debug('GDP: Moving all steps content into respective page content sections');
@@ -151,8 +190,8 @@ function initializeSteps() {
 function initializeView() {
     logger.info('GDP:root.js::initializeView(): Initializing view.');
     $(window).resize(function() {
-        resizeElements()
-        });
+        resizeElements();
+	});
     
     loadStep(0);
     
@@ -206,7 +245,7 @@ function sortListbox(listbox) {
         if (!isNaN(_a)) _a = +_a;
         if (!isNaN(_b)) _b = +_b;
         if (_a < _b) return -1;
-        if (_a == _b) return 0;
+        if (_a === _b) return 0;
         return 1;
     });
     $($r).remove();
@@ -245,12 +284,12 @@ function initializeAjax() {
  */
 function initializePrevNextButtons() {
     $(PREV_BUTTON).click(function() {
-        logger.trace("GDP: User is moving back to step " + (CURRENT_STEP - 1))
+        logger.trace("GDP: User is moving back to step " + (CURRENT_STEP - 1));
         if (CURRENT_STEP - 1 >= 0) loadStep(CURRENT_STEP - 1);
     });
 
     $(NEXT_BUTTON).click(function() {
-        logger.trace("GDP: User is moving forward to step " + (CURRENT_STEP + 1))
+        logger.trace("GDP: User is moving forward to step " + (CURRENT_STEP + 1));
         if (CURRENT_STEP + 1 < steps.length) loadStep(CURRENT_STEP + 1);
     });
 }
@@ -281,12 +320,12 @@ function initializeTips() {
     logger.info("GDP:root.js::initializeTips(): Initializing Tips.");
     $(".tooltip img").hover(
         function() {
-            $(this).attr('src', 'images/question-mark-hover.png')
-            },
+            $(this).attr('src', 'images/question-mark-hover.png');
+		},
         function() {
-            $(this).attr('src', 'images/question-mark.png')
-            }
-        );
+            $(this).attr('src', 'images/question-mark.png');
+		}
+	);
     $(".tooltip").tipTip({
         'maxWidth': '50%',
         'delay': 100,
@@ -329,11 +368,17 @@ function loadStep(stepNum) {
 
     CURRENT_STEP = stepNum;
     
-    if (CURRENT_STEP == 0) $(PREV_BUTTON).fadeOut(500);
-    else $(PREV_BUTTON).fadeIn(500);
+    if (CURRENT_STEP === 0) {
+		$(PREV_BUTTON).fadeOut(500);
+	} else {
+		$(PREV_BUTTON).fadeIn(500);
+	}
     
-    if (CURRENT_STEP == steps.length - 1) $(NEXT_BUTTON).fadeOut(500);
-    else $(NEXT_BUTTON).fadeIn(500);
+    if (CURRENT_STEP === steps.length - 1) {
+		$(NEXT_BUTTON).fadeOut(500);
+	} else {
+		$(NEXT_BUTTON).fadeIn(500);
+	}
     
     return true;
 }
@@ -363,7 +408,7 @@ function resizeCenterDiv() {
         if (key.contains('view_show_service') && val === '1') {
             buttonCount++;
         }
-    })
+    });
     
     calculatedCenterWidth = buttonCount * minButtonSize;
     calculatedCenterWidth = calculatedCenterWidth < minimumCenterWidth ? minimumCenterWidth : calculatedCenterWidth;
@@ -421,60 +466,6 @@ function showInformationalNotification(message, sticky)  {
     showNotification(message, sticky, 'theme-informational');
 }
 
-/**
- * @See http://internal.cida.usgs.gov/jira/browse/GDP-188
- */
-function createPopupView(popupText, overrideCookie) {
-    logger.trace('GDP:root.js::createPopupView(): Showing popup to user');
-    // Create the div
-    var popupDiv = $(Constant.divString).attr('id', 'info_popup_modal_window').append(popupText);
-    
-    if (!overrideCookie) {
-        if (cookie.get('gdp-hide-popup')) return true;
-        $(popupDiv).append(
-            $(Constant.divString).attr('id', 'info_popup_modal_window_hide_popup_option').append(
-                "Do not show this again?",
-                $(Constant.inputString).attr({
-                    'type': 'checkbox',
-                    'id' : 'dont-show-again-check'
-                })
-                )
-            )
-        $('#dont-show-again-check').live('change', function(action) {
-            if (action.target.checked) {
-                cookie.set('gdp-hide-popup', 'true', '');
-            } else {
-                cookie.del('gdp-hide-popup');
-            }
-        });
-    }
-    
-    $('body').append(popupDiv);
-    $('#info_popup_modal_window').dialog({
-        buttons: {
-            'OK' : function() {
-                $(this).dialog("close");
-                // Take the div out of the dom.
-                // This is a one-time-only event
-                $('#info_popup_modal_window').remove();
-                return true;
-            }
-        },
-        title: 'Geo Data Portal Information',
-        width: '80%',
-        height: 'auto',
-        modal: true,
-        resizable: false,
-        draggable: false,
-        zIndex: 9999,
-        // GDP-383
-        open: function(event, ui) {
-            $(".ui-dialog-titlebar-close").hide();
-        } 
-    });
-    return true;
-}
-
 function ajaxNoErrorNotification(options) {
     $(THROBBER).unbind('ajaxError');
 
@@ -521,3 +512,40 @@ function handleException(err) {
         zIndex: 9999
     });
 }
+
+function init() {
+    logger.info("GDP:root.js::init(): Beginning application initialization.");
+    
+    $(window).load(function() {
+        // initMap() has to be done here instead of in $(document).ready due to IE8 bug
+        initMap();
+    });
+    
+    // Add htmlDecode function to the JS String object
+    String.prototype.htmlDecode = function() {
+        var e = document.createElement('div');
+        e.innerHTML = this;
+        return e.childNodes[0].nodeValue;
+    };
+
+    return initializeOverlay() 
+        && initializeAjax() 
+        && initializeSteps() 
+        && initializeView();
+}
+
+$(document).ready(function () {
+    try {
+        initializeLogging();
+
+        if (init()) {
+            logger.debug("GDP: Application initialized successfully.");
+            removeOverlay();
+        } else {
+            logger.error("GDP: A non-fatal error occured while loading the application.");
+        }
+        
+    } catch(err) {
+        handleException(err);
+    }
+});

@@ -924,7 +924,7 @@
                                         <xsl:text>noreplace</xsl:text>
                                     </xsl:attribute>
                                     <xsl:attribute name="href">
-                                        <xsl:text>javascript:(CSWClient.setDatasetUrl</xsl:text>
+                                        <xsl:text>javascript:(Dataset.setDatasetUrl</xsl:text>
                                         <xsl:text>('</xsl:text>
                                         <xsl:value-of select="$cvalue"/>
                                         <xsl:text>'))</xsl:text>
