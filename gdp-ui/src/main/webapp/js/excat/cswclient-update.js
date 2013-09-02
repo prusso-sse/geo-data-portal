@@ -5,17 +5,18 @@
  * Author: Ivan Suftin (isuftin@usgs.gov)
  */
 
-// JSLint pre-conditions
+// JSLint cleanup
+/*jslint sloppy : true */
 /*global window */
 /*global document */
 /*global CSWClient: true */
+/*global trim: true */
 /*global Sarissa */
 /*global XMLHttpRequest */
 /*global XSLTProcessor */
 /*global XMLSerializer */
 /*global ActiveXObject */
 /*global DOMParser */
-/*jslint sloppy : true */
 
 // We need to override the constructor for this object. In order to do that, 
 // I am going to borrow the prototype for this object as it's been set up by the
