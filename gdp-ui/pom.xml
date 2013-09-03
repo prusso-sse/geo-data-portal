@@ -188,6 +188,87 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
+			
+			<!-- Using this to use the jasmine plugin with packaged resources 
+			like the eXcat CSW Client -->
+<!--			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>unpack</id>
+						<phase>process-test-resources</phase>
+						<goals>
+							<goal>unpack</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>gov.usgs.cida.jslibs</groupId>
+									<artifactId>excat-csw-client-simple</artifactId>
+									<type>jar</type>
+									<overWrite>true</overWrite>
+									<includes>META-INF/resources/lib/</includes>
+								</artifactItem>
+								<artifactItem>
+									<groupId>gov.usgs.cida.jslibs</groupId>
+									<artifactId>sarissa</artifactId>
+									<type>jar</type>
+									<overWrite>false</overWrite>
+									<destFileName>test</destFileName>
+									<includes>META-INF/resources/js/</includes>
+								</artifactItem>
+							</artifactItems>
+							<outputDirectory>${project.build.directory}/jasmine</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>-->
+			<!--
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.6</version>
+				<executions>
+					<execution>
+						<id>copy-resources</id>
+						<phase>process-test-resources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<resources>          
+								<resource>
+									<directory>${project.build.directory}/jasmine-test-resources/META-INF/resources/</directory>
+								</resource>
+							</resources>              
+							<outputDirectory>${project.build.directory}/${project.build.finalName}/</outputDirectory>
+						</configuration>            
+					</execution>
+				</executions>
+			</plugin>-->
+<!--			<plugin>
+				<groupId>com.github.searls</groupId>
+				<artifactId>jasmine-maven-plugin</artifactId>
+				<version>1.3.1.2</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>test</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<jsSrcDir>${project.build.directory}/jasmine</jsSrcDir>
+					<sourceIncludes>
+						<include>META-INF/resources/</include>
+						<include>**/sarissa.js</include>
+						<include>**/cswclient.js</include>
+					</sourceIncludes>
+					<srcDirectoryName>lib</srcDirectoryName>
+					<sourceEncoding>utf-8</sourceEncoding>
+					<debug>true</debug>
+				</configuration>
+			</plugin>-->
 		</plugins>
 		<finalName>GDP_WEB</finalName>
 	</build>

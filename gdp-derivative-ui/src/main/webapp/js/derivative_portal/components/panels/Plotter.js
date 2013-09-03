@@ -167,83 +167,6 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 itemId : 'plotter-toolbar-download-button',
                 text : 'Download As CSV',
                 ref : 'plotter-toolbar-download-button'
-            }),
-            new Ext.Button({
-                itemId : 'plotter-toolbar-download-as-image-button',
-                text : 'Download As Image',
-                ref : '../plotter-toolbar-download-as-image-button',
-                hidden : ((Ext.isIE6 || Ext.isIE7 || Ext.isIE8) && !Ext.isIE9) ? true : false, // IE6,7,8 doesn't do canvas, so no image downloads for plotter
-                listeners : {
-                    click : function () {
-                        var dygraph = this.graph,
-							options = {},
-							canvas = Dygraph.createCanvas();
-
-                        Dygraph.update(options, Dygraph.Export.DEFAULT_ATTRS);
-                        Dygraph.update(options, options);
-
-                        canvas.width = dygraph.width_;
-                        canvas.height = dygraph.height_ + options.legendHeight;
-
-                        Dygraph.Export.drawBackground(canvas, "white");
-                        Dygraph.Export.drawPlot(canvas, dygraph, options);
-                        Dygraph.Export.drawLegend(canvas, dygraph, options);
-
-                        var url = canvas.toDataURL(),
-							base64Data = url.substring(url.indexOf(',') + 1),
-							id = Ext.id(),
-							frame = document.createElement('iframe');
-
-                        frame.id = id;
-                        frame.name = id;
-                        frame.className = 'x-hidden';
-                        if (Ext.isIE) {
-                            frame.src = Ext.SSL_SECURE_URL;
-                        }
-                        document.body.appendChild(frame);
-
-                        if (Ext.isIE) {
-                            document.frames[id].name = id;
-                        }
-
-                        var form = Ext.DomHelper.append(document.body, {
-                            tag: 'form',
-                            method: 'post',
-                            action: 'export?filename=plotter.png&type=image/png;base64',
-                            target: id
-                        });
-
-                        Ext.DomHelper.append(form, {
-                            tag: 'input',
-                            name : 'data',
-                            value: base64Data
-                        });
-                        document.body.appendChild(form);
-                        var callback = function (e) {
-                            var rstatus = (e && typeof e.type !== 'undefined' ? e.type : this.dom.readyState);
-
-                            switch (rstatus) {
-							case 'loading':  //IE  has several readystate transitions
-							case 'interactive': //IE
-
-								break;
-
-							case 'load': //Gecko, Opera
-							case 'complete': //IE
-								if (Ext.isIE) {
-									this.dom.src = "javascript:false";
-								}
-								break;
-							default:
-                            }
-                        };
-
-                        Ext.EventManager.on(frame, Ext.isIE ? 'readystatechange' : 'load', callback);
-                        form.submit();
-
-                    },
-                    scope: this
-                }
             })
 		);
 
@@ -262,10 +185,6 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             this.errorBarsOn = obj.pressed;
         }, this);          
         this.topToolbar.doLayout();
-        if (Ext.isIE) {
-            // TODO should do this
-            //this.topToolbar.remove("../plotter-toolbar-download-as-image-button");
-        }
         
         Ext.iterate(this.scenarioGcmJSON, function (scenario, object) {
             Ext.iterate(object, function (gcm) {
