@@ -234,7 +234,7 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
 		}
     },
     requestOpacity : function (opacity) {
-        if (opacity && opacity === 0) {
+        if (opacity && opacity !== 0) {
 			LOG.debug('LayerController:requestOpacity: Handling request.');
 			if (0 <= opacity && 1 >= opacity) {
 				LOG.debug('LayerController:requestOpacity: Setting opacity to ' + opacity);
