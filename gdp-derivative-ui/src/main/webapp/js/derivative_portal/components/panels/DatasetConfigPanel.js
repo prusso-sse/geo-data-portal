@@ -485,13 +485,16 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
     },
     onChangeScenario : function (args) {
         LOG.debug("DatasetConfigPanel: onChangeScenario()");
+		
+		args = args || {};
+		
 		// Derivative record store needs to be loaded first
         if (this.derivRecordStoreLoaded) {
 			if (this.leafRecordStoreLoaded) {
 				// A user has really selected a scenario. Use the leafRecordStore
 				// to populate downstream events instead of calling out to CSW
 				// again
-				var scenario = args.record.data.scenario,
+				var scenario = args.record ? args.record.data.scenario : this.controller.getScenario(),
 					leafRecord = this.leafRecordStore.getAt(this.leafRecordStore.find('scenarios', scenario));
 
 				this.controller.fireEvent('selected-dataset', {

@@ -19,7 +19,8 @@
 		<module>geoserver</module>
 		<module>gdp-ui</module>
 		<module>gdp-derivative-ui</module>
-	</modules>
+		<module>gdp-ui-landing</module>
+  </modules>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<n52-wps.version>3.1.1</n52-wps.version>
@@ -189,6 +190,11 @@
 				<artifactId>openlayers</artifactId>
 				<version>2.11-3</version>
 				<type>war</type>
+			</dependency>
+			<dependency>
+				<groupId>org.webjars</groupId>
+				<artifactId>openlayers</artifactId>
+				<version>2.13.1</version>
 			</dependency>
 			<dependency>
 				<groupId>gov.usgs.cida.jslibs</groupId>
