@@ -5,7 +5,6 @@
     <servlet>
         <servlet-name>OWSProxy</servlet-name>
         <servlet-class>gov.usgs.service.OWSProxyServletX</servlet-class>
-        <!--        <servlet-class>gov.usgs.service.OWSProxyServlet</servlet-class>-->
         <init-param>
             <param-name>getRequestURIKey</param-name>
             <param-value>/proxy/*</param-value>
