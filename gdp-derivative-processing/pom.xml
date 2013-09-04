@@ -8,6 +8,18 @@
     </parent>
     <artifactId>gdp-derivative-processing</artifactId>
     <name>GDP Derivative Processing</name>
+    
+    <repositories>
+        <repository>
+            <id>cida-internal</id>
+            <url>http://internal.cida.usgs.gov/maven/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>cida-internal-snapshots</id>
+            <url>http://internal.cida.usgs.gov/maven/content/groups/public-snapshots/</url>
+        </repository>
+    </repositories>
+    
     <dependencies>
         <!-- sibling module dependencies -->
         <dependency>
@@ -48,6 +60,12 @@
         <dependency>
             <groupId>edu.ucar</groupId>
             <artifactId>netcdf</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.sun.jna</groupId>
+                    <artifactId>jna</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>edu.ucar</groupId>
