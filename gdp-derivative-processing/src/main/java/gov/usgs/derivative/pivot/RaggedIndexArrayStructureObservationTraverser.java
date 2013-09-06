@@ -29,9 +29,9 @@ public class RaggedIndexArrayStructureObservationTraverser implements Observatio
         for (int oIndex = 0; oIndex < oTotal; oIndex += oStep) {
             int oCount = oIndex + oStep > oTotal ? oTotal - oIndex : oStep;
             array = (ArrayStructure) observationVariable.read(new int[]{oIndex}, new int[]{oCount});
-            StructureMembers.Member mTime = array.findMember("time");
-            StructureMembers.Member mIndex = array.findMember("index");
-            StructureMembers.Member mValue = array.findMember("QAccCon");
+            StructureMembers.Member mTime = array.findMember(DSGPivoter.TIME);
+            StructureMembers.Member mIndex = array.findMember(DSGPivoter.INDEX);
+            StructureMembers.Member mValue = array.findMember(DSGPivoter.MEAN);
             for (int aIndex = 0; aIndex < array.getSize(); aIndex++) {
                 visitor.observation(array.getScalarInt(aIndex, mIndex), array.getScalarInt(aIndex, mTime), array.getScalarDouble(aIndex, mValue));
             }

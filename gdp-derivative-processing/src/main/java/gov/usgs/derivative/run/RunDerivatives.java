@@ -97,6 +97,9 @@ public class RunDerivatives {
                     case SPATIAL:
                         calculateDerivativeFeatureWeightedGridStatistics(options);
                         break;
+                    case PIVOT:
+                        pivotSpatialNetCDFFile(options);
+                        break;
                     default:
                         throw new CmdLineException(parser, "Unable to determine process type");
                 }

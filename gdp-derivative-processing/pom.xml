@@ -26,6 +26,12 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>gdp-core-processing</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>geotiff-iosp</artifactId>
+                    <groupId>gov.usgs.cida.netcdf.iosp</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -132,7 +138,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>-Xmx8192m</argLine>
-                    <skipTests>true</skipTests>
+                    <!--<skipTests>true</skipTests>-->
                 </configuration>
             </plugin>
             <plugin>
