@@ -37,13 +37,15 @@
 <script type="text/javascript" src="js/ui.js"></script>
 <script type="text/javascript" src="js/onready.js"></script>
 <script type="text/javascript" src="js/ogc/CSW.js"></script>
+<script type="text/javascript" src="js/ogc/WPS.js"></script>
 
 <%-- Local configuration --%>
 <script type="text/javascript">
 	GDP = GDP || {};
 	GDP.CONFIG = {
 		hosts : {
-			csw : '<%= props.getProperty("gdp.endpoint.csw.url") %>'
+			csw : '<%= props.getProperty("gdp.endpoint.csw.url") %>',
+			wps : '<%= props.getProperty("gdp.endpoint.wps.process.url") %>'
 		}
 	};
 </script>
