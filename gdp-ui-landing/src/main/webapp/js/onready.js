@@ -6,11 +6,39 @@
 // JSLint fixes
 /*global document */
 /*global $ */
+/*global GDP */
+/*global CSW */
+/*global Sarissa */
 
 $(document).ready(function () {
 	"use strict";
+	var proxyEndpoint = 'proxy/',
+		UI = new GDP.UI(),
+		csw = new GDP.CSW({
+			proxy: proxyEndpoint,
+			url: GDP.CONFIG.hosts.csw
+		}),
+		wps = new GDP.WPS({
+			proxy: proxyEndpoint,
+			url: GDP.CONFIG.hosts.wps
+		});
 
-	// Fix the header of the application by removing unused elements in the 
-	// right container
-	$('#ccsa-area').children().slice(0, 2).remove();
+	csw.sendCSWGetCapabilitiesRequest({
+		callbacks : {
+			success : [
+				function (data, textStatus, jqXHR) {
+					var oDomDoc = Sarissa.getDomDocument(),
+						keywords;
+					oDomDoc.setProperty("SelectionLanguage", "XPath");
+					oDomDoc.setProperty("SelectionNamespaces",
+						"xmlns:xhtml='http://www.w3.org/1999/xhtml' " +
+						"xmlns:xsl='http://www.w3.org/1999/XSL/Transform' " +
+						"xmlns:ows='http://www.opengis.net/ows' " +
+						"xmlns:csw='http://www.opengis.net/cat/csw/2.0.2'");
+					keywords = data.selectNodes('//ows:Keywords/ows:Keyword');
+				}
+			],
+			error : []
+		}
+	});
 });

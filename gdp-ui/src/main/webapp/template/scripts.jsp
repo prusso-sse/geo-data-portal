@@ -43,7 +43,7 @@
 <script type="text/javascript" src="js/sarissa/sarissa.js"></script>
 <script type="text/javascript" src="js/sarissa/sarissa_ieemu_xpath.js"></script>
 <script type="text/javascript" src="lib/scripts/cswclient.js"></script>
-<script type="text/javascript" src="js/excat/cswclient-update.js"></script>
+<script type="text/javascript" src="lib/scripts/gdp-cswclient-update.js"></script>
 <script type="text/javascript">
 
 	if ($.browser.msie && $.browser.version === "9.0") {
