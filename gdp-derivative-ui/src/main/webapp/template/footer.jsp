@@ -30,7 +30,7 @@
                         </span>
                     </span><!-- vcard -->
                 </p>
-                <p id="footer-url-info">URL:  <%= (request.getRequestURL()).toString() %></a>
+                <p id="footer-url-info"></p>
                 <p id="footer-contact-info">Page Contact Information: <a href="mailto:gdp@usgs.gov?Subject=GDP%20Derivative%20Portal%20Help%20Request">Contact the Geo Data Portal team</a></p>
                 <p id="footer-page-modified-info">Page Last modified: <script type="text/javascript">document.write(document.lastModified);</script></p>
             </div><!-- /page-info -->
