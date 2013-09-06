@@ -66,12 +66,8 @@
                 </jsp:include>
 			</div>
 		</div>
-
-		<script type="text/javascript" src="webjars/jquery/1.9.0/jquery<%= development ? "" : ".min"%>.js"></script>
-		<link type="text/css" rel="stylesheet" href="webjars/bootstrap/3.0.0/css/bootstrap<%= development ? "" : ".min"%>.css" />
-		<link type="text/css" rel="stylesheet" href="webjars/bootstrap/3.0.0/css/bootstrap-theme<%= development ? "" : ".min"%>.css" />
-		<script type="text/javascript" src="webjars/bootstrap/3.0.0/js/bootstrap<%= development ? "" : ".min"%>.js"></script>
-		<script type="text/javascript" src="webjars/openlayers/2.13.1/OpenLayers<%= development ? ".debug" : ""%>.js"></script>
-		<script type="text/javascript" src="js/onready.js"></script>
+		<jsp:include page="WEB-INF/jsp/scripts.jsp">
+			<jsp:param name="development" value="<%= development%>" />
+		</jsp:include>
     </body>
 </html>
