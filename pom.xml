@@ -20,7 +20,7 @@
 		<module>gdp-ui</module>
 		<module>gdp-derivative-ui</module>
 		<module>gdp-ui-landing</module>
-  </modules>
+	</modules>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<n52-wps.version>3.1.1</n52-wps.version>
@@ -161,6 +161,17 @@
 				<scope>import</scope>
 			</dependency>
 			<!-- 52North WPS dependencies -->
+			<dependency>
+				<groupId>gov.usgs.cida.jslibs</groupId>
+				<artifactId>usgs-template</artifactId>
+				<version>2.2</version>
+				<type>war</type>
+			</dependency>
+			<dependency>
+				<groupId>org.webjars</groupId>
+				<artifactId>bootstrap</artifactId>
+				<version>3.0.0</version>
+			</dependency>
 			<dependency>
 				<groupId>gov.usgs.cida.jslibs</groupId>
 				<artifactId>log4js</artifactId>

@@ -1,17 +1,77 @@
+<%@page import="gov.usgs.cida.config.DynamicReadOnlyProperties"%>
+<%@page import="org.slf4j.LoggerFactory"%>
+<%@page import="java.io.File"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-   "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML>
+<%!	protected DynamicReadOnlyProperties props = null;
 
-<html>
+	{
+		try {
+			props = new DynamicReadOnlyProperties();
+			props = props.addJNDIContexts(new String[0]);
+		} catch (Exception e) {
+			LoggerFactory.getLogger("index.jsp").error("Could not find JNDI - Application will probably not function correctly");
+		}
+	}
+	boolean development = Boolean.parseBoolean(props.getProperty("development"));
+%>
+<html lang="en">
     <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>JSP Page</title>
-		<script type="text/javascript" src="webjars/openlayers/2.13.1/OpenLayers.js"></script>
-		<script type="text/javascript">
-			var a = 1;
-		</script>
+        <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE" />
+        <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE" />
+        <META HTTP-EQUIV="EXPIRES" CONTENT="0" />
+        <META HTTP-EQUIV="CONTENT-LANGUAGE" CONTENT="en-US" />
+        <META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=UTF-8" />
+		<meta HTTP-EQUIV="X-UA-Compatible" CONTENT="IE=edge">
+        <meta NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
+        <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+        <link rel="icon" href="favicon.ico" type="image/x-icon" />
+		<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!--[if lt IE 9]>
+		  <script src="../../assets/js/html5shiv.js"></script>
+		  <script src="../../assets/js/respond.min.js"></script>
+		<![endif]-->
+        <jsp:include page="template/USGSHead.jsp">
+            <jsp:param name="relPath" value="" />
+            <jsp:param name="shortName" value="USGS Geo Data Portal" />
+            <jsp:param name="title" value="USGS Geo Data Portal" />
+            <jsp:param name="description" value="" />
+            <jsp:param name="author" value="Ivan Suftin" />
+            <jsp:param name="keywords" value="" />
+            <jsp:param name="publisher" value="" />
+            <jsp:param name="revisedDate" value="" />
+            <jsp:param name="nextReview" value="" />
+            <jsp:param name="expires" value="never" />
+            <jsp:param name="development" value="<%= development%>" />
+        </jsp:include>
     </head>
     <body>
-        <h1>Hello World!</h1>
+		<div class="container">
+			<div class="row">
+				<jsp:include page="template/USGSHeader.jsp">
+                    <jsp:param name="relPath" value="" />
+                    <jsp:param name="header-class" value="" />
+                    <jsp:param name="site-title" value="USGS Geo Data Portal" />
+                </jsp:include>
+			</div>
+			<div class="row">
+				Hello Whirl!
+			</div>
+			<div class="row">
+				<jsp:include page="template/USGSFooter.jsp">
+                    <jsp:param name="relPath" value="" />
+                    <jsp:param name="header-class" value="" />
+                    <jsp:param name="site-url" value="<script type='text/javascript'>document.write(document.location.href);</script>" />
+                    <jsp:param name="contact-info" value="Page Contact Information: <a href='mailto:gdp@usgs.gov?Subject=GDP%20Derivative%20Portal%20Help%20Request'>Contact the Geo Data Portal team</a>" />
+                </jsp:include>
+			</div>
+		</div>
+
+		<script type="text/javascript" src="webjars/jquery/1.9.0/jquery<%= development ? "" : ".min"%>.js"></script>
+		<link type="text/css" rel="stylesheet" href="webjars/bootstrap/3.0.0/css/bootstrap<%= development ? "" : ".min"%>.css" />
+		<link type="text/css" rel="stylesheet" href="webjars/bootstrap/3.0.0/css/bootstrap-theme<%= development ? "" : ".min"%>.css" />
+		<script type="text/javascript" src="webjars/bootstrap/3.0.0/js/bootstrap<%= development ? "" : ".min"%>.js"></script>
+		<script type="text/javascript" src="webjars/openlayers/2.13.1/OpenLayers<%= development ? ".debug" : ""%>.js"></script>
+		<script type="text/javascript" src="js/onready.js"></script>
     </body>
 </html>
