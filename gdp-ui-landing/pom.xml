@@ -56,6 +56,22 @@
 			<artifactId>gdp-proxy</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>gov.usgs.cida.jslibs</groupId>
+			<artifactId>sarissa</artifactId>
+			<type>jar</type>
+		</dependency>
+		<dependency>
+			<groupId>gov.usgs.cida.jslibs</groupId>
+			<artifactId>excat-csw-client-simple</artifactId>
+			<type>jar</type>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>gdp-csw-client</artifactId>
+			<version>${project.version}</version>
+			<type>jar</type>
+		</dependency>
 	</dependencies>
 
 	<build>

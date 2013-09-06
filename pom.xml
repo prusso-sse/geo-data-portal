@@ -211,7 +211,7 @@
 			<dependency>
 				<groupId>gov.usgs.cida.jslibs</groupId>
 				<artifactId>sarissa</artifactId>
-				<version>0.9.9.5-2</version>
+				<version>0.9.9.6</version>
 				<type>jar</type>
 			</dependency>
 			<dependency>
