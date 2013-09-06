@@ -11,6 +11,9 @@ Ext.onReady(function () {
     initializeNotification();
     initializeMapping();
     initializeQuickTips();
+	
+	// Add the correct URL to the footer
+	document.getElementById('footer-url-info').innerHTML = 'URL: ' + document.location.href;
 });
 
 /**
