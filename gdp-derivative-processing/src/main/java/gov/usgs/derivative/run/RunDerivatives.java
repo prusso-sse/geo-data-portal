@@ -17,6 +17,7 @@ import gov.usgs.derivative.RunBelowPrecipitationThresholdVisitor;
 import gov.usgs.derivative.TimeStepDeltaVisitor;
 import gov.usgs.derivative.grid.GridTraverser;
 import gov.usgs.derivative.grid.GridVisitor;
+import gov.usgs.derivative.pivot.DSGPivoter;
 import gov.usgs.derivative.run.DerivativeOptions.VariableType;
 import gov.usgs.derivative.spatial.DerivativeFeatureCoverageWeightedGridStatistics;
 import java.io.File;
@@ -46,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ucar.ma2.InvalidRangeException;
 import ucar.ma2.Range;
+import ucar.nc2.NetcdfFile;
 import ucar.nc2.constants.FeatureType;
 import ucar.nc2.dataset.CoordinateAxis1D;
 import ucar.nc2.dt.GridCoordSystem;
@@ -542,7 +544,22 @@ public class RunDerivatives {
             }
         }
     }
+    
     // #########################################################################
     // End of TimeStepAveragingTest.java
     // #########################################################################
+    
+    public static void pivotSpatialNetCDFFile(DerivativeOptions options) throws IOException, InvalidRangeException {
+        NetcdfFile nc = null;
+        try {
+            nc = NetcdfFile.open(options.datasetLocation);
+
+            new DSGPivoter(nc, options).pivot();
+            
+        } finally {
+            if (nc != null) {
+                nc.close();
+            }
+        }
+    }
 }
