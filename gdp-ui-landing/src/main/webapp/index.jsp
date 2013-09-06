@@ -71,6 +71,7 @@
 		<link type="text/css" rel="stylesheet" href="webjars/bootstrap/3.0.0/css/bootstrap<%= development ? "" : ".min"%>.css" />
 		<link type="text/css" rel="stylesheet" href="webjars/bootstrap/3.0.0/css/bootstrap-theme<%= development ? "" : ".min"%>.css" />
 		<script type="text/javascript" src="webjars/bootstrap/3.0.0/js/bootstrap<%= development ? "" : ".min"%>.js"></script>
+		<script type="text/javascript" src="webjars/openlayers/2.13.1/OpenLayers<%= development ? ".debug" : ""%>.js"></script>
 		<script type="text/javascript" src="js/onready.js"></script>
     </body>
 </html>
