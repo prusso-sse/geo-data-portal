@@ -10,3 +10,4 @@ gdp-wps-test/
 gdp-utility-wps/src/main/webapp/WEB-INF/server-config.wsdd
 /gdp-ui-landing/nbproject/private/
 /gdp-ui-landing/src/test/javascript/available-namespaces.txt
+/gdp-ui-landing/src/test/javascript/scratch.js

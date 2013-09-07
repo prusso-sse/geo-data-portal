@@ -23,22 +23,38 @@ $(document).ready(function () {
 			url: GDP.CONFIG.hosts.wps
 		});
 
-	csw.sendCSWGetCapabilitiesRequest({
+	csw.requestGetCapabilities({
 		callbacks : {
 			success : [
-				function (data, textStatus, jqXHR) {
-					var oDomDoc = Sarissa.getDomDocument(),
-						keywords;
-					oDomDoc.setProperty("SelectionLanguage", "XPath");
-					oDomDoc.setProperty("SelectionNamespaces",
-						"xmlns:xhtml='http://www.w3.org/1999/xhtml' " +
-						"xmlns:xsl='http://www.w3.org/1999/XSL/Transform' " +
-						"xmlns:ows='http://www.opengis.net/ows' " +
-						"xmlns:csw='http://www.opengis.net/cat/csw/2.0.2'");
-					keywords = data.selectNodes('//ows:Keywords/ows:Keyword');
+				function (capablitiesXmlDoc) {
+					var keywords = this.getCapabilitiesKeywords();
+					this.getRecordsByKeywords({
+						keywords : [
+							'gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm'
+						]
+					});
 				}
 			],
-			error : []
+			error : [
+				function (error) {
+					throw error;
+				}
+			]
+		}
+	});
+
+	wps.requestGetCapabilities({
+		callbacks : {
+			success : [
+				function (capabilities) {
+					var a = 1;
+				}
+			],
+			error : [
+				function (error) {
+					throw error;
+				}
+			]
 		}
 	});
 });
