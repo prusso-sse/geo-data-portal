@@ -2,6 +2,7 @@ var GDP = GDP || {};
 
 // JSLint fixes
 /*global $ */
+/*global window */
 /*jslint plusplus: true */
 
 GDP.UI = function (args) {
@@ -128,6 +129,7 @@ GDP.UI = function (args) {
 				offeringsObj = {};
 
 			if (!value) {
+				$('#row-proceed').fadeOut();
 				$('#p-csw-information-title').html('');
 				$('#p-csw-information-content').html('');
 				if (me.chosenStartPath === 'dataset') {
@@ -142,21 +144,25 @@ GDP.UI = function (args) {
 						alg = validAlgorithms[algInd];
 						offeringsObj[alg] = alg;
 					}
-					
+
 					currentValue = $('#form-control-select-wps').val();
-					
+
 					me.updateWpsDropdown({
 						offerings: offeringsObj
 					});
-					
+
 					if ($('#form-control-select-wps option[value="' + currentValue + '"]').length) {
 						$('#form-control-select-wps').val(currentValue).change();
 					} else {
 						$('#form-control-select-wps option[value=""]').val('').change();
 					}
-					
+					$('#row-wps-select').fadeIn();
+				} else {
+					if ($('#form-control-select-csw').val()) {
+						me.bindProceedButton();
+						$('#row-proceed').fadeIn();
+					}
 				}
-				$('#row-wps-select').fadeIn();
 			}
 		};
 
@@ -167,6 +173,7 @@ GDP.UI = function (args) {
 				me = this;
 
 			if (!value) {
+				$('#row-proceed').fadeOut();
 				$('#p-wps-information-title').html('');
 				$('#p-wps-information-content').html('');
 				if (me.chosenStartPath === 'algorithm') {
@@ -183,18 +190,23 @@ GDP.UI = function (args) {
 								$('#p-wps-information-content').html(processResponse.abstract);
 								if (me.chosenStartPath === 'algorithm') {
 									currentValue = $('#form-control-select-wps').val();
-					
+
 									me.updateCswDropdown({
 										offerings: validOfferings
 									});
-					
+
 									if ($('#form-control-select-csw option[value="' + currentValue + '"]').length) {
 										$('#form-control-select-csw').val(currentValue).change();
 									} else {
 										$('#form-control-select-csw option[value=""]').val('').change();
 									}
+									$('#row-csw-select').fadeIn();
+								} else {
+									if ($('#form-control-select-wps').val()) {
+										me.bindProceedButton();
+										$('#row-proceed').fadeIn();
+									}
 								}
-								$('#row-csw-select').fadeIn();
 							}
 						],
 						error : [
@@ -289,7 +301,7 @@ GDP.UI = function (args) {
 		this.algorithmStartButtonSelected = function (event) {
 			var me = this;
 			this.chosenStartPath = 'algorithm';
-			
+
 			me.updateWpsDropdown();
 			me.updateCswDropdown();
 
@@ -316,10 +328,10 @@ GDP.UI = function (args) {
 		this.datasetStartButtonSelected = function (event) {
 			var me = this;
 			me.chosenStartPath = 'dataset';
-			
+
 			me.updateWpsDropdown();
 			me.updateCswDropdown();
-			
+
 			this.updateStartInstructions({
 				title : 'Begin By Selecting A Dataset',
 				content : 'Sed ut perspiciatis unde omnis iste natus error sit ' +
@@ -336,6 +348,28 @@ GDP.UI = function (args) {
 					$('#row-csw-select').insertBefore($('#row-wps-select'));
 					$('#row-csw-select').fadeIn();
 				});
+			});
+		};
+
+		this.bindProceedButton = function () {
+			$('#btn-proceed').off('click', this.bindProceedButton);
+			$('#btn-proceed').on('click', function () {
+				var csw,
+					cswRecord,
+					uriIndex,
+					uri,
+					wps = $('#form-control-select-wps').val(),
+					win;
+				cswRecord = GDP.CONFIG.offeringMaps.cswIdentToRecord[$('#form-control-select-csw').val()];
+				for (uriIndex = 0; uriIndex < cswRecord.URI.length; uriIndex++) {
+					uri = cswRecord.URI[uriIndex];
+					if (uri.name.toLowerCase() === 'opendap') {
+						csw = encodeURIComponent(uri.value);
+					}
+				}
+
+				win = window.open(GDP.CONFIG.hosts.gdp + '?csw=' + csw + '&wps=' + wps, '_gdp');
+				win.focus();
 			});
 		};
 
@@ -391,6 +425,7 @@ GDP.UI = function (args) {
 	this.init();
 
 	return {
+		bindProceedButton : this.bindProceedButton,
 		updateCswDropdown : this.updateCswDropdown,
 		updateWpsDropdown : this.updateWpsDropdown,
 		cswDropdownUpdated : this.cswDropdownChanged,

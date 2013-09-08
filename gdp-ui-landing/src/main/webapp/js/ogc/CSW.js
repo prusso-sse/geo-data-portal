@@ -139,7 +139,7 @@ GDP.CSW = function (args) {
 				maxRecords: String(maxRecords),
 				Query: {
 					ElementSetName: {
-						value: "summary"
+						value: "full"
 					},
 					Constraint: {
 						"version": "1.1.0",
