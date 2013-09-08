@@ -17,6 +17,9 @@ GDP.UI = function (args) {
 		$('#ccsa-area').children().slice(0, 2).remove();
 
 		var me = this,
+			removeOverlay = function () {
+				$('#overlay').fadeOut();
+			},
 			updateOfferingMaps = function () {
 				GDP.CONFIG.cswClient.getDomain({
 					propertyName : 'keyword',
@@ -89,7 +92,10 @@ GDP.UI = function (args) {
 										],
 										error : [
 											function (error) {
-												throw error;
+												GDP.CONFIG.ui.errorEncountered({
+													data : error,
+													recoverable : false
+												});
 											}
 										]
 									}
@@ -98,7 +104,10 @@ GDP.UI = function (args) {
 						],
 						error : [
 							function (error) {
-								throw error;
+								GDP.CONFIG.ui.errorEncountered({
+									data : error,
+									recoverable : false
+								});
 							}
 						]
 					}
@@ -109,7 +118,7 @@ GDP.UI = function (args) {
 				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[value],
 				algInd,
 				offeringsObj = {};
-		
+
 			if (!value) {
 				GDP.CONFIG.ui.updateWpsDropdown();
 			} else {
@@ -121,13 +130,13 @@ GDP.UI = function (args) {
 				});
 			}
 		};
-		
+
 		this.wpsDropdownUpdated = function (event) {
 			var value = event.target.value,
 				validOfferings = GDP.CONFIG.offeringMaps.wpsToCsw[value],
 				offering,
 				offeringsObj = {};
-		
+
 			if (!value) {
 				GDP.CONFIG.ui.updateCswDropdown();
 			} else {
@@ -140,7 +149,6 @@ GDP.UI = function (args) {
 					cswOfferings : offeringsObj
 				});
 			}
-			
 		};
 
 		this.updateCswDropdown = function (args) {
@@ -199,13 +207,19 @@ GDP.UI = function (args) {
 					);
 				}
 			}
-			
+
 			dropdown.off('change', this.wpsDropdownUpdated);
 			dropdown.on('change', this.wpsDropdownUpdated);
 		};
+
+		this.errorEncountered = function (args) {
+			alert('Cannot recover! HALP!!!!');
+		};
+
 		this.initializationCompleted = function () {
 			this.updateCswDropdown();
 			this.updateWpsDropdown();
+			removeOverlay();
 		};
 
 		GDP.CONFIG.cswClient.requestGetCapabilities({
@@ -219,7 +233,10 @@ GDP.UI = function (args) {
 				],
 				error : [
 					function (error) {
-						throw error;
+						GDP.CONFIG.ui.errorEncountered({
+							data : error,
+							recoverable : false
+						});
 					}
 				]
 			}
@@ -236,7 +253,10 @@ GDP.UI = function (args) {
 				],
 				error : [
 					function (error) {
-						throw error;
+						GDP.CONFIG.ui.errorEncountered({
+							data : error,
+							recoverable : false
+						});
 					}
 				]
 			}
@@ -249,6 +269,7 @@ GDP.UI = function (args) {
 		updateCswDropdown : this.updateCswDropdown,
 		updateWpsDropdown : this.updateWpsDropdown,
 		cswDropdownUpdated : this.cswDropdownUpdated,
-		wpsDropdownUpdated : this.wpsDropdownUpdated
+		wpsDropdownUpdated : this.wpsDropdownUpdated,
+		errorEncountered : this.errorEncountered
 	};
 };

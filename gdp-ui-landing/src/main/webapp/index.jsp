@@ -46,6 +46,11 @@
         </jsp:include>
     </head>
     <body>
+		<div id="overlay">
+			<div id="overlay-content">
+				Application Loading
+			</div>
+		</div>
 		<div class="container">
 			<div class="row">
 				<jsp:include page="template/USGSHeader.jsp">

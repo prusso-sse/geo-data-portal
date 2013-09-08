@@ -13,7 +13,11 @@
 	}
 %>
 <% Boolean dev = Boolean.parseBoolean(request.getParameter("development")); %>
-<script type="text/javascript" src="webjars/jquery/1.9.0/jquery<%= dev ? "" : ".min"%>.js"></script>
+
+<%-- JQuery + JQuery UI --%>
+<script type="text/javascript" src="webjars/jquery/1.9.1/jquery<%= dev ? "" : ".min"%>.js"></script>
+<script type="text/javascript" src="webjars/jquery-ui/1.10.2/ui<%= dev ? "" : "/minified"%>/jquery-ui<%= dev ? "" : ".min"%>.js"></script>
+<link type="text/css" rel="stylesheet" href="webjars/jquery-ui/1.10.2/themes/base<%= dev ? "" : "/minified"%>/jquery-ui<%= dev ? "" : ".min"%>.css" />
 
 <%-- Bootstrap --%>
 <link type="text/css" rel="stylesheet" href="webjars/bootstrap/3.0.0/css/bootstrap<%= dev ? "" : ".min"%>.css" />
