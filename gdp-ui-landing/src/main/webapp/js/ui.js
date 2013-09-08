@@ -113,25 +113,22 @@ GDP.UI = function (args) {
 					}
 				});
 			};
-		this.cswDropdownUpdated = function (event) {
+		this.cswDropdownChanged = function (event) {
 			var value = event.target.value,
 				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[value],
 				algInd,
 				offeringsObj = {};
 
 			if (!value) {
-				GDP.CONFIG.ui.updateWpsDropdown();
+				$('#p-csw-information-title').html('');
+				$('#p-csw-information-content').html('');
 			} else {
-				for (algInd = 0; algInd < validAlgorithms.length; algInd++) {
-					offeringsObj[validAlgorithms[algInd]] = '';
-				}
-				GDP.CONFIG.ui.updateWpsDropdown({
-					wpsOfferings : offeringsObj
-				});
+				$('#p-csw-information-title').html(GDP.CONFIG.offeringMaps.cswIdentToRecord[value].title[0].value);
+				$('#p-csw-information-content').html(GDP.CONFIG.offeringMaps.cswIdentToRecord[value].abstract[0]);
 			}
 		};
 
-		this.wpsDropdownUpdated = function (event) {
+		this.wpsDropdownChanged = function (event) {
 			var value = event.target.value,
 				validOfferings = GDP.CONFIG.offeringMaps.wpsToCsw[value],
 				offering,
@@ -188,9 +185,10 @@ GDP.UI = function (args) {
 					);
 				}
 			}
-			dropdown.off('change', this.cswDropdownUpdated);
-			dropdown.on('change', this.cswDropdownUpdated);
+			dropdown.off('change', this.cswDropdownChanged);
+			dropdown.on('change', this.cswDropdownChanged);
 		};
+
 		this.updateWpsDropdown = function (args) {
 			args = args || {};
 			var wpsOfferings = args.wpsOfferings || GDP.CONFIG.offeringMaps.wpsToCsw,
@@ -219,8 +217,8 @@ GDP.UI = function (args) {
 				}
 			}
 
-			dropdown.off('change', this.wpsDropdownUpdated);
-			dropdown.on('change', this.wpsDropdownUpdated);
+			dropdown.off('change', this.wpsDropdownChanged);
+			dropdown.on('change', this.wpsDropdownChanged);
 		};
 
 		this.errorEncountered = function (args) {
@@ -335,8 +333,8 @@ GDP.UI = function (args) {
 	return {
 		updateCswDropdown : this.updateCswDropdown,
 		updateWpsDropdown : this.updateWpsDropdown,
-		cswDropdownUpdated : this.cswDropdownUpdated,
-		wpsDropdownUpdated : this.wpsDropdownUpdated,
+		cswDropdownUpdated : this.cswDropdownChanged,
+		wpsDropdownUpdated : this.wpsDropdownChanged,
 		errorEncountered : this.errorEncountered
 	};
 };

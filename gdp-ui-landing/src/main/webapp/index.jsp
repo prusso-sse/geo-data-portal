@@ -106,8 +106,12 @@
 					</label>
 				</div>
 				<div id="col-csw-information" class="col-md-6">
-					<div id="col-csw-information-title" class="text-center col-md-12"></div>
-					<div id="col-csw-information-content" class="text-center col-md-12"></div>
+					<div id="col-csw-information-title" class="text-center col-md-12">
+						<p id="p-csw-information-title" class="lead"></p>
+					</div>
+					<div id="col-csw-information-content" class="col-md-12">
+						<p id="p-csw-information-content"></p>
+					</div>
 				</div>
 			</div>
 			<div id="row-wps-select" class="row">
@@ -120,7 +124,7 @@
 					<div id="col-wps-information-title" class="text-center col-md-12">
 						<p id="p-wps-information-title" class="lead"></p>
 					</div>
-					<div id="col-wps-information-content" class="text-center col-md-12">
+					<div id="col-wps-information-content" class="col-md-12">
 						<p id="p-wps-information-content" class="lead"></p>
 					</div>
 				</div>
