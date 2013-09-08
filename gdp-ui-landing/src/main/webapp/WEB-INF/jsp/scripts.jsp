@@ -21,7 +21,6 @@
 
 <%-- Bootstrap --%>
 <link type="text/css" rel="stylesheet" href="webjars/bootstrap/3.0.0/css/bootstrap<%= dev ? "" : ".min"%>.css" />
-<link type="text/css" rel="stylesheet" href="webjars/bootstrap/3.0.0/css/bootstrap-theme<%= dev ? "" : ".min"%>.css" />
 <script type="text/javascript" src="webjars/bootstrap/3.0.0/js/bootstrap<%= dev ? "" : ".min"%>.js"></script>
 
 <%-- OpenLayers --%>

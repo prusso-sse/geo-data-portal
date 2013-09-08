@@ -17,10 +17,6 @@
 %>
 <html lang="en">
     <head>
-        <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE" />
-        <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE" />
-        <META HTTP-EQUIV="EXPIRES" CONTENT="0" />
-        <META HTTP-EQUIV="CONTENT-LANGUAGE" CONTENT="en-US" />
         <META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=UTF-8" />
 		<meta HTTP-EQUIV="X-UA-Compatible" CONTENT="IE=edge">
         <meta NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
@@ -59,16 +55,74 @@
                     <jsp:param name="site-title" value="USGS Geo Data Portal" />
                 </jsp:include>
 			</div>
-			<div class="row">
+
+			<div id="row-application-intro-text" class="row">
+				<div class="well">
+					<p>
+						At vero eos et accusamus et iusto odio dignissimos ducimus 
+						qui blanditiis praesentium voluptatum deleniti atque corrupti 
+						quos dolores et quas molestias excepturi sint occaecati 
+						cupiditate non provident, similique sunt in culpa qui officia 
+						deserunt mollitia animi, id est laborum et dolorum fuga. 
+					</p>
+					<br /><br />
+					<p>
+						Et harum quidem rerum facilis est et expedita distinctio. 
+						Nam libero tempore, cum soluta nobis est eligendi optio cumque 
+						nihil impedit quo minus id quod maxime placeat facere possimus, 
+						omnis voluptas assumenda est, omnis dolor repellendus. 
+					</p>
+				</div>
+			</div>
+
+			<div id="row-choice-start" class="row">
+				<div id="col-choice-start" class="col-md-12 text-center">
+					<div class="btn-group" data-toggle="buttons">
+						<label class="btn btn-primary">
+							<input type="radio" id="btn-choice-algorithm" name="btn-choice-start" />Begin With An Algorithm
+						</label>
+						<label class="btn btn-primary">
+							<input type="radio" id="btn-choice-dataset" name="btn-choice-start" />Begin With A Dataset
+						</label>
+					</div>
+				</div>
+			</div>
+
+			<div id="row-start-instructions" class="row">
+				<div class="well">
+					<div id="div-start-instructions">
+						<div id="col-start-instructions-title" class="col-md-12 text-center">
+							<p id="p-start-instructions-title" class="lead"></p>
+						</div>
+						<div id="p-start-instructions-content" class="col-md-12"></div>
+					</div>
+				</div>
+			</div>
+
+			<div id="row-csw-select" class="row">
 				<div id="col-csw-select" class="col-md-6">
-					<label>Select By CSW
+					<label>Select Dataset
 						<select id="form-control-select-csw" class="form-control"></select>
 					</label>
 				</div>
+				<div id="col-csw-information" class="col-md-6">
+					<div id="col-csw-information-title" class="text-center col-md-12"></div>
+					<div id="col-csw-information-content" class="text-center col-md-12"></div>
+				</div>
+			</div>
+			<div id="row-wps-select" class="row">
 				<div id="col-wps-select" class="col-md-6">
-					<label>Select By WPS
+					<label>Select Algorithm
 						<select id="form-control-select-wps" class="form-control"></select>
 					</label>
+				</div>
+				<div id="col-wps-information" class="col-md-6">
+					<div id="col-wps-information-title" class="text-center col-md-12">
+						<p id="p-wps-information-title" class="lead"></p>
+					</div>
+					<div id="col-wps-information-content" class="text-center col-md-12">
+						<p id="p-wps-information-content" class="lead"></p>
+					</div>
 				</div>
 			</div>
 			<div class="row">

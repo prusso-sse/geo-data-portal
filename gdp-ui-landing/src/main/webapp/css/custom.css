@@ -8,3 +8,9 @@ img {
 #ccsa-area {
 	padding-top: 5px;
 }
+
+#row-start-instructions,
+#row-csw-select,
+#row-wps-select {
+	display : none;
+}
