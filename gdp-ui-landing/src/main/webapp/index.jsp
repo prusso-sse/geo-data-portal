@@ -125,7 +125,7 @@
 						<p id="p-wps-information-title" class="lead"></p>
 					</div>
 					<div id="col-wps-information-content" class="col-md-12">
-						<p id="p-wps-information-content" class="lead"></p>
+						<p id="p-wps-information-content"></p>
 					</div>
 				</div>
 			</div>

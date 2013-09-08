@@ -12,15 +12,14 @@
 
 $(document).ready(function () {
 	"use strict";
-	var proxyEndpoint = 'proxy/';
 
 	GDP.CONFIG.cswClient = new GDP.CSW({
-		proxy: proxyEndpoint,
+		proxy: GDP.CONFIG.hosts.proxy,
 		url: GDP.CONFIG.hosts.csw
 	});
 
 	GDP.CONFIG.wpsClient = new GDP.WPS({
-		proxy: proxyEndpoint,
+		proxy: GDP.CONFIG.hosts.proxy,
 		url: GDP.CONFIG.hosts.wps
 	});
 
