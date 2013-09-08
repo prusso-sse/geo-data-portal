@@ -17,6 +17,9 @@ GDP.UI = function (args) {
 		$('#ccsa-area').children().slice(0, 2).remove();
 
 		var me = this,
+			removeOverlay = function () {
+				$('#overlay').fadeOut();
+			},
 			updateOfferingMaps = function () {
 				GDP.CONFIG.cswClient.getDomain({
 					propertyName : 'keyword',
@@ -89,7 +92,10 @@ GDP.UI = function (args) {
 										],
 										error : [
 											function (error) {
-												throw error;
+												GDP.CONFIG.ui.errorEncountered({
+													data : error,
+													recoverable : false
+												});
 											}
 										]
 									}
@@ -98,49 +104,59 @@ GDP.UI = function (args) {
 						],
 						error : [
 							function (error) {
-								throw error;
+								GDP.CONFIG.ui.errorEncountered({
+									data : error,
+									recoverable : false
+								});
 							}
 						]
 					}
 				});
 			};
-		this.cswDropdownUpdated = function (event) {
+		this.cswDropdownChanged = function (event) {
 			var value = event.target.value,
 				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[value],
 				algInd,
 				offeringsObj = {};
-		
+
 			if (!value) {
-				GDP.CONFIG.ui.updateWpsDropdown();
+				$('#p-csw-information-title').html('');
+				$('#p-csw-information-content').html('');
 			} else {
-				for (algInd = 0; algInd < validAlgorithms.length; algInd++) {
-					offeringsObj[validAlgorithms[algInd]] = '';
-				}
-				GDP.CONFIG.ui.updateWpsDropdown({
-					wpsOfferings : offeringsObj
-				});
+				$('#p-csw-information-title').html(GDP.CONFIG.offeringMaps.cswIdentToRecord[value].title[0].value);
+				$('#p-csw-information-content').html(GDP.CONFIG.offeringMaps.cswIdentToRecord[value].abstract[0]);
 			}
 		};
-		
-		this.wpsDropdownUpdated = function (event) {
+
+		this.wpsDropdownChanged = function (event) {
 			var value = event.target.value,
 				validOfferings = GDP.CONFIG.offeringMaps.wpsToCsw[value],
 				offering,
+				me = this,
 				offeringsObj = {};
-		
+
 			if (!value) {
-				GDP.CONFIG.ui.updateCswDropdown();
+				$('#p-wps-information-title').html('');
+				$('#p-wps-information-content').html('');
 			} else {
-				for (offering in validOfferings) {
-					if (validOfferings.hasOwnProperty(offering)) {
-						offeringsObj[offering] = '';
+				GDP.CONFIG.wpsClient.getProcessDescription({
+					process : value,
+					callbacks : {
+						success : [
+							function (processResponse) {
+								$('#p-wps-information-title').html(processResponse.title);
+								$('#p-wps-information-content').html(processResponse.abstract);
+							}
+						],
+						error : [
+							function (response) {
+								var msg = 'Unable to get description for this process';
+								$('#p-wps-information-content').html(msg);
+							}
+						]
 					}
-				}
-				GDP.CONFIG.ui.updateCswDropdown({
-					cswOfferings : offeringsObj
 				});
 			}
-			
 		};
 
 		this.updateCswDropdown = function (args) {
@@ -169,9 +185,10 @@ GDP.UI = function (args) {
 					);
 				}
 			}
-			dropdown.off('change', this.cswDropdownUpdated);
-			dropdown.on('change', this.cswDropdownUpdated);
+			dropdown.off('change', this.cswDropdownChanged);
+			dropdown.on('change', this.cswDropdownChanged);
 		};
+
 		this.updateWpsDropdown = function (args) {
 			args = args || {};
 			var wpsOfferings = args.wpsOfferings || GDP.CONFIG.offeringMaps.wpsToCsw,
@@ -199,13 +216,75 @@ GDP.UI = function (args) {
 					);
 				}
 			}
-			
-			dropdown.off('change', this.wpsDropdownUpdated);
-			dropdown.on('change', this.wpsDropdownUpdated);
+
+			dropdown.off('change', this.wpsDropdownChanged);
+			dropdown.on('change', this.wpsDropdownChanged);
 		};
+
+		this.errorEncountered = function (args) {
+
+		};
+
+		this.updateStartInstructions = function (args) {
+			args = args || {};
+			var title = args.title,
+				content = args.content;
+			$('#div-start-instructions').fadeOut(function () {
+				$('#p-start-instructions-title').html(title);
+				$('#p-start-instructions-content').html(content);
+				$('#row-start-instructions').css('visibility', 'visible').removeClass('hidden').fadeIn();
+				$('#div-start-instructions').fadeIn();
+			});
+		};
+
+		this.algorithmStartButtonSelected = function (event) {
+			var me = this;
+			this.updateStartInstructions({
+				title : 'Begin By Selecting An Algorithm',
+				content : 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, ' +
+						'sed do eiusmod tempor incididunt ut labore et dolore magna ' +
+						'aliqua. Ut enim ad minim veniam, quis nostrud exercitation ' +
+						'ullamco laboris nisi ut aliquip ex ea commodo consequat. ' +
+						'Duis aute irure dolor in reprehenderit in voluptate velit ' +
+						'esse cillum dolore eu fugiat nulla pariatur. Excepteur sint ' +
+						'occaecat cupidatat non proident, sunt in culpa qui officia ' +
+						'deserunt mollit anim id est laborum.'
+			});
+
+			$('#row-csw-select').fadeOut(function () {
+				$('#row-wps-select').fadeOut(function () {
+					$('#row-wps-select').insertBefore($('#row-csw-select'));
+					me.updateWpsDropdown();
+					$('#row-wps-select').fadeIn();
+				});
+			});
+		};
+
+		this.datasetStartButtonSelected = function (event) {
+			this.updateStartInstructions({
+				title : 'Begin By Selecting A Dataset',
+				content : 'Sed ut perspiciatis unde omnis iste natus error sit ' +
+						'voluptatem accusantium doloremque laudantium, totam rem ' +
+						'aperiam, eaque ipsa quae ab illo inventore veritatis et ' +
+						'quasi architecto beatae vitae dicta sunt explicabo. Nemo ' +
+						'enim ipsam voluptatem quia voluptas sit aspernatur aut odit ' +
+						'aut fugit, sed quia consequuntur magni dolores eos qui ' +
+						'ratione voluptatem sequi nesciunt.'
+			});
+
+			$('#row-wps-select').fadeOut(function () {
+				$('#row-csw-select').fadeOut(function () {
+					$('#row-csw-select').insertBefore($('#row-wps-select'));
+					me.updateCswDropdown();
+					$('#row-csw-select').fadeIn();
+				});
+			});
+		};
+
 		this.initializationCompleted = function () {
-			this.updateCswDropdown();
-			this.updateWpsDropdown();
+			removeOverlay();
+			$('#btn-choice-algorithm').on('change', $.proxy(this.algorithmStartButtonSelected, this));
+			$('#btn-choice-dataset').on('change', $.proxy(this.datasetStartButtonSelected, this));
 		};
 
 		GDP.CONFIG.cswClient.requestGetCapabilities({
@@ -219,7 +298,10 @@ GDP.UI = function (args) {
 				],
 				error : [
 					function (error) {
-						throw error;
+						GDP.CONFIG.ui.errorEncountered({
+							data : error,
+							recoverable : false
+						});
 					}
 				]
 			}
@@ -236,7 +318,10 @@ GDP.UI = function (args) {
 				],
 				error : [
 					function (error) {
-						throw error;
+						GDP.CONFIG.ui.errorEncountered({
+							data : error,
+							recoverable : false
+						});
 					}
 				]
 			}
@@ -248,7 +333,8 @@ GDP.UI = function (args) {
 	return {
 		updateCswDropdown : this.updateCswDropdown,
 		updateWpsDropdown : this.updateWpsDropdown,
-		cswDropdownUpdated : this.cswDropdownUpdated,
-		wpsDropdownUpdated : this.wpsDropdownUpdated
+		cswDropdownUpdated : this.cswDropdownChanged,
+		wpsDropdownUpdated : this.wpsDropdownChanged,
+		errorEncountered : this.errorEncountered
 	};
 };

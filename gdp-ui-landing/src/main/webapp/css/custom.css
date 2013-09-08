@@ -1,3 +1,5 @@
+@import "overlay.css";
+
 /* http://getbootstrap.com/getting-started/#third-parties */
 img { 
     max-width: none; 
@@ -7,4 +9,8 @@ img {
 	padding-top: 5px;
 }
 
-
+#row-start-instructions,
+#row-csw-select,
+#row-wps-select {
+	display : none;
+}
