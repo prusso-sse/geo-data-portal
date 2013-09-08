@@ -46,6 +46,11 @@
 		hosts : {
 			csw : '<%= props.getProperty("gdp.endpoint.csw.url") %>',
 			wps : '<%= props.getProperty("gdp.endpoint.wps.process.url") %>'
+		},
+		offeringMaps : {
+			cswToWps : {},
+			wpsToCsw : {},
+			cswIdentToRecord : {}
 		}
 	};
 </script>

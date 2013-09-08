@@ -12,33 +12,17 @@
 
 $(document).ready(function () {
 	"use strict";
-	var proxyEndpoint = 'proxy/',
-		UI = new GDP.UI(),
-		csw = new GDP.CSW({
-			proxy: proxyEndpoint,
-			url: GDP.CONFIG.hosts.csw
-		}),
-		wps = new GDP.WPS({
-			proxy: proxyEndpoint,
-			url: GDP.CONFIG.hosts.wps
-		});
+	var proxyEndpoint = 'proxy/';
 
-	csw.sendCSWGetCapabilitiesRequest({
-		callbacks : {
-			success : [
-				function (data, textStatus, jqXHR) {
-					var oDomDoc = Sarissa.getDomDocument(),
-						keywords;
-					oDomDoc.setProperty("SelectionLanguage", "XPath");
-					oDomDoc.setProperty("SelectionNamespaces",
-						"xmlns:xhtml='http://www.w3.org/1999/xhtml' " +
-						"xmlns:xsl='http://www.w3.org/1999/XSL/Transform' " +
-						"xmlns:ows='http://www.opengis.net/ows' " +
-						"xmlns:csw='http://www.opengis.net/cat/csw/2.0.2'");
-					keywords = data.selectNodes('//ows:Keywords/ows:Keyword');
-				}
-			],
-			error : []
-		}
+	GDP.CONFIG.cswClient = new GDP.CSW({
+		proxy: proxyEndpoint,
+		url: GDP.CONFIG.hosts.csw
 	});
+
+	GDP.CONFIG.wpsClient = new GDP.WPS({
+		proxy: proxyEndpoint,
+		url: GDP.CONFIG.hosts.wps
+	});
+
+	GDP.CONFIG.ui = new GDP.UI();
 });

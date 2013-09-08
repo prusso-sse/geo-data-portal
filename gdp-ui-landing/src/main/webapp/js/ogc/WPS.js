@@ -11,12 +11,12 @@ GDP.WPS = function (args) {
 	this.proxy = args.proxy;
 	this.capabilitiesDocument = args.capabilitiesDocument;
 	this.processOfferings = args.processOfferings || {};
-	
+
 	/**
 	 * Requests a capabilities document from a WPS server
 	 * @argument {Object} args 
 	 */
-	var sendWPSGetCapabilitiesRequest = function (args) {
+	var requestGetCapabilities = function (args) {
 		args = args || {};
 
 		var callbacks = args.callbacks || {
@@ -27,10 +27,10 @@ GDP.WPS = function (args) {
 			scbInd,
 			proxy = args.proxy || this.proxy,
 			capabilitiesDocument = args.capabilitiesDocument || this.capabilitiesDocument,
-			cachedGetCaps = parseInt(capabilitiesDocument, 10),
-			scope = args.scope || this;
+			scope = args.scope || this,
+			me = this;
 
-		if (cachedGetCaps) {
+		if (capabilitiesDocument) {
 			for (scbInd = 0; scbInd < callbacks.success.length; scbInd++) {
 				callbacks.success[scbInd].call(this, capabilitiesDocument);
 			}
@@ -44,15 +44,16 @@ GDP.WPS = function (args) {
 				},
 				success: function (response) {
 					var capabilities = new OpenLayers.Format.WPSCapabilities().read(response.responseText);
-					scope.cache.capabilities = 
-					scope.processOfferings = capabilities.processOfferings;
-					if (callbacks.success) {
-							for (scbInd = 0; scbInd < callbacks.success.length; scbInd++) {
-								callbacks.success[scbInd].call(scope, capabilities);
-							}
+					me.capabilitiesDocument = response.responseXML;
+					me.processOfferings = capabilities.processOfferings;
+
+					if (callbacks.success && callbacks.success.length) {
+						for (scbInd = 0; scbInd < callbacks.success.length; scbInd++) {
+							callbacks.success[scbInd].call(scope, capabilities);
 						}
+					}
 				},
-				failure: function(response) {
+				failure: function (response) {
 					if (callbacks.error) {
 						for (scbInd = 0; scbInd < callbacks.error.length; scbInd++) {
 							callbacks.error[scbInd].call(scope, response);
@@ -62,15 +63,9 @@ GDP.WPS = function (args) {
 			});
 		}
 	};
-	
-	// Initialization
-	sendWPSGetCapabilitiesRequest.call(this, {
-		proxy: this.proxy,
-		url: this.url
-	});
-	
+
 	return {
-		sendWPSGetCapabilitiesRequest: sendWPSGetCapabilitiesRequest,
+		requestGetCapabilities: requestGetCapabilities,
 		processOfferings : this.processOfferings,
 		url: this.url,
 		proxy: this.proxy,
