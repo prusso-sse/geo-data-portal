@@ -44,7 +44,7 @@
 	GDP = GDP || {};
 	GDP.CONFIG = {
 		hosts : {
-			csw : 'http://cida-eros-gdp2.er.usgs.gov:8081/geonetwork/srv/en/csw', <%-- '<%= props.getProperty("gdp.endpoint.csw.url") %>' --%>
+			csw : '<%= props.getProperty("gdp.endpoint.csw.url") %>',
 			wps : '<%= props.getProperty("gdp.endpoint.wps.process.url") %>'
 		},
 		offeringMaps : {
