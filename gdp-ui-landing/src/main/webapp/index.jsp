@@ -55,7 +55,16 @@
                 </jsp:include>
 			</div>
 			<div class="row">
-				Hello Whirl!
+				<div id="col-csw-select" class="col-md-6">
+					<label>Select By CSW
+						<select id="form-control-select-csw" class="form-control"></select>
+					</label>
+				</div>
+				<div id="col-wps-select" class="col-md-6">
+					<label>Select By WPS
+						<select id="form-control-select-wps" class="form-control"></select>
+					</label>
+				</div>
 			</div>
 			<div class="row">
 				<jsp:include page="template/USGSFooter.jsp">

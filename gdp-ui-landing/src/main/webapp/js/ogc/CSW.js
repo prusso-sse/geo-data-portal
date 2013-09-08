@@ -27,7 +27,8 @@ GDP.CSW = function (args) {
 			scbInd,
 			proxy = args.proxy || this.proxy,
 			capabilitiesDocument = args.capabilitiesDocument || this.capabilitiesDocument,
-			scope = args.scope || this;
+			scope = args.scope || this,
+			me = this;
 
 		// Check to see if there's a capabilities document available in cache
 		if (capabilitiesDocument) {
@@ -46,11 +47,11 @@ GDP.CSW = function (args) {
 					var responseXML = response.responseXML;
 
 					// Add the getCapabilities response to cache
-					scope.capabilitiesDocument = responseXML;
+					me.capabilitiesDocument = responseXML;
 
 					if (callbacks.success && callbacks.success.length) {
 						for (scbInd = 0; scbInd < callbacks.success.length; scbInd++) {
-							callbacks.success[scbInd].call(scope, scope.capabilitiesDocument);
+							callbacks.success[scbInd].call(scope, me.capabilitiesDocument);
 						}
 					}
 				},
@@ -97,6 +98,7 @@ GDP.CSW = function (args) {
 					success : [],
 					error : []
 				},
+				maxRecords = args.maxRecords || 100,
 				scope = args.scope || this,
 				fInd,
 				cswGetRecFormat = new OpenLayers.Format.CSWGetRecords(),
@@ -126,15 +128,15 @@ GDP.CSW = function (args) {
 					);
 				}
 			}
-			
+
 			filter = new OpenLayers.Filter.Logical({
-					type: OpenLayers.Filter.Logical.AND,
-					filters: filters
+				type: OpenLayers.Filter.Logical.OR,
+				filters: filters
 			});
-			
+
 			getRecRequest = cswGetRecFormat.write({
 				resultType: "results",
-//					maxRecords: "20",
+				maxRecords: String(maxRecords),
 				Query: {
 					ElementSetName: {
 						value: "summary"
@@ -168,12 +170,50 @@ GDP.CSW = function (args) {
 					}
 				}
 			});
+		},
+		getDomain = function (args) {
+			args = args || {};
+
+			var cswGetDomainFormat = new OpenLayers.Format.CSWGetDomain(),
+				propertyName = args.propertyName || '',
+				scope = args.scope || this,
+				callbacks = args.callbacks || {
+					success : [],
+					error : []
+				},
+				getDomainReqData = cswGetDomainFormat.write({
+					PropertyName: propertyName
+				});
+
+			OpenLayers.Request.POST({
+				url: this.proxy + this.url,
+				data: getDomainReqData,
+				success: function (request) {
+					var cswGetDomainResponseObject = cswGetDomainFormat.read(request.responseXML || request.responseText),
+						scbInd;
+
+					if (callbacks.success && callbacks.success.length) {
+						for (scbInd = 0; scbInd < callbacks.success.length; scbInd++) {
+							callbacks.success[scbInd].call(scope, cswGetDomainResponseObject);
+						}
+					}
+				},
+				failure : function (response) {
+					var scbInd;
+					if (callbacks.error) {
+						for (scbInd = 0; scbInd < callbacks.error.length; scbInd++) {
+							callbacks.error[scbInd].call(scope, response);
+						}
+					}
+				}
+			});
 		};
 
 	return {
 		requestGetCapabilities: requestGetCapabilities,
 		getCapabilitiesKeywords : getCapabilitiesKeywords,
 		getRecordsByKeywords : getRecordsByKeywords,
+		getDomain : getDomain,
 		url : this.url,
 		proxy : this.proxy,
 		capabilitiesDocument : this.capabilitiesDocument

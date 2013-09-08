@@ -27,10 +27,10 @@ GDP.WPS = function (args) {
 			scbInd,
 			proxy = args.proxy || this.proxy,
 			capabilitiesDocument = args.capabilitiesDocument || this.capabilitiesDocument,
-			cachedGetCaps = parseInt(capabilitiesDocument, 10),
-			scope = args.scope || this;
+			scope = args.scope || this,
+			me = this;
 
-		if (cachedGetCaps) {
+		if (capabilitiesDocument) {
 			for (scbInd = 0; scbInd < callbacks.success.length; scbInd++) {
 				callbacks.success[scbInd].call(this, capabilitiesDocument);
 			}
@@ -44,8 +44,8 @@ GDP.WPS = function (args) {
 				},
 				success: function (response) {
 					var capabilities = new OpenLayers.Format.WPSCapabilities().read(response.responseText);
-					scope.capabilitiesDocument = response.responseXml;
-					scope.processOfferings = capabilities.processOfferings;
+					me.capabilitiesDocument = response.responseXML;
+					me.processOfferings = capabilities.processOfferings;
 
 					if (callbacks.success && callbacks.success.length) {
 						for (scbInd = 0; scbInd < callbacks.success.length; scbInd++) {

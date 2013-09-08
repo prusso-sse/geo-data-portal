@@ -12,49 +12,17 @@
 
 $(document).ready(function () {
 	"use strict";
-	var proxyEndpoint = 'proxy/',
-		UI = new GDP.UI(),
-		csw = new GDP.CSW({
-			proxy: proxyEndpoint,
-			url: GDP.CONFIG.hosts.csw
-		}),
-		wps = new GDP.WPS({
-			proxy: proxyEndpoint,
-			url: GDP.CONFIG.hosts.wps
-		});
+	var proxyEndpoint = 'proxy/';
 
-	csw.requestGetCapabilities({
-		callbacks : {
-			success : [
-				function (capablitiesXmlDoc) {
-					var keywords = this.getCapabilitiesKeywords();
-					this.getRecordsByKeywords({
-						keywords : [
-							'gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm'
-						]
-					});
-				}
-			],
-			error : [
-				function (error) {
-					throw error;
-				}
-			]
-		}
+	GDP.CONFIG.cswClient = new GDP.CSW({
+		proxy: proxyEndpoint,
+		url: GDP.CONFIG.hosts.csw
 	});
 
-	wps.requestGetCapabilities({
-		callbacks : {
-			success : [
-				function (capabilities) {
-					var a = 1;
-				}
-			],
-			error : [
-				function (error) {
-					throw error;
-				}
-			]
-		}
+	GDP.CONFIG.wpsClient = new GDP.WPS({
+		proxy: proxyEndpoint,
+		url: GDP.CONFIG.hosts.wps
 	});
+
+	GDP.CONFIG.ui = new GDP.UI();
 });
