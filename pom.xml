@@ -4,7 +4,7 @@
 	<groupId>gov.usgs.cida.gdp</groupId>
 	<artifactId>gdp</artifactId>
 	<packaging>pom</packaging>
-	<version>23-SNAPSHOT</version>
+	<version>24-SNAPSHOT</version>
 	<name>GDP</name>
 	<modules>
 		<module>gdp-common-utilities</module>
@@ -19,6 +19,8 @@
 		<module>geoserver</module>
 		<module>gdp-ui</module>
 		<module>gdp-derivative-ui</module>
+		<module>gdp-ui-landing</module>
+		<module>gdp-csw-client</module>
 	</modules>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -162,6 +164,22 @@
 			<!-- 52North WPS dependencies -->
 			<dependency>
 				<groupId>gov.usgs.cida.jslibs</groupId>
+				<artifactId>usgs-template</artifactId>
+				<version>2.2</version>
+				<type>war</type>
+			</dependency>
+			<dependency>
+				<groupId>org.webjars</groupId>
+				<artifactId>jquery-ui</artifactId>
+				<version>1.10.2-1</version>
+			</dependency>
+			<dependency>
+				<groupId>org.webjars</groupId>
+				<artifactId>bootstrap</artifactId>
+				<version>3.0.0</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.usgs.cida.jslibs</groupId>
 				<artifactId>log4js</artifactId>
 				<version>1.4.3-3</version>
 				<type>war</type>
@@ -189,6 +207,23 @@
 				<artifactId>openlayers</artifactId>
 				<version>2.11-3</version>
 				<type>war</type>
+			</dependency>
+			<dependency>
+				<groupId>org.webjars</groupId>
+				<artifactId>openlayers</artifactId>
+				<version>2.13.1</version>
+			</dependency>
+			<dependency>
+				<groupId>gov.usgs.cida.jslibs</groupId>
+				<artifactId>sarissa</artifactId>
+				<version>0.9.9.6</version>
+				<type>jar</type>
+			</dependency>
+			<dependency>
+				<groupId>gov.usgs.cida.jslibs</groupId>
+				<artifactId>excat-csw-client-simple</artifactId>
+				<version>20090129-1-SNAPSHOT</version>
+				<type>jar</type>
 			</dependency>
 			<dependency>
 				<groupId>org.n52.wps</groupId>
@@ -299,7 +334,7 @@
 			<dependency>
 				<groupId>gov.usgs.cida.owsutils</groupId>
 				<artifactId>cida-owsutils-geoserver</artifactId>
-				<version>1.0.2</version>
+				<version>1.0.3</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.guava</groupId>

@@ -1065,6 +1065,7 @@ var Dataset = function() {
     }
 
     function opendapDatasetSelected(datasetURL, useCache) {
+        useCache = useCache || false;
         logger.debug('GDP: Attempting to retrieve grids using OpenDAP.');
         gDatasetType = _datasetTypeEnum.OPENDAP;
         _usingCache = useCache;
@@ -1194,6 +1195,7 @@ var Dataset = function() {
 	}
 
     function getTimeRange(datasetURL, selectedGrid, useCache) {
+        useCache = useCache || false;
         logger.debug('GDP: Attaining grid time range for dataset: ' + datasetURL + ' and selected grid: ' + selectedGrid);
         var getTimeRangeWpsAlgorithm = 'gov.usgs.cida.gdp.wps.algorithm.discovery.GetGridTimeRange';
         var getTimeRangeWpsInputs = {
@@ -1391,7 +1393,7 @@ var Dataset = function() {
             })
         }
         $(queryableElement).find('option[value="AnyText"]').attr('selected','selected');
-        CSWClient.setCSWHost($(_CSW_URL_INPUT_BOX).val());
+        GDPCSWClient.setCSWHost($(_CSW_URL_INPUT_BOX).val());
     }
 
     /**
@@ -1488,12 +1490,12 @@ var Dataset = function() {
         if (Constant.endpoint.csw.length > 0) {
             logger.trace('GDP: Adding default endpoint URL "'+Constant.endpoint.csw+'" to the CSW endpoint URL inputbox.');
             $(_CSW_URL_INPUT_BOX).val(Constant.endpoint.csw);
-            CSWClient.sendCSWGetCapabilitiesRequest($(_CSW_URL_INPUT_BOX).val(), cswFillInCapabilities);
+            CSW.sendCSWGetCapabilitiesRequest($(_CSW_URL_INPUT_BOX).val(), cswFillInCapabilities, Constant.config.csw.cache, Constant.endpoint.proxy);
         }
 
         $(_CSW_HOST_SET_BUTTON).click(function() {
             if ($(_CSW_URL_INPUT_BOX).val()) {
-                CSWClient.sendCSWGetCapabilitiesRequest($(_CSW_URL_INPUT_BOX).val(), cswFillInCapabilities);
+                CSW.sendCSWGetCapabilitiesRequest($(_CSW_URL_INPUT_BOX).val(), cswFillInCapabilities, Constant.config.csw.cache, Constant.endpoint.proxy);
             } else {
                 logger.warn('GDP: User clicked CSW Endpoint Set button without setting a CSW endpoint.')
                 showErrorNotification('A CSW endpoint must be defined.');
@@ -1532,13 +1534,15 @@ var Dataset = function() {
                 $(_CSW_HOST_SET_BUTTON).click();
                 
                 if (this.innerHTML === Constant.endpoint['sciencebase-csw']) {
-                    CSWClient.setSBConstraint("wcs");
+                    GDPCSWClient.sbConstraintFeature = false;
+					GDPCSWClient.sbConstraintCoverage = true;
                 } else {
-                    CSWClient.setSBConstraint();
+					GDPCSWClient.sbConstraintFeature = false;
+					GDPCSWClient.sbConstraintCoverage = false;
                 }
                 
                 $(dialog).dialog('close');
-            })
+            });
             
         });
         
@@ -1550,14 +1554,14 @@ var Dataset = function() {
         if (Constant.ui.default_dataset_url.length > 0) {
             logger.trace('GDP: Adding default dataset URL "'+Constant.ui.default_dataset_url+'" to the CSW dataset URL inputbox.');
             $(_DATASET_URL_INPUT_BOX).val(Constant.ui.default_dataset_url);
-            CSWClient.setDatasetUrl($(_DATASET_URL_INPUT_BOX).val());
+            Dataset.setDatasetUrl($(_DATASET_URL_INPUT_BOX).val());
         }
         
         // Ref: http://internal.cida.usgs.gov/jira/browse/GDP-344
         if (dsUrl) {  //Incoming dataset URL should override a default dataset URL if one exists
             logger.trace('GDP: Adding dataset URL "'+ decodeURIComponent(dsUrl) +'" parsed from incoming URL.');
             $(_DATASET_URL_INPUT_BOX).val(decodeURIComponent(dsUrl));
-            CSWClient.setDatasetUrl($(_DATASET_URL_INPUT_BOX).val());
+            Dataset.setDatasetUrl($(_DATASET_URL_INPUT_BOX).val());
         }
 
         $(_DATASET_ID_SELECTBOX).change(function() {
@@ -1705,6 +1709,7 @@ var Dataset = function() {
         },
 
         datasetSelected : function(datasetURL, wmsURL, useCache){
+            useCache = undefined === useCache ? _usingCache : useCache;
             _datasetURL = datasetURL;
             
             $(_DATASET_ID_TOOLTIP).hide();
@@ -1761,6 +1766,156 @@ var Dataset = function() {
                 $(_ALGORITHM_DROPDOWN).trigger('change');
             }
             return true;
-        }
+        },
+		displayMultipleOpenDAPSelection: function (id) {
+			var csw_response = GDPCSWClient.getRecordById(id),
+				stylesheet = "lib/xsl/multi-service-endpoint.xsl",
+				processor = new XSLTProcessor(),
+				serializer = new XMLSerializer(),
+				xslt,
+				XmlDom,
+				output,
+				outputDiv;
+
+			xslt = GDPCSWClient.loadDocument(stylesheet);
+			processor.importStylesheet(xslt);
+
+			XmlDom = processor.transformToDocument(csw_response);
+			output = serializer.serializeToString(XmlDom.documentElement);
+			outputDiv = document.getElementById("metadata");
+			outputDiv.innerHTML = output;
+
+			$(outputDiv).dialog({
+				modal: true,
+				width: '90%',
+				height: $(window).height() / 1.25,
+				resizable: true,
+				draggable: true,
+				'title': 'Choose a data set',
+				zIndex: 9999
+			});
+			$(outputDiv).scrollTop(0);
+		},
+		createCSWResponseDialog: function(request) {
+			var outputId = request === "getrecordbyid" ? "metadata" : "csw-output";
+			var outputDiv = document.getElementById(outputId);
+			outputDiv.innerHTML = replaceURLWithHTMLLinks(outputDiv.innerHTML);
+			
+			$(outputDiv).dialog({
+				modal: true,
+				width: '90%',
+				height: request === "getrecordbyid" ? $(window).height() / 1.25 : 'auto',
+				resizable: true,
+				draggable: true,
+				title: request === "getrecordbyid" ? 'Dataset metadata' : 'Choose a data set',
+				zIndex: 9999
+			});
+
+			// If a user has previously viewed metadata and has scrolled down,
+			// the new window opens up scrolled down to the location they were 
+			// at previously. This fixes that issue.
+			$(outputDiv).scrollTop(0);
+
+			// Some hackery needs to happen here because IE8 will have window.onunload triggered 
+			// when selecting a dataset even though it just calls javascript and doesn't try to leave the
+			// page
+			// http://stackoverflow.com/a/7651818
+			$(window).data('beforeunload', window.onbeforeunload);
+			$('a[href^="javascript:"]').hover(
+					function() {
+						window.onbeforeunload = null;
+					},
+					function() {
+						window.onbeforeunload = $(window).data('beforeunload');
+					}
+			);
+		},
+		selectDatasetById: function (id, title) {
+			var csw_response = GDPCSWClient.getRecordById(id),
+				selectedDataset,
+				shouldUseCache = false,
+				wmsURL,
+				// We are doing this because we don't know which format the data might be in, if we can tell, we shouldn't iterate
+				datasetSelectors = [
+					'[nodeName="csw:GetRecordByIdResponse"] > [nodeName="csw:Record"] [nodeName="dc:URI"]',
+					'[nodeName="csw:GetRecordByIdResponse"] > [nodeName="gmd:MD_Metadata"] > [nodeName="gmd:identificationInfo"] > ' +
+							'[nodeName="srv:SV_ServiceIdentification"] > [nodeName="srv:containsOperations"] > [nodeName="srv:SV_OperationMetadata"] > ' +
+							'[nodeName="srv:connectPoint"] > [nodeName="gmd:CI_OnlineResource"] > [nodeName="gmd:linkage"] > [nodeName="gmd:URL"]',
+					'[nodeName="csw:GetRecordByIdResponse"] > [nodeName="gmd:MD_Metadata"] > [nodeName="gmd:distributionInfo"] > ' +
+							'[nodeName="gmd:MD_Distribution"] > [nodeName="gmd:transferOptions"] > [nodeName="gmd:MD_DigitalTransferOptions"] > ' +
+							'[nodeName="gmd:onLine"] > [nodeName="gmd:CI_OnlineResource"] > [nodeName="gmd:linkage"] > [nodeName="gmd:URL"]'
+				],
+				shouldCacheSelectors = [
+					'[nodeName="csw:GetRecordByIdResponse"] > [nodeName="gmd:MD_Metadata"] > [nodeName="gmd:identificationInfo"] > ' +
+							'[nodeName="gmd:MD_DataIdentification"] > [nodeName="gmd:status"] > [nodeName="gmd:MD_ProgressCode"]'
+				];
+
+			for (var i = 0; i < datasetSelectors.length; i++) {
+				$(csw_response).find(datasetSelectors[i]).each(function(index, elem) {
+					var text = $(elem).text();
+
+					if (text.toLowerCase().contains("dods")) {
+						Dataset.setDatasetType(Dataset.datasetTypeEnum.OPENDAP);
+						selectedDataset = text.indexOf('?') !== -1 ? text.substring(0, text.indexOf('?')) : text;
+					} else if (text.toLowerCase().contains("wcs") && !selectedDataset) {
+						Dataset.setDatasetType(Dataset.datasetTypeEnum.WCS);
+						selectedDataset = text.indexOf('?') !== -1 ? text.substring(0, text.indexOf('?')) : text;
+					} else if (text.toLowerCase().contains("wms")) {
+						wmsURL = text.indexOf('?') !== -1 ? text.substring(0, text.indexOf('?')) : text;
+					}
+				});
+			}
+
+			for (i = 0; i < shouldCacheSelectors.length; i++) {
+				$(csw_response).find(shouldCacheSelectors[i]).each(function(index, elem) {
+					var codeListValue = $(elem).attr("codeListValue");
+
+					if (codeListValue.toLowerCase() === "completed") {
+						shouldUseCache = true;
+					}
+				});
+			}
+
+			if (!selectedDataset) {
+				showErrorNotification("No dataset found for this CSW Record");
+			} else {
+				Dataset.datasetSelected(selectedDataset, wmsURL, shouldUseCache);
+				$('#dataset-url-input-box').val(selectedDataset);
+				if (parseInt(Constant.ui.view_show_csw_chosen_dataset_title, 10)) {
+					$('#dataset-selected-title').fadeOut(Constant.fadeSpeed, function() {
+						$('#dataset-selected-title').html('Selected Dataset: ' + title);
+						$('#dataset-selected-title').fadeIn(Constant.fadeSpeed);
+					});
+				}
+
+				$('#csw-output').dialog('close');
+			}
+		},
+		selectSubdataset: function(selectedDataset, wmsURL, title, useCache) {
+			Dataset.datasetSelected(selectedDataset, wmsURL, useCache);
+			$('#dataset-url-input-box').val(selectedDataset);
+			if (parseInt(Constant.ui.view_show_csw_chosen_dataset_title, 10) && title) {
+				$('#dataset-selected-title').fadeOut(Constant.fadeSpeed, function() {
+					$('#dataset-selected-title').html('Selected Dataset: ' + title);
+					$('#dataset-selected-title').fadeIn(Constant.fadeSpeed);
+				});
+			}
+			$('#metadata').dialog('close');
+			$('#csw-output').dialog('close');
+		},
+		setDatasetUrl: function (url) {
+			if (url) {
+				$('#dataset-url-input-box').val(url);
+
+				if ($('#metadata').length) {
+					$('#metadata').dialog('close');
+				}
+				if ($('#csw-output').length) {
+					$('#csw-output').dialog('close');
+				}
+
+				$('#select-dataset-button').trigger('click');
+			}
+		}
     };
 };

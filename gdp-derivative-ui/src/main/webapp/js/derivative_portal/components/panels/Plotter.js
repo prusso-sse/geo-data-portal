@@ -2,8 +2,10 @@ Ext.ns("GDP");
 
 GDP.Plotter = Ext.extend(Ext.Panel, {
     sosStore : [],
+	leafStore : undefined,
     plotterData : [],
     scenarioGcmJSON : {},
+	origScenarioGcmJSON : {},
     yLabels : [],
     plotterYMin : 10000000,
     plotterYMax : 0,
@@ -19,7 +21,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
     errorBarsOn : undefined,
     toolbar : undefined,
     errorDisplayed : undefined,
-    constructor : function(config) {
+    constructor : function (config) {
         config = config || {};
         this.plotterDiv = config.plotterDiv || 'dygraph-content';
         this.legendDiv = config.legendDiv || 'dygraph-legend';
@@ -31,12 +33,12 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         this.visibility = config.visibility || [true, false, false, false];
         this.errorBarsOn = config.errorBars || true;
         this.errorDisplayed = false;
-        
         this.toolbar = new Ext.Toolbar({
             itemId : 'plotterToolbar',
             ref : '../plotterToolbar',
             items : '&nbsp; '
-        })
+        });
+
         var contentPanel = new Ext.Panel({
             contentEl : this.plotterDiv,
             itemId : 'contentPanel',
@@ -45,11 +47,12 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             region : 'center',
             autoShow : true
         });
+
         var legendPanel = new Ext.Panel({
             itemId : 'legendPanel',
             ref : '../legendPanel',
             contentEl : this.legendDiv,
-            layout : 'fit', 
+            layout : 'fit',
             region : 'east',
             autoShow : true
         });
@@ -61,20 +64,24 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             bufferResize : true,
             split: true
         }, config);
-        
+
         GDP.Plotter.superclass.constructor.call(this, config);
-        this.controller.on('updateplotter', function(args){
+        this.controller.on('updateplotter', function (args) {
             LOG.debug('Plotter:updateplotter');
             this.updatePlotter(args);
         }, this);
-        this.controller.on('loaded-catstore', function(args) {
+        this.controller.on('loaded-catstore', function (args) {
             LOG.debug('Plotter:onLoadedCatstore');
             this.onLoadedCatstore(args);
         }, this);
-        this.controller.on('exception-catstore', function() {
+        this.controller.on('loaded-leafstore', function (args) {
+            LOG.debug('Plotter:onLoadedCatstore');
+            this.onLoadedLeafstore(args);
+        }, this);
+        this.controller.on('exception-catstore', function () {
             this.collapse();
         }, this);
-        this.on('resize', function() {
+        this.on('resize', function () {
             LOG.debug('Plotter:resize');
             this.resizePlotter();
         }, this);
@@ -83,39 +90,29 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             this.resizePlotter();
         }, this);
     },
-    
-    updatePlotter : function(args) {
+
+    updatePlotter : function (args) {
         LOG.debug('Plotter:updatePlotter: Observed request to update plotter');
-        
+
         var endpoint = args.url;
         var offering = args.offering;
         this.errorDisplayed = false;
         this.plotterTitle = args.featureTitle;
         this.yLabels = [];
-        
+
         if (this.sosStore) {
-            this.sosStore = new Array();
+            this.sosStore = [];
         }
-        // TODO- Figure out how to clear the graph (and memory).
-        // Leaving this in causes the graph object to lose its 
-        // maindiv_ variable which causes errors when clicking on a second
-        // feature of interest.
-        //        if (this.graph) {
-        //            this.graph.destroy();
-        //        }
-        //        
-        //        else {
-            Ext.get(this.plotterDiv).dom.innerHTML = '';
-        //        }
+		Ext.get(this.plotterDiv).dom.innerHTML = '';
         var height = Math.round(0.5 * parseInt(Ext.get(this.plotterDiv).dom.style.height));
         LOADMASK = new Ext.LoadMask(Ext.get(this.plotterDiv).dom, {
             msg: '<div id="cida-load-msg">Loading...</div><img height="' + height + '" src="images/cida-anim.gif" />', 
             msgCls: 'cida-load-plotter'
         });
         LOADMASK.show();
-        
+
         this.topToolbar.removeAll(true);
-        
+
         // Add the title
         this.topToolbar.add(
             new Ext.Toolbar.TextItem({
@@ -128,34 +125,34 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 layout : 'table',
                 ref : 'plotter-toolbar-buttongroup',
                 items : [
-                new Ext.Button({
-                    text : 'a1fi',
-                    id : 'plotter-toolbar-btngrp-table1',
-                    sequencePosition : 0,
-                    pressed : this.visibility[0],
-                    enableToggle: true
-                }),
-                new Ext.Button({
-                    text : 'a2',
-                    id : 'plotter-toolbar-btngrp-table2',
-                    sequencePosition : 1,
-                    pressed : this.visibility[1],
-                    enableToggle: true
-                }), 
-                new Ext.Button({
-                    text : 'a1b',
-                    id : 'plotter-toolbar-btngrp-table3',
-                    sequencePosition : 2,
-                    pressed : this.visibility[2],
-                    enableToggle: true
-                }), 
-                new Ext.Button({
-                    text : 'b1',
-                    id : 'plotter-toolbar-btngrp-table4',
-                    sequencePosition : 3,
-                    pressed : this.visibility[3],
-                    enableToggle: true
-                })
+					new Ext.Button({
+						text : 'a1fi',
+						id : 'plotter-toolbar-btngrp-table1',
+						sequencePosition : 0,
+						pressed : this.visibility[0],
+						enableToggle: true
+					}),
+					new Ext.Button({
+						text : 'a2',
+						id : 'plotter-toolbar-btngrp-table2',
+						sequencePosition : 1,
+						pressed : this.visibility[1],
+						enableToggle: true
+					}), 
+					new Ext.Button({
+						text : 'a1b',
+						id : 'plotter-toolbar-btngrp-table3',
+						sequencePosition : 2,
+						pressed : this.visibility[2],
+						enableToggle: true
+					}),
+					new Ext.Button({
+						text : 'b1',
+						id : 'plotter-toolbar-btngrp-table4',
+						sequencePosition : 3,
+						pressed : this.visibility[3],
+						enableToggle: true
+					})
                 ]
             }),
             new Ext.Button({
@@ -170,94 +167,17 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 itemId : 'plotter-toolbar-download-button',
                 text : 'Download As CSV',
                 ref : 'plotter-toolbar-download-button'
-            }),
-            new Ext.Button({
-                itemId : 'plotter-toolbar-download-as-image-button',
-                text : 'Download As Image',
-                ref : '../plotter-toolbar-download-as-image-button',
-                hidden : ((Ext.isIE6 || Ext.isIE7 || Ext.isIE8) && !Ext.isIE9) ? true : false, // IE6,7,8 doesn't do canvas, so no image downloads for plotter
-                listeners : {
-                    click : function() {
-                        var dygraph = this.graph;
-                        var options = {}, 
-                        canvas = Dygraph.createCanvas();
-    
-                        Dygraph.update(options, Dygraph.Export.DEFAULT_ATTRS);
-                        Dygraph.update(options, options);
+            })
+		);
 
-                        canvas.width = dygraph.width_;
-                        canvas.height = dygraph.height_ + options.legendHeight;
-
-                        Dygraph.Export.drawBackground(canvas, "white");
-                        Dygraph.Export.drawPlot(canvas, dygraph, options);    
-                        Dygraph.Export.drawLegend(canvas, dygraph, options);
-
-                        var url = canvas.toDataURL();
-                        var base64Data = url.substring(url.indexOf(',') + 1);
-                        
-                        var id = Ext.id();
-                        var frame = document.createElement('iframe');
-                        frame.id = id;
-                        frame.name = id;
-                        frame.className = 'x-hidden'; 
-                        if (Ext.isIE) {
-                            frame.src = Ext.SSL_SECURE_URL;
-                        }
-                        document.body.appendChild(frame);
-
-                        if (Ext.isIE) {
-                            document.frames[id].name = id;
-                        }
-
-                        var form = Ext.DomHelper.append(document.body, {
-                            tag:'form',
-                            method:'post',
-                            action: 'export?filename=plotter.png&type=image/png;base64',
-                            target:id
-                        });
-                        
-                        Ext.DomHelper.append(form, {
-                            tag:'input',
-                            name : 'data',
-                            value: base64Data
-                        }); 
-                        document.body.appendChild(form);
-                        var callback = function(e) {
-                            var rstatus = (e && typeof e.type !== 'undefined'?e.type:this.dom.readyState );
-
-                            switch(rstatus){
-                                case 'loading':  //IE  has several readystate transitions
-                                case 'interactive': //IE
-
-                                    break;
-
-                                case 'load': //Gecko, Opera
-                                case 'complete': //IE
-                                    if(Ext.isIE){
-                                        this.dom.src = "javascript:false"; //cleanup
-                                    }
-                                    break;
-                                default:
-                            }
-                        };
-
-                        Ext.EventManager.on(frame, Ext.isIE?'readystatechange':'load', callback);
-                        form.submit();
-                        
-                    },
-                    scope: this
-                }
-            })  
-            );
-            
         for (var i = 0, itemCount = this.topToolbar['plotter-toolbar-buttongroup'].items.getCount();i < itemCount;i++) {
             var item = this.topToolbar['plotter-toolbar-buttongroup'].items.itemAt(i);
-            item.on('click', function(obj) {
+            item.on('click', function (obj) {
                 this.graph.setVisibility(obj.sequencePosition, obj.pressed );
                 this.visibility[obj.sequencePosition] = obj.pressed;
-            }, this)
+            }, this);
         }
-        this.topToolbar["plotter-toolbar-errorbars-button"].on('click', function(obj) {
+        this.topToolbar["plotter-toolbar-errorbars-button"].on('click', function (obj) {
             this.graph.updateOptions({
                 fillAlpha : obj.pressed ? 0.15 : 0.0
                 
@@ -265,14 +185,10 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             this.errorBarsOn = obj.pressed;
         }, this);          
         this.topToolbar.doLayout();
-        if (Ext.isIE) {
-            // TODO should do this
-            //this.topToolbar.remove("../plotter-toolbar-download-as-image-button");
-        }
         
-        Ext.iterate(this.scenarioGcmJSON, function(scenario, object) {
-            Ext.iterate(object, function(gcm) {
-                if (gcm != 'ensemble') {
+        Ext.iterate(this.scenarioGcmJSON, function (scenario, object) {
+            Ext.iterate(object, function (gcm) {
+                if (gcm !== 'ensemble') {
                     this.scenarioGcmJSON[scenario][gcm] = new Array();
                     var meta = {};
                     var url = endpoint.replace("{shapefile}", this.controller.getCurrentFOI());
@@ -288,7 +204,34 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         }, this);
         this.resizePlotter();
     },
-    resizePlotter : function() {
+	
+	/**
+	 * Using the leaf store, test whether or not it contains a scenario and 
+	 * whether or not that scenario contains a given gcm
+	 * 
+	 * @argument {Object} args "store" - {Object} The leaf store, "scenario" - {String} , "gcm" - {String}
+	 */
+	testScenarioGCMComboExists : function (args) {
+		args = args || {};
+		var store = args.store;
+		var scenario = args.scenario;
+		var gcm = args.gcm;
+		
+		var scenarioGCMComboExists = false;
+
+		// This should always be true, unless we selectively don't have scenarios
+		var scenarioIndex = store.find('scenarios', scenario);
+		if (scenarioIndex > -1) {
+			var gcmArray = this.leafStore.getAt(scenarioIndex).get('gcms').map(function (gcm) {
+				return this.cleanUpIdentifiers(gcm[0].toLowerCase());
+			}, this);
+			scenarioGCMComboExists = gcmArray.indexOf(gcm.toLowerCase()) > -1;
+		}
+		
+		return scenarioGCMComboExists;
+	},
+	
+    resizePlotter : function () {
         LOG.debug('Plotter:resizePlotter()');
         var divPlotter = Ext.get(this.plotterDiv);
         var divLegend = Ext.get(this.legendDiv);
@@ -300,18 +243,21 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             this.graph.resize(divPlotter.getWidth(), divPlotter.getHeight());
         }
     },
-    onLoadedCatstore : function(args) {
-        Ext.each(args.record.get("scenarios"), function(scenario) {
+	cloneScenarioGcmJSON : function () {
+		return Ext.util.JSON.decode(Ext.util.JSON.encode(this.origScenarioGcmJSON));
+	},
+    onLoadedCatstore : function (args) {
+        Ext.each(args.record.get("scenarios"), function (scenario) {
             var scenarioKey = this.cleanUpIdentifiers(scenario[0]);
-            this.scenarioGcmJSON[scenarioKey] = {};
-            Ext.each(args.record.get("gcms"), function(gcm) {
-                if (gcm[0] != 'Ensemble') {
+            this.origScenarioGcmJSON[scenarioKey] = {};
+            Ext.each(args.record.get("gcms"), function (gcm) {
+                if (gcm[0] !== 'Ensemble') {
                     var gcmKey = this.cleanUpIdentifiers(gcm[0]);
-                    this.scenarioGcmJSON[scenarioKey][gcmKey] = [];
+                    this.origScenarioGcmJSON[scenarioKey][gcmKey] = [];
                 }
             }, this);
         }, this);
-        
+		
         // Set up the text for the initial view of the plotter panel
         Ext.DomHelper.append(Ext.DomQuery.selectNode("div[id='dygraph-content']"), {
             tag : 'div', 
@@ -324,7 +270,29 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         // This tooltip will show up to the right of any title text
         this.titleTipText = '&nbsp;&nbsp;<span ext:qtip="'+args.record.get('helptext')['plotHelp']+'" class="x-combo-list-item"><img class="quicktip-img" src="images/info.gif" /></span>';
     },
-    loadSOSStore : function(meta, offering) {
+	
+	onLoadedLeafstore : function (args) {
+		this.scenarioGcmJSON = this.cloneScenarioGcmJSON();
+		this.leafStore = args.store;
+		Ext.iterate(this.scenarioGcmJSON, function (scenario, gcms, scenarioGcmJSON) {
+			for (var gcm in gcms) {
+				var hasGCM = this.testScenarioGCMComboExists({
+					store : this.leafStore,
+					gcm : gcm,
+					scenario : scenario
+				});
+
+				if (!hasGCM) {
+					delete scenarioGcmJSON[scenario][gcm];
+					if (Object.isEmpty(scenarioGcmJSON[scenario])) {
+						delete scenarioGcmJSON[scenario];
+					}
+				}
+			}
+        }, this);
+	},
+	
+    loadSOSStore : function (meta, offering) {
         var url = "proxy/" + meta.url + "?service=SOS&request=GetObservation&version=1.0.0&offering=" + encodeURIComponent(encodeURIComponent(offering)) + "&observedProperty=mean";
         
         this.sosStore.push(new GDP.SOSGetObservationStore({
@@ -337,10 +305,10 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             }),
             baseParams : {},
             listeners : {
-                load : function(store) {
+                load : function (store) {
                     this.globalArrayUpdate(store, meta);
                 },
-                exception : function() {
+                exception : function () {
                     LOG.debug('Plotter: SOS store has encountered an exception.');
                     // I only want to display this message once per request,
                     if (!this.errorDisplayed) {
@@ -353,7 +321,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             
         }));
     },
-    globalArrayUpdate : function(store, meta) {
+    globalArrayUpdate : function (store, meta) {
         LOG.debug('Plotter:globalArrayUpdate()');
         var record = store.getAt(0);
         if (!record) {
@@ -363,15 +331,15 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             }
             return;
         }
-        this.scenarioGcmJSON[meta.scenario][meta.gcm] = function(values) {
-            Ext.each(values, function(item, index, allItems) {
+        this.scenarioGcmJSON[meta.scenario][meta.gcm] = function (values) {
+            Ext.each(values, function (item, index, allItems) {
                 for(var i=0; i<item.length; i++) {
                     var value;
-                    if (i==0) {
+                    if (i === 0) {
                         value = Date.parseISO8601(item[i].split('T')[0]);
                     }
                     else {
-                        value = parseFloat(item[i])
+                        value = parseFloat(item[i]);
                     }
                     allItems[index][i] = value;
                 }
@@ -381,9 +349,9 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 
         var isComplete = true;
 
-        Ext.iterate(this.scenarioGcmJSON, function(key, value, object) {
-            Ext.iterate(value, function(key, value, object) {
-                if (value.length == 0) {
+        Ext.iterate(this.scenarioGcmJSON, function (key, value, object) {
+            Ext.iterate(value, function (key, value, object) {
+                if (value.length === 0) {
                     isComplete = false;
                 }
             }, this);
@@ -394,10 +362,10 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             var observationsLength;
             var scenarios = [];
             var gcms = [];
-            Ext.iterate(this.scenarioGcmJSON, function(scenario, value) {
+            Ext.iterate(this.scenarioGcmJSON, function (scenario, value) {
                 scenarios.push(scenario);
-                Ext.iterate(value, function(gcm, value) {
-                    if(gcms.indexOf(gcm) == -1 && gcm != 'ensemble') {
+                Ext.iterate(value, function (gcm, value) {
+                    if(gcms.indexOf(gcm) === -1 && gcm !== 'ensemble') {
                         gcms.push(gcm);
                     }
                     if (!observationsLength) {
@@ -415,20 +383,22 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 this.plotterData.push(new Array());
                 this.plotterData[i][0] = this.scenarioGcmJSON[scenarios[0]][gcms[0]][i][0];
 
-                Ext.each(scenarios, function(scenario) {
+                Ext.each(scenarios, function (scenario) {
                     var scenarioArray = [];
-                    Ext.each(gcms, function(gcm) {
-                        scenarioArray.push(this.scenarioGcmJSON[scenario][gcm][i][1]);
+                    Ext.each(gcms, function (gcm) {
+						if (this.scenarioGcmJSON[scenario][gcm]) {
+							scenarioArray.push(this.scenarioGcmJSON[scenario][gcm][i][1]);
+						}
                     }, this);
                     var min = Array.min(scenarioArray);
                     var mean = Array.mean(scenarioArray);
                     var max = Array.max(scenarioArray);
                     this.plotterData[i].push([min, mean, max]);
                     if (min < this.plotterYMin) {
-                        this.plotterYMin = min
+                        this.plotterYMin = min;
                     }
                     if (max > this.plotterYMax) {
-                        this.plotterYMax = max
+                        this.plotterYMax = max;
                     }
                 }, this);
             }
@@ -436,7 +406,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             
             // Set up the download CSV button
             this.topToolbar["plotter-toolbar-download-button"].un('click');          
-            this.topToolbar["plotter-toolbar-download-button"].on('click', function(){
+            this.topToolbar["plotter-toolbar-download-button"].on('click', function (){
                 var id = Ext.id();
                 var frame = document.createElement('iframe');
                 frame.id = id;
@@ -460,14 +430,14 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 Ext.DomHelper.append(form, {
                     tag:'input',
                     name : 'data',
-                    value: function(scope) {
+                    value: function (scope) {
                         var observationsLength;
                         var scenarios = [];
                         var gcms = [];
-                        Ext.iterate(scope.scenarioGcmJSON, function(scenario, value) {
+                        Ext.iterate(scope.scenarioGcmJSON, function (scenario, value) {
                             scenarios.push(scenario);
-                            Ext.iterate(value, function(gcm, value) {
-                                if(gcms.indexOf(gcm) == -1 && gcm != 'ensemble') {
+                            Ext.iterate(value, function (gcm, value) {
+                                if(gcms.indexOf(gcm) === -1 && gcm !== 'ensemble') {
                                     gcms.push(gcm);
                                 }
                                 if (!observationsLength) {
@@ -477,10 +447,12 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                         });
                     
                         var csv = '#' + scope.plotterTitle + ' calculated by ' + window.location + '\n';
-                        var line = 'date, '
-                        Ext.each(scenarios, function(scenario) {
-                            Ext.each(gcms, function(gcm) {
-                                line += gcm + " " + scenario + ",";
+                        var line = 'date, ';
+                        Ext.each(scenarios, function (scenario) {
+                            Ext.each(gcms, function (gcm) {
+								if (scope.scenarioGcmJSON[scenario][gcm]) {
+									line += gcm + " " + scenario + ",";
+								}
                             }, this);
                         }, this);
                         csv += line.substr(0, line.length - 1) + "\n";
@@ -489,9 +461,11 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                             var line2 = '';
                             line2 += scope.scenarioGcmJSON[scenarios[0]][gcms[0]][i][0].getFullYear() + ",";
 
-                            Ext.each(scenarios, function(scenario) {
-                                Ext.each(gcms, function(gcm) {
-                                    line2 += scope.scenarioGcmJSON[scenario][gcm][i][1] + ",";
+                            Ext.each(scenarios, function (scenario) {
+                                Ext.each(gcms, function (gcm) {
+									if (scope.scenarioGcmJSON[scenario][gcm]) {
+										line2 += scope.scenarioGcmJSON[scenario][gcm][i][1] + ",";
+									}
                                 }, this);
                             }, this);
                             csv += line2.substr(0, line2.length - 1) + "\n";
@@ -502,7 +476,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 }); 
 
                 document.body.appendChild(form);
-                var callback = function(e) {
+                var callback = function (e) {
                     var rstatus = (e && typeof e.type !== 'undefined'?e.type:this.dom.readyState );
 
                     switch(rstatus){
@@ -523,11 +497,11 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 
                 Ext.EventManager.on(frame, Ext.isIE?'readystatechange':'load', callback);
                 form.submit();
-            }, this)
+            }, this);
             
         }
     },
-    dygraphUpdateOptions : function(store) {
+    dygraphUpdateOptions : function (store) {
         var record = store.getAt(0);
         
         // this is mean for us, probably figure this out better?
@@ -559,17 +533,17 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 visibility : this.visibility,
                 axes: {
                     x: {
-                        valueFormatter: function(ms) {
+                        valueFormatter: function (ms) {
                             return '<span style="font-weight: bold; text-size: big">' +
                             new Date(ms).strftime('%Y') +
                             '</span>';
                         },
-                        axisLabelFormatter: function(d) {
+                        axisLabelFormatter: function (d) {
                             return d.strftime('%Y');
                         }
                     },
                     y: {
-                        valueFormatter: function(y) {
+                        valueFormatter: function (y) {
                             return Math.round(y) + " " + yaxisUnits + "<br />";
                         }
                     }
@@ -578,7 +552,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             );
     },
     // These are some business rules for how our scenario or gcms appear in urls
-    cleanUpIdentifiers : function(str) {
+    cleanUpIdentifiers : function (str) {
         str = str.toLowerCase();
         str = str.replace(' ', '_');
         str = str.replace('.', '-');

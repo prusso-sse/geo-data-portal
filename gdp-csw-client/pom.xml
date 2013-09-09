@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<artifactId>gdp</artifactId>
+		<groupId>gov.usgs.cida.gdp</groupId>
+		<version>24-SNAPSHOT</version>
+	</parent>
+	<artifactId>gdp-csw-client</artifactId>
+  
+	<name>GDP CSW JavaScript Client</name>
+  
+	<licenses>
+		<license>
+			<name>Public Domain</name>
+			<url>http://en.wikipedia.org/wiki/Public_domain_software</url>
+			<comments>
+				All work of the US Government enter into the Public Domain within
+				the United States.  Whether that work is public domain outside of
+				the United States depends on various factors.
+			</comments>
+		</license>
+	</licenses>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<destDir>${project.build.outputDirectory}/META-INF/resources/</destDir>
+	</properties>
+	
+	<build>
+		<resources>
+			<resource>
+				<directory>${project.basedir}/src/main/resources</directory>
+				<targetPath>${destDir}</targetPath>
+			</resource>
+		</resources>
+		
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

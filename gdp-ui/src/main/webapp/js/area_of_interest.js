@@ -408,12 +408,15 @@ var AOI = function () {
                         lowerCorner : minx + ' ' + miny,
                         upperCorner : maxx + ' ' + maxy
                     };
+					
                 }
             });  
             if (AOI.attributeBounds.lowerCorner === undefined || AOI.attributeBounds.upperCorner === undefined) {
                 logger.warn('Bounds for chosen layer could not be found');
             } else {
                 logger.debug('Bounds for chosen layer are: LOWER CORNER: ' + AOI.attributeBounds.lowerCorner + ', UPPER CORNER: ' + AOI.attributeBounds.upperCorner);
+				GDPCSWClient.lowerCorner = AOI.attributeBounds.lowerCorner;
+				GDPCSWClient.upperCorner = AOI.attributeBounds.upperCorner;
             }
         });
     }
@@ -463,7 +466,9 @@ var AOI = function () {
         
         AOI.attributeBounds.lowerCorner = '-180 -90';
         AOI.attributeBounds.upperCorner = '180 90';
-
+		GDPCSWClient.lowerCorner = AOI.attributeBounds.lowerCorner;
+		GDPCSWClient.upperCorner = AOI.attributeBounds.upperCorner;
+		
         if (ScienceBase.useSB) {
             logger.info('AOI.setSelectedAttributeBoundingBox(): LC/UC = ' + AOI.attributeBounds.lowerCorner + " / " + AOI.attributeBounds.upperCorner);
         } else {
@@ -487,6 +492,8 @@ var AOI = function () {
                         } else {
                             AOI.attributeBounds.lowerCorner = $(data).find('LowerCorner')[0].textContent;
                             AOI.attributeBounds.upperCorner = $(data).find('UpperCorner')[0].textContent;
+							GDPCSWClient.lowerCorner = AOI.attributeBounds.lowerCorner;
+							GDPCSWClient.upperCorner = AOI.attributeBounds.upperCorner;
                         }
                         logger.info('AOI.setSelectedAttributeBoundingBox(): LC/UC = ' + AOI.attributeBounds.lowerCorner + " / " + AOI.attributeBounds.upperCorner);
                     }, 

@@ -95,7 +95,7 @@ Ext.extend(GDP.CSWGetRecordsReader, Ext.data.DataReader, {
                                 var derivArr = [];
                                 var val = key.CharacterString.value;
                                 derivArr.push(val);
-                                if (abstrakt != null) {
+                                if (abstrakt !== null) {
                                     derivArr.push(abstrakt.quicktips.derivatives[val]);
                                 }
                                 values.derivatives.push(derivArr);
@@ -106,7 +106,7 @@ Ext.extend(GDP.CSWGetRecordsReader, Ext.data.DataReader, {
                                 var scenarioArr = [];
                                 var val = key.CharacterString.value;
                                 scenarioArr.push(val);
-                                if (abstrakt != null) {
+                                if (abstrakt !== null) {
                                     scenarioArr.push(abstrakt.quicktips.scenarios[val]);
                                 }
                                 values.scenarios.push(scenarioArr);
@@ -117,7 +117,7 @@ Ext.extend(GDP.CSWGetRecordsReader, Ext.data.DataReader, {
                                 var gcmArr = [];
                                 var val = key.CharacterString.value;
                                 gcmArr.push(val);
-                                if (abstrakt != null) {
+                                if (abstrakt !== null) {
                                     gcmArr.push(abstrakt.quicktips.gcms[val]);
                                 }
                                 values.gcms.push(gcmArr);
@@ -142,7 +142,7 @@ Ext.extend(GDP.CSWGetRecordsReader, Ext.data.DataReader, {
                         }
                     } 
                 }
-                if (abstrakt != null) {
+                if (abstrakt !== null) {
                     values.fieldLabels = abstrakt.fieldlabels;
                     values.helptext = abstrakt.helptext;
                 }
@@ -151,13 +151,6 @@ Ext.extend(GDP.CSWGetRecordsReader, Ext.data.DataReader, {
             
             records.push(new this.recordType(values));
         }, this);
-//        values.identifier = data.records[0].fileIdentifier...;
-//        values.languages = data.languages;
-//        values.operationsMetadata = data.operationsMetadata;
-//        values.processOfferings = data.processOfferings;
-//        values.serviceIdentification = data.serviceIdentification;
-//        values.serviceProvider = data.serviceProvider;
-        //records.push(new this.recordType(values));
         
         return {
             totalRecords: records.length,
