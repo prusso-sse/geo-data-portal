@@ -23,8 +23,7 @@ GDP.WPS = function (args) {
 			callbacks = args.callbacks || {
 				success : [],
 				error : []
-			},
-			process;
+			};
 
 		OpenLayers.Request.GET({
 			url: proxy ? proxy + url : url,
@@ -35,7 +34,7 @@ GDP.WPS = function (args) {
 				identifier: processId
 			},
 			success: function (response) {
-				process = new OpenLayers.Format.WPSDescribeProcess().read(
+				var process = new OpenLayers.Format.WPSDescribeProcess().read(
 					response.responseText
 				).processDescriptions[processId];
 
@@ -57,6 +56,7 @@ GDP.WPS = function (args) {
 				callback,
 				process = args.process,
 				me = this,
+				proxy = args.proxy || this.proxy,
 				scope = args.scope || me,
 				callbacks = args.callbacks || {
 					success : [],
@@ -74,6 +74,7 @@ GDP.WPS = function (args) {
 				}
 			} else {
 				describeProcess.call(scope, {
+					proxy : proxy,
 					process: process,
 					callbacks: callbacks
 				});
