@@ -38,7 +38,7 @@ GDP.UI = function (args) {
 
 								for (dvIdx = 0; dvIdx < domainValues.length; dvIdx++) {
 									value = domainValues[dvIdx].Value.value;
-									if (value.toLowerCase().contains('gov.usgs.cida.gdp.wps')) {
+									if (value.toLowerCase().indexOf('gov.usgs.cida.gdp.wps') !== -1) {
 										GDP.CONFIG.offeringMaps.wpsToCsw[value] = {};
 									}
 								}
@@ -69,7 +69,7 @@ GDP.UI = function (args) {
 													subjectArray = record.subject;
 													for (sIdx = 0; sIdx < subjectArray.length; sIdx++) {
 														subject = subjectArray[sIdx].value;
-														if (subject.toLowerCase().contains('gov.usgs.cida.gdp.wps')) {
+														if (subject.toLowerCase().indexOf('gov.usgs.cida.gdp.wps') !== -1) {
 															if (!wpsToCsw[subject][record.identifier[0].value]) {
 																wpsToCsw[subject][record.identifier[0].value] = record;
 															}
