@@ -1065,6 +1065,7 @@ var Dataset = function() {
     }
 
     function opendapDatasetSelected(datasetURL, useCache) {
+        useCache = !!useCache; //boolean cast in case undefined
         logger.debug('GDP: Attempting to retrieve grids using OpenDAP.');
         gDatasetType = _datasetTypeEnum.OPENDAP;
         _usingCache = useCache;
@@ -1194,6 +1195,7 @@ var Dataset = function() {
 	}
 
     function getTimeRange(datasetURL, selectedGrid, useCache) {
+        useCache = !!useCache;//boolean cast in case undefined
         logger.debug('GDP: Attaining grid time range for dataset: ' + datasetURL + ' and selected grid: ' + selectedGrid);
         var getTimeRangeWpsAlgorithm = 'gov.usgs.cida.gdp.wps.algorithm.discovery.GetGridTimeRange';
         var getTimeRangeWpsInputs = {
@@ -1707,6 +1709,7 @@ var Dataset = function() {
         },
 
         datasetSelected : function(datasetURL, wmsURL, useCache){
+            useCache = undefined === useCache ? _usingCache : useCache;
             _datasetURL = datasetURL;
             
             $(_DATASET_ID_TOOLTIP).hide();
