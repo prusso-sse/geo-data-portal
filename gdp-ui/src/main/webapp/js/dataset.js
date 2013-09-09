@@ -1546,7 +1546,7 @@ var Dataset = function() {
         
         $(_SELECT_DATASET_BUTTON).click(function() {
             logger.debug('GDP: User has selected a dataset. ');
-            Dataset.datasetSelected($(_DATASET_URL_INPUT_BOX).val(), undefined ,_usingCache);
+            Dataset.datasetSelected($(_DATASET_URL_INPUT_BOX).val());
         });
 
         if (Constant.ui.default_dataset_url.length > 0) {
@@ -1707,6 +1707,7 @@ var Dataset = function() {
         },
 
         datasetSelected : function(datasetURL, wmsURL, useCache){
+            useCache = undefined === useCache ? _usingCache : useCache;
             _datasetURL = datasetURL;
             
             $(_DATASET_ID_TOOLTIP).hide();
