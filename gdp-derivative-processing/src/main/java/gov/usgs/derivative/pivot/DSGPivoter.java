@@ -95,7 +95,6 @@ public class DSGPivoter {
         nLonVar.addAttribute(new Attribute(CF.STANDARD_NAME, "longitude"));
         nLonVar.addAttribute(new Attribute(CDM.UNITS, CDM.LON_UNITS));
         
-        // TODO get variables from input file and put them here
         Variable nMean = ncWriter.addVariable(null, "mean", DataType.DOUBLE, Arrays.asList(nStationDim, nTimeDim));
         nMean.addAttribute(new Attribute(CDM.UNITS, mMean.getUnitsString()));
         nMean.addAttribute(new Attribute(CF.COORDINATES, "time lat lon"));
@@ -118,14 +117,14 @@ public class DSGPivoter {
         DateTime currentDateTime = baseDateTime;
         for (int tIndex = 0; tIndex < timeCount; ++tIndex) {
             nTimeArray.setInt(tIndex, Days.daysBetween(baseDateTime, currentDateTime).getDays());
-            currentDateTime = currentDateTime.plusMonths(1);
+            currentDateTime = currentDateTime.plusYears(1);
         }
         ncWriter.write(nTimeVar, nTimeArray);
         
         for (Map.Entry<Integer, List<Double>> entry : observationMap.entrySet()) {
             int stationIndex = entry.getKey();
             List<Double> values = entry.getValue();
-            int timeMissing = timeCount - values.size();     
+            int timeMissing = timeCount - values.size();
             
             Array valueArray = Array.factory(DataType.DOUBLE, new int[] { 1, timeCount - timeMissing} );
             int valueArrayIndex = 0;
