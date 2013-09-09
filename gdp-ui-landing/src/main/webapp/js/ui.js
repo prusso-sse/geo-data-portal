@@ -304,6 +304,7 @@ GDP.UI = function (args) {
 
 			me.updateWpsDropdown();
 			me.updateCswDropdown();
+			$('#row-proceed').fadeOut();
 
 			this.updateStartInstructions({
 				title : 'Begin By Selecting An Algorithm',
@@ -331,6 +332,7 @@ GDP.UI = function (args) {
 
 			me.updateWpsDropdown();
 			me.updateCswDropdown();
+			$('#row-proceed').fadeOut();
 
 			this.updateStartInstructions({
 				title : 'Begin By Selecting A Dataset',
