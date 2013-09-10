@@ -533,7 +533,7 @@ public class RunDerivatives {
                 List<GridDatatype> gdtl = gds.getGrids();
                 for (GridDatatype gdt : gdtl) {
                     if (gdt.getName().startsWith("x")) {
-                        System.out.println("running " + gdt.getName());
+                        LOGGER.info("running " + gdt.getName());
                         GridTraverser t = new GridTraverser(gdt);
                         GridVisitor v = new RepeatingPeriodTimeStepAveragingVisitor(Period.months(1), options.outputDir);
                         t.traverse(v);
