@@ -15,8 +15,13 @@ public class RepeatingPeriodTimeStepAveragingVisitor extends AbstractTimeStepAve
 
     private ReadablePeriod repeatingPeriod;
 
-    public RepeatingPeriodTimeStepAveragingVisitor(ReadablePeriod repeatingPeriod) {
+    public RepeatingPeriodTimeStepAveragingVisitor(ReadablePeriod repeatingPeriod, String outputDir) {
         this.repeatingPeriod = repeatingPeriod;
+        if (outputDir != null) {
+            this.outputDir = outputDir;
+        } else {
+            this.outputDir = DerivativeUtil.DEFAULT_P30Y_PATH;
+        }
     }
    
     @Override

@@ -53,6 +53,8 @@ public abstract class DerivativeGridVisitor extends GridVisitor {
     
     private final boolean cal365Hack;
     
+    protected String outputDir;
+    
     public DerivativeGridVisitor() {
         this(false);
     }

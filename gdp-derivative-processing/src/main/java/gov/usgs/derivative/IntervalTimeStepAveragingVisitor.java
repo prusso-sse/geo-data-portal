@@ -15,8 +15,13 @@ public class IntervalTimeStepAveragingVisitor extends AbstractTimeStepAveragingV
 
     private List<Interval> intervalList;
 
-    public IntervalTimeStepAveragingVisitor(List<Interval> intervalList) {
+    public IntervalTimeStepAveragingVisitor(List<Interval> intervalList, String outputDir) {
         this.intervalList = intervalList;
+        if (outputDir != null) {
+            this.outputDir = outputDir;
+        } else {
+            this.outputDir = DerivativeUtil.DEFAULT_P30Y_PATH;
+        }
     }
    
     @Override

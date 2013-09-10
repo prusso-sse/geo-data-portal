@@ -31,9 +31,16 @@ import ucar.units.ConversionException;
 public class AnnualScenarioEnsembleAveragingVisitor extends DerivativeGridVisitor {
 
     private final String scenario;
+    private final int inputGridCount;
     
-    public AnnualScenarioEnsembleAveragingVisitor(String scenario) {
+    public AnnualScenarioEnsembleAveragingVisitor(String scenario, int inputGridCount, String outputDir) {
         this.scenario = scenario;
+        this.inputGridCount = inputGridCount;
+        if (outputDir != null) {
+            this.outputDir = outputDir;
+        } else {
+            this.outputDir = DerivativeUtil.DEFAULT_P1Y_PATH;
+        }
     }
     
     protected String generateDerivativeOutputVariableName(List<GridDatatype> gridDatatypeList) {
@@ -54,7 +61,7 @@ public class AnnualScenarioEnsembleAveragingVisitor extends DerivativeGridVisito
     
     @Override
     protected int getInputGridCount() {
-        return 4;
+        return inputGridCount;
     }
 
     @Override
@@ -86,7 +93,7 @@ public class AnnualScenarioEnsembleAveragingVisitor extends DerivativeGridVisito
 
     @Override
     protected String getOutputFilePath() {
-        return DerivativeUtil.DEFAULT_P1Y_PATH;
+        return this.outputDir;
     }
 
     @Override
