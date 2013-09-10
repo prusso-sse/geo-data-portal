@@ -113,10 +113,9 @@ public abstract class AbstractTimeStepAveragingVisitor extends DerivativeGridVis
         for (int inputTimeStepIndex = 0; inputTimeStepIndex < inputTimeStepCount; ++inputTimeStepIndex) {
             Date inputTimeStepDate = tAxis.getTimeDate(inputTimeStepIndex);
             int outputTimeStepIndex = getTimeStepDescriptor().getOutputTimeStepIndex(toDateTimeUTC(inputTimeStepDate));
-            if (outputTimeStepIndex < 0) {
-                continue; // skip missing time steps
+            if (outputTimeStepIndex >= 0) {
+                inputTimeStepCountForOutputTimeStep[outputTimeStepIndex]++;
             }
-            inputTimeStepCountForOutputTimeStep[outputTimeStepIndex]++;
         }
         int tCountMax = 0;
         for(int tCount : inputTimeStepCountForOutputTimeStep) {
