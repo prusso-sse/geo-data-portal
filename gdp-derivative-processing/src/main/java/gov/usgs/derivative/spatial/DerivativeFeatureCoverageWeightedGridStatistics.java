@@ -96,6 +96,7 @@ public class DerivativeFeatureCoverageWeightedGridStatistics {
         List<Object> attributeList = coverageByIndex.getAttributeValueList();
 
         // START HACK
+        // may want to switch to using StationTimeSeriesMultiDimensional
         RecordType rt = new RecordType(gridDatatype.getCoordinateSystem().getTimeAxis1D().getUnitsString());
         for (Statistic statistic : statisticList) {
             Map<String, Object> attributeMap = new LinkedHashMap<String, Object>();

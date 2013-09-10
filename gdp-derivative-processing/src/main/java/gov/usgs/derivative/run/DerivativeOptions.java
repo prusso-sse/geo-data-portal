@@ -13,10 +13,11 @@ public class DerivativeOptions {
     public enum Process {
         P1D,
         P1Y,
-        P1Y30D,
-        P30Y,
+        P1YAVG30Y,
+        P30YDELTA,
         P1M,
-        SPATIAL;
+        SPATIAL,
+        PIVOT;
     }
     
     public enum VariableType {
@@ -31,8 +32,14 @@ public class DerivativeOptions {
     @Option(name = "-o", metaVar = "DIR", usage = "directory to write output files to")
     public String outputDir = ".";
     
+    @Option(name = "-of", metaVar = "FILE", usage = "output file")
+    public String outputFile = null;
+    
     @Option(name = "-s", usage = "shapefile to do spatial analysis with")
     public File shapefile = null;
+    
+    @Option(name = "-attr", usage = "attribute to get id to use in spatial analysis")
+    public String attribute = null;
     
     @Option(name = "-p", required = true, usage = "which derivative process to run at this step")
     public Process process = null;

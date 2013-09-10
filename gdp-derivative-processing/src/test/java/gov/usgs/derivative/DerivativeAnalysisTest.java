@@ -27,7 +27,6 @@ import ucar.nc2.ft.FeatureDatasetFactoryManager;
  *
  * @author tkunicki
  */
-@Ignore
 public class DerivativeAnalysisTest {
     
     public enum VariableType {
@@ -194,22 +193,22 @@ public class DerivativeAnalysisTest {
                     }
                     {
                         GridTraverser t = new GridTraverser(a1bList);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1b");
+                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1b", 4, DerivativeUtil.DEFAULT_P1Y_PATH);
                         t.traverse(v);
                     }
                     {
                         GridTraverser t = new GridTraverser(a1fiList);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1fi");
+                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a1fi", 4, DerivativeUtil.DEFAULT_P1Y_PATH);
                         t.traverse(v);
                     }
                     {
                         GridTraverser t = new GridTraverser(a2List);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a2");
+                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("a2", 4, DerivativeUtil.DEFAULT_P1Y_PATH);
                         t.traverse(v);
                     }
                     {
                         GridTraverser t = new GridTraverser(b1List);
-                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("b1");
+                        GridVisitor v = new AnnualScenarioEnsembleAveragingVisitor("b1", 4, DerivativeUtil.DEFAULT_P1Y_PATH);
                         t.traverse(v);
                     }
                 }
@@ -221,21 +220,21 @@ public class DerivativeAnalysisTest {
     }
     
     @Test
-    @Ignore
     public void calculateP1YAverageOverP30Y() throws IOException {
         FeatureDataset fds = null;
         
         List<String> gridP1YList = Arrays.asList(
                 new String[] {
-                    "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.pr.ncml",
-                    "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.tmax.ncml",
-                    "/Users/tkunicki/Downloads/derivatives/derivative-days_below_threshold.tmin.ncml",
-                    "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_above_threshold.tmax.ncml",
-                    "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_below_threshold.pr.ncml",
-                    "/Users/tkunicki/Downloads/derivatives/derivative-heating_degree_days.ncml",
-                    "/Users/tkunicki/Downloads/derivatives/derivative-cooling_degree_days.ncml",
-                    "/Users/tkunicki/Downloads/derivatives/derivative-growing_degree_days.ncml",
-                    "/Users/tkunicki/Downloads/derivatives/derivative-growing_season_length.ncml",
+                    "/home/jiwalker/mnt/striped/derivatives/ncmls/derivative-days_above_threshold.tmax.ncml"
+//                    "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.pr.ncml",
+//                    "/Users/tkunicki/Downloads/derivatives/derivative-days_above_threshold.tmax.ncml",
+//                    "/Users/tkunicki/Downloads/derivatives/derivative-days_below_threshold.tmin.ncml",
+//                    "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_above_threshold.tmax.ncml",
+//                    "/Users/tkunicki/Downloads/derivatives/derivative-spell_length_below_threshold.pr.ncml",
+//                    "/Users/tkunicki/Downloads/derivatives/derivative-heating_degree_days.ncml",
+//                    "/Users/tkunicki/Downloads/derivatives/derivative-cooling_degree_days.ncml",
+//                    "/Users/tkunicki/Downloads/derivatives/derivative-growing_degree_days.ncml",
+//                    "/Users/tkunicki/Downloads/derivatives/derivative-growing_season_length.ncml",
                 });
 
         for (String gridP1Y : gridP1YList) {
@@ -258,7 +257,7 @@ public class DerivativeAnalysisTest {
                                     new Interval("2011-01-01TZ/2041-01-01TZ"),
                                     new Interval("2041-01-01TZ/2071-01-01TZ"),
                                     new Interval("2071-01-01TZ/2100-01-01TZ"),
-                                }));
+                                }), "/tmp");
                         t.traverse(v);
                     }
                 }
@@ -301,7 +300,7 @@ public class DerivativeAnalysisTest {
                     for (GridDatatype gdt : gdtl) { 
                         System.out.println("running " + gdt.getName());
                         GridTraverser t = new GridTraverser(gdt);
-                        GridVisitor v = new TimeStepDeltaVisitor();
+                        GridVisitor v = new TimeStepDeltaVisitor(null);
                         t.traverse(v);
                     }
                 }

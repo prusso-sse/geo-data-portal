@@ -47,7 +47,7 @@ public class TimeStepAveragingTest {
                         if (gdt.getName().startsWith("x")) {
                             System.out.println("running " + gdt.getName());
                             GridTraverser t = new GridTraverser(gdt);
-                            GridVisitor v = new RepeatingPeriodTimeStepAveragingVisitor(Period.months(1));
+                            GridVisitor v = new RepeatingPeriodTimeStepAveragingVisitor(Period.months(1), null);
                             t.traverse(v);
                         }
                     }
