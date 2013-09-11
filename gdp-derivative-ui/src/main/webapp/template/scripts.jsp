@@ -42,8 +42,8 @@
 </jsp:include>
 
 <%-- Extended Openlayers/GeoExt readers/writers --%>
-<script type="text/javascript" src='${param["ComponentDir"]}/CSW/Format/v2_0_2.js'></script>
-<script type="text/javascript" src='${param["ComponentDir"]}/SOS/Format/SOSGetObservation.js'></script>
+<script type="text/javascript" src='openlayers/extensions/format/csw/v2_0_2.js'></script>
+<script type="text/javascript" src='openlayers/extensions/format/sos/SOSGetObservation.js'></script>
 <script type="text/javascript" src='${param["ComponentDir"]}/CSW/CSWGetRecordsStore.js'></script>
 <script type="text/javascript" src='${param["ComponentDir"]}/CSW/CSWGetRecordsReader.js'></script>
 <script type="text/javascript" src='${param["ComponentDir"]}/SOS/SOSGetObservationStore.js'></script>
