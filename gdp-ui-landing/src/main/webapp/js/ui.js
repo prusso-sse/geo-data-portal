@@ -367,19 +367,13 @@ GDP.UI = function (args) {
 			$('#btn-proceed').off('click', this.bindProceedButton);
 			$('#btn-proceed').on('click', function () {
 				var csw,
-					cswRecord,
-					uriIndex,
-					uri,
+					record,
 					wps = $('#form-control-select-wps').val(),
 					win;
-				cswRecord = GDP.CONFIG.offeringMaps.cswIdentToRecord[$('#form-control-select-csw').val()];
-				for (uriIndex = 0; uriIndex < cswRecord.URI.length; uriIndex++) {
-					uri = cswRecord.URI[uriIndex];
-					if (uri.name.toLowerCase() === 'opendap') {
-						csw = encodeURIComponent(uri.value);
-					}
-				}
-
+				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[$('#form-control-select-csw').val()];
+				csw = GDP.CONFIG.cswClient.getEndpointFromRecord({
+					record : record
+				});
 				win = window.open(GDP.CONFIG.hosts.gdp + '?csw=' + csw + '&wps=' + wps, '_gdp');
 				win.focus();
 			});

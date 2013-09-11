@@ -285,6 +285,38 @@ GDP.CSW = function (args) {
 			}
 
 			return abstract;
+		},
+		getEndpointFromRecord = function(args) {
+			args = args || {};
+			if (!args.record) {
+				throw "undefined record passed in";
+			}
+			var record = args.record,
+				distributionInfo,
+				transferOption,
+				transferOptions,
+				url,
+				protocol,
+				toIndex,
+				endpoint = '';
+			
+			if (record.hasOwnProperty('distributionInfo')) {
+				distributionInfo  = record.distributionInfo;
+				if (distributionInfo.hasOwnProperty('transferOptions')) {
+					transferOptions = distributionInfo.transferOptions;
+					for (toIndex = 0; toIndex < transferOptions.length && endpoint === ''; toIndex++) {
+						transferOption = transferOptions[toIndex];
+						protocol = transferOption.onLine[0].name.CharacterString.value.toLowerCase();
+						url = transferOption.onLine[0].linkage.URL;
+						if (protocol === 'opendap' || url.toLowerCase().indexOf('wcs')) {
+							endpoint = url;
+						}
+					}
+				}
+			}
+			
+			return endpoint;
+			
 		};
 
 	return {
@@ -295,6 +327,7 @@ GDP.CSW = function (args) {
 		getAlgorithmArrayFromRecord : getAlgorithmArrayFromRecord,
 		getTitleFromRecord : getTitleFromRecord,
 		getAbstractFromRecord : getAbstractFromRecord,
+		getEndpointFromRecord : getEndpointFromRecord,
 		url : this.url,
 		proxy : this.proxy,
 		capabilitiesDocument : this.capabilitiesDocument
