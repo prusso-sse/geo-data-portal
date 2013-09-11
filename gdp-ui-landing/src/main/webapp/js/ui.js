@@ -18,7 +18,6 @@ GDP.UI = function (args) {
 		$('#ccsa-area').children().slice(0, 2).remove();
 
 		var me = this,
-			chosenStartPath,
 			removeOverlay = function () {
 				$('#overlay').fadeOut(
 					function () {
@@ -52,6 +51,7 @@ GDP.UI = function (args) {
 												var records = cswGetRecRespObj.records,
 													wpsToCsw = GDP.CONFIG.offeringMaps.wpsToCsw,
 													cswToWps = GDP.CONFIG.offeringMaps.cswToWps,
+													urlToDataset = GDP.CONFIG.offeringMaps.urlToDataset,
 													rIdx,
 													record,
 													algIdx,
@@ -371,9 +371,9 @@ GDP.UI = function (args) {
 					wps = $('#form-control-select-wps').val(),
 					win;
 				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[$('#form-control-select-csw').val()];
-				csw = GDP.CONFIG.cswClient.getEndpointFromRecord({
+				csw = encodeURIComponent(GDP.CONFIG.cswClient.getEndpointFromRecord({
 					record : record
-				});
+				}));
 				win = window.open(GDP.CONFIG.hosts.gdp + '?csw=' + csw + '&wps=' + wps, '_gdp');
 				win.focus();
 			});

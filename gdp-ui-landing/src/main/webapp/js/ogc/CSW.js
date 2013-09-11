@@ -241,7 +241,7 @@ GDP.CSW = function (args) {
 			}
 			return algorithmArray;
 		},
-		getTitleFromRecord = function(args) {
+		getTitleFromRecord = function (args) {
 			args = args || {};
 			if (!args.record) {
 				throw "undefined record passed in";
@@ -264,7 +264,7 @@ GDP.CSW = function (args) {
 
 			return title;
 		},
-		getAbstractFromRecord = function(args) {
+		getAbstractFromRecord = function (args) {
 			args = args || {};
 			if (!args.record) {
 				throw "undefined record passed in";
@@ -272,7 +272,6 @@ GDP.CSW = function (args) {
 			var record = args.record,
 				abstract = '',
 				idInfoIdx,
-				citation,
 				idInfoElement;
 
 			if (record.hasOwnProperty('identificationInfo')) {
@@ -286,7 +285,7 @@ GDP.CSW = function (args) {
 
 			return abstract;
 		},
-		getEndpointFromRecord = function(args) {
+		getEndpointFromRecord = function (args) {
 			args = args || {};
 			if (!args.record) {
 				throw "undefined record passed in";
@@ -299,7 +298,7 @@ GDP.CSW = function (args) {
 				protocol,
 				toIndex,
 				endpoint = '';
-			
+
 			if (record.hasOwnProperty('distributionInfo')) {
 				distributionInfo  = record.distributionInfo;
 				if (distributionInfo.hasOwnProperty('transferOptions')) {
@@ -314,9 +313,8 @@ GDP.CSW = function (args) {
 					}
 				}
 			}
-			
+
 			return endpoint;
-			
 		};
 
 	return {
