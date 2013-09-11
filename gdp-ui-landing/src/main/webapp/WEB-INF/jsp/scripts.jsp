@@ -25,6 +25,7 @@
 
 <%-- OpenLayers --%>
 <script type="text/javascript" src="webjars/openlayers/2.13.1/OpenLayers<%= dev ? ".debug" : ""%>.js"></script>
+<script type="text/javascript" src='openlayers/extensions/format/csw/v2_0_2.js'></script>
 
 <%-- Sarissa XML parsing library --%>
 <script type="text/javascript" src="js/sarissa/sarissa.js"></script>

@@ -208,6 +208,83 @@ GDP.CSW = function (args) {
 					}
 				}
 			});
+		},
+		getAlgorithmArrayFromRecord = function (args) {
+			args = args || {};
+			if (!args.record) {
+				throw "undefined record passed in";
+			}
+			var record = args.record,
+				idInfoIdx,
+				idInfoElement,
+				dkIdx,
+				kwArray,
+				kwIdx,
+				keyword,
+				algorithmArray = [];
+
+			if (record.hasOwnProperty('identificationInfo')) {
+				for (idInfoIdx = 0; idInfoIdx < record.identificationInfo.length; idInfoIdx++) {
+					idInfoElement = record.identificationInfo[idInfoIdx];
+					if (idInfoElement.hasOwnProperty('descriptiveKeywords')) {
+						for (dkIdx = 0; dkIdx < idInfoElement.descriptiveKeywords.length; dkIdx++) {
+							kwArray = idInfoElement.descriptiveKeywords[dkIdx].keyword;
+							for (kwIdx = 0; kwIdx < kwArray.length; kwIdx++) {
+								keyword = kwArray[kwIdx].CharacterString.value;
+								if (keyword.toLowerCase().indexOf('gov.usgs.cida.gdp.wps') !== -1) {
+									algorithmArray.push(keyword);
+								}
+							}
+						}
+					}
+				}
+			}
+			return algorithmArray;
+		},
+		getTitleFromRecord = function(args) {
+			args = args || {};
+			if (!args.record) {
+				throw "undefined record passed in";
+			}
+			var record = args.record,
+				title = '',
+				idInfoIdx,
+				citation,
+				idInfoElement;
+
+			if (record.hasOwnProperty('identificationInfo')) {
+				for (idInfoIdx = 0; idInfoIdx < record.identificationInfo.length && title === ''; idInfoIdx++) {
+					idInfoElement = record.identificationInfo[idInfoIdx];
+					if (idInfoElement.hasOwnProperty('citation')) {
+						citation = idInfoElement.citation;
+						title = citation.title.CharacterString.value;
+					}
+				}
+			}
+
+			return title;
+		},
+		getAbstractFromRecord = function(args) {
+			args = args || {};
+			if (!args.record) {
+				throw "undefined record passed in";
+			}
+			var record = args.record,
+				abstract = '',
+				idInfoIdx,
+				citation,
+				idInfoElement;
+
+			if (record.hasOwnProperty('identificationInfo')) {
+				for (idInfoIdx = 0; idInfoIdx < record.identificationInfo.length && abstract === ''; idInfoIdx++) {
+					idInfoElement = record.identificationInfo[idInfoIdx];
+					if (idInfoElement.hasOwnProperty('abstract')) {
+						abstract = idInfoElement.abstract.CharacterString.value;
+					}
+				}
+			}
+
+			return abstract;
 		};
 
 	return {
@@ -215,6 +292,9 @@ GDP.CSW = function (args) {
 		getCapabilitiesKeywords : getCapabilitiesKeywords,
 		getRecordsByKeywords : getRecordsByKeywords,
 		getDomain : getDomain,
+		getAlgorithmArrayFromRecord : getAlgorithmArrayFromRecord,
+		getTitleFromRecord : getTitleFromRecord,
+		getAbstractFromRecord : getAbstractFromRecord,
 		url : this.url,
 		proxy : this.proxy,
 		capabilitiesDocument : this.capabilitiesDocument
