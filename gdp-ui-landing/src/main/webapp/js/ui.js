@@ -2,6 +2,7 @@ var GDP = GDP || {};
 
 // JSLint fixes
 /*global $ */
+/*global window */
 /*jslint plusplus: true */
 
 GDP.UI = function (args) {
@@ -17,8 +18,13 @@ GDP.UI = function (args) {
 		$('#ccsa-area').children().slice(0, 2).remove();
 
 		var me = this,
+			chosenStartPath,
 			removeOverlay = function () {
-				$('#overlay').fadeOut();
+				$('#overlay').fadeOut(
+					function () {
+						$('#overlay').remove();
+					}
+				);
 			},
 			updateOfferingMaps = function () {
 				GDP.CONFIG.cswClient.getDomain({
@@ -32,7 +38,7 @@ GDP.UI = function (args) {
 
 								for (dvIdx = 0; dvIdx < domainValues.length; dvIdx++) {
 									value = domainValues[dvIdx].Value.value;
-									if (value.toLowerCase().contains('gov.usgs.cida.gdp.wps')) {
+									if (value.toLowerCase().indexOf('gov.usgs.cida.gdp.wps') !== -1) {
 										GDP.CONFIG.offeringMaps.wpsToCsw[value] = {};
 									}
 								}
@@ -63,7 +69,7 @@ GDP.UI = function (args) {
 													subjectArray = record.subject;
 													for (sIdx = 0; sIdx < subjectArray.length; sIdx++) {
 														subject = subjectArray[sIdx].value;
-														if (subject.toLowerCase().contains('gov.usgs.cida.gdp.wps')) {
+														if (subject.toLowerCase().indexOf('gov.usgs.cida.gdp.wps') !== -1) {
 															if (!wpsToCsw[subject][record.identifier[0].value]) {
 																wpsToCsw[subject][record.identifier[0].value] = record;
 															}
@@ -113,31 +119,67 @@ GDP.UI = function (args) {
 					}
 				});
 			};
+
 		this.cswDropdownChanged = function (event) {
 			var value = event.target.value,
 				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[value],
 				algInd,
+				alg,
+				currentValue,
 				offeringsObj = {};
 
 			if (!value) {
+				$('#row-proceed').fadeOut();
 				$('#p-csw-information-title').html('');
 				$('#p-csw-information-content').html('');
+				if (me.chosenStartPath === 'dataset') {
+					$('#row-wps-select').fadeOut();
+					$('#form-control-select-wps option[value=""]').val('').change();
+				}
 			} else {
 				$('#p-csw-information-title').html(GDP.CONFIG.offeringMaps.cswIdentToRecord[value].title[0].value);
 				$('#p-csw-information-content').html(GDP.CONFIG.offeringMaps.cswIdentToRecord[value].abstract[0]);
+				if (me.chosenStartPath === 'dataset') {
+					for (algInd = 0; algInd < validAlgorithms.length; algInd++) {
+						alg = validAlgorithms[algInd];
+						offeringsObj[alg] = alg;
+					}
+
+					currentValue = $('#form-control-select-wps').val();
+
+					me.updateWpsDropdown({
+						offerings: offeringsObj
+					});
+
+					if ($('#form-control-select-wps option[value="' + currentValue + '"]').length) {
+						$('#form-control-select-wps').val(currentValue).change();
+					} else {
+						$('#form-control-select-wps option[value=""]').val('').change();
+					}
+					$('#row-wps-select').fadeIn();
+				} else {
+					if ($('#form-control-select-csw').val()) {
+						me.bindProceedButton();
+						$('#row-proceed').fadeIn();
+					}
+				}
 			}
 		};
 
 		this.wpsDropdownChanged = function (event) {
 			var value = event.target.value,
 				validOfferings = GDP.CONFIG.offeringMaps.wpsToCsw[value],
-				offering,
-				me = this,
-				offeringsObj = {};
+				currentValue,
+				me = this;
 
 			if (!value) {
+				$('#row-proceed').fadeOut();
 				$('#p-wps-information-title').html('');
 				$('#p-wps-information-content').html('');
+				if (me.chosenStartPath === 'algorithm') {
+					$('#row-csw-select').fadeOut();
+					$('#form-control-select-csw option[value=""]').val('').change();
+				}
 			} else {
 				GDP.CONFIG.wpsClient.getProcessDescription({
 					process : value,
@@ -146,6 +188,25 @@ GDP.UI = function (args) {
 							function (processResponse) {
 								$('#p-wps-information-title').html(processResponse.title);
 								$('#p-wps-information-content').html(processResponse.abstract);
+								if (me.chosenStartPath === 'algorithm') {
+									currentValue = $('#form-control-select-wps').val();
+
+									me.updateCswDropdown({
+										offerings: validOfferings
+									});
+
+									if ($('#form-control-select-csw option[value="' + currentValue + '"]').length) {
+										$('#form-control-select-csw').val(currentValue).change();
+									} else {
+										$('#form-control-select-csw option[value=""]').val('').change();
+									}
+									$('#row-csw-select').fadeIn();
+								} else {
+									if ($('#form-control-select-wps').val()) {
+										me.bindProceedButton();
+										$('#row-proceed').fadeIn();
+									}
+								}
 							}
 						],
 						error : [
@@ -161,7 +222,7 @@ GDP.UI = function (args) {
 
 		this.updateCswDropdown = function (args) {
 			args = args || {};
-			var cswOfferings =  args.cswOfferings || GDP.CONFIG.offeringMaps.cswToWps,
+			var offerings =  args.offerings || GDP.CONFIG.offeringMaps.cswToWps,
 				dropdown = $('#form-control-select-csw'),
 				ident;
 
@@ -175,8 +236,8 @@ GDP.UI = function (args) {
 						selected : 'selected'
 					}).html('')
 			);
-			for (ident in cswOfferings) {
-				if (cswOfferings.hasOwnProperty(ident)) {
+			for (ident in offerings) {
+				if (offerings.hasOwnProperty(ident)) {
 					dropdown.append(
 						$('<option />')
 							.attr({
@@ -191,7 +252,7 @@ GDP.UI = function (args) {
 
 		this.updateWpsDropdown = function (args) {
 			args = args || {};
-			var wpsOfferings = args.wpsOfferings || GDP.CONFIG.offeringMaps.wpsToCsw,
+			var offerings = args.offerings || GDP.CONFIG.offeringMaps.wpsToCsw,
 				dropdown = $('#form-control-select-wps'),
 				ident;
 
@@ -206,8 +267,8 @@ GDP.UI = function (args) {
 					}).html('')
 			);
 
-			for (ident in wpsOfferings) {
-				if (wpsOfferings.hasOwnProperty(ident)) {
+			for (ident in offerings) {
+				if (offerings.hasOwnProperty(ident)) {
 					dropdown.append(
 						$('<option />')
 							.attr({
@@ -217,8 +278,8 @@ GDP.UI = function (args) {
 				}
 			}
 
-			dropdown.off('change', this.wpsDropdownChanged);
-			dropdown.on('change', this.wpsDropdownChanged);
+			dropdown.off('change', $.proxy(this.wpsDropdownChanged, this));
+			dropdown.on('change', $.proxy(this.wpsDropdownChanged, this));
 		};
 
 		this.errorEncountered = function (args) {
@@ -239,6 +300,12 @@ GDP.UI = function (args) {
 
 		this.algorithmStartButtonSelected = function (event) {
 			var me = this;
+			this.chosenStartPath = 'algorithm';
+
+			me.updateWpsDropdown();
+			me.updateCswDropdown();
+			$('#row-proceed').fadeOut();
+
 			this.updateStartInstructions({
 				title : 'Begin By Selecting An Algorithm',
 				content : 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, ' +
@@ -254,13 +321,19 @@ GDP.UI = function (args) {
 			$('#row-csw-select').fadeOut(function () {
 				$('#row-wps-select').fadeOut(function () {
 					$('#row-wps-select').insertBefore($('#row-csw-select'));
-					me.updateWpsDropdown();
 					$('#row-wps-select').fadeIn();
 				});
 			});
 		};
 
 		this.datasetStartButtonSelected = function (event) {
+			var me = this;
+			me.chosenStartPath = 'dataset';
+
+			me.updateWpsDropdown();
+			me.updateCswDropdown();
+			$('#row-proceed').fadeOut();
+
 			this.updateStartInstructions({
 				title : 'Begin By Selecting A Dataset',
 				content : 'Sed ut perspiciatis unde omnis iste natus error sit ' +
@@ -275,13 +348,36 @@ GDP.UI = function (args) {
 			$('#row-wps-select').fadeOut(function () {
 				$('#row-csw-select').fadeOut(function () {
 					$('#row-csw-select').insertBefore($('#row-wps-select'));
-					me.updateCswDropdown();
 					$('#row-csw-select').fadeIn();
 				});
 			});
 		};
 
+		this.bindProceedButton = function () {
+			$('#btn-proceed').off('click', this.bindProceedButton);
+			$('#btn-proceed').on('click', function () {
+				var csw,
+					cswRecord,
+					uriIndex,
+					uri,
+					wps = $('#form-control-select-wps').val(),
+					win;
+				cswRecord = GDP.CONFIG.offeringMaps.cswIdentToRecord[$('#form-control-select-csw').val()];
+				for (uriIndex = 0; uriIndex < cswRecord.URI.length; uriIndex++) {
+					uri = cswRecord.URI[uriIndex];
+					if (uri.name.toLowerCase() === 'opendap') {
+						csw = encodeURIComponent(uri.value);
+					}
+				}
+
+				win = window.open(GDP.CONFIG.hosts.gdp + '?csw=' + csw + '&wps=' + wps, '_gdp');
+				win.focus();
+			});
+		};
+
 		this.initializationCompleted = function () {
+			me.updateWpsDropdown();
+			me.updateCswDropdown();
 			removeOverlay();
 			$('#btn-choice-algorithm').on('change', $.proxy(this.algorithmStartButtonSelected, this));
 			$('#btn-choice-dataset').on('change', $.proxy(this.datasetStartButtonSelected, this));
@@ -331,10 +427,12 @@ GDP.UI = function (args) {
 	this.init();
 
 	return {
+		bindProceedButton : this.bindProceedButton,
 		updateCswDropdown : this.updateCswDropdown,
 		updateWpsDropdown : this.updateWpsDropdown,
 		cswDropdownUpdated : this.cswDropdownChanged,
 		wpsDropdownUpdated : this.wpsDropdownChanged,
-		errorEncountered : this.errorEncountered
+		errorEncountered : this.errorEncountered,
+		chosenStartPath : this.chosenStartPath
 	};
 };

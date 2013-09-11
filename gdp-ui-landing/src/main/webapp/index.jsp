@@ -114,6 +114,7 @@
 					</div>
 				</div>
 			</div>
+			
 			<div id="row-wps-select" class="row">
 				<div id="col-wps-select" class="col-md-6">
 					<label>Select Algorithm
@@ -125,9 +126,13 @@
 						<p id="p-wps-information-title" class="lead"></p>
 					</div>
 					<div id="col-wps-information-content" class="col-md-12">
-						<p id="p-wps-information-content" class="lead"></p>
+						<p id="p-wps-information-content"></p>
 					</div>
 				</div>
+			</div>
+			
+			<div id="row-proceed" class="row text-center">
+				<button id="btn-proceed" class="btn btn-success">Proceed</button>
 			</div>
 			<div class="row">
 				<jsp:include page="template/USGSFooter.jsp">

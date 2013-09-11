@@ -137,9 +137,10 @@ GDP.CSW = function (args) {
 			getRecRequest = cswGetRecFormat.write({
 				resultType: "results",
 				maxRecords: String(maxRecords),
+				outputSchema : "http://www.isotc211.org/2005/gmd",
 				Query: {
 					ElementSetName: {
-						value: "summary"
+						value: "full"
 					},
 					Constraint: {
 						"version": "1.1.0",

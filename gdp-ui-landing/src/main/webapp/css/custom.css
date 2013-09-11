@@ -11,6 +11,7 @@ img {
 
 #row-start-instructions,
 #row-csw-select,
-#row-wps-select {
+#row-wps-select,
+#row-proceed {
 	display : none;
 }
