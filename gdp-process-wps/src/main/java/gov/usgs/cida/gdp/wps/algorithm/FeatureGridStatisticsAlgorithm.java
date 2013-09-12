@@ -182,7 +182,7 @@ public class FeatureGridStatisticsAlgorithm extends AbstractAnnotatedAlgorithm {
                 return;
             }
 
-            output = File.createTempFile(getClass().getSimpleName(), ".csv");
+            output = File.createTempFile(getClass().getSimpleName(), delimiter.extension);
             writer = new BufferedWriter(new FileWriter(output));
             
             for (String currentDatasetId : datasetId) {
@@ -206,7 +206,7 @@ public class FeatureGridStatisticsAlgorithm extends AbstractAnnotatedAlgorithm {
                         statistics == null || statistics.isEmpty() ? Arrays.asList(Statistic.values()) : statistics,
                         writer,
                         groupBy == null ? GroupBy.STATISTIC : groupBy,
-                        delimiter == null ? Delimiter.COMMA : delimiter,
+                        delimiter == null ? Delimiter.getDefault() : delimiter,
                         requireFullCoverage,
                         summarizeTimeStep,
                         summarizeFeatureAttribute);

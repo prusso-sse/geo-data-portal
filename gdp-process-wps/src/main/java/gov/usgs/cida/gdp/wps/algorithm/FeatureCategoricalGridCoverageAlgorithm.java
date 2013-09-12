@@ -110,7 +110,7 @@ public class FeatureCategoricalGridCoverageAlgorithm extends AbstractAnnotatedAl
 
         try {
 
-            output = File.createTempFile(getClass().getSimpleName(), ".csv");
+            output = File.createTempFile(getClass().getSimpleName(), delimiter.extension);
             writer = new BufferedWriter(new FileWriter(output));
 
             for (String currentDatasetId : datasetId) {
