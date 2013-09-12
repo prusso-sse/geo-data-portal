@@ -285,6 +285,83 @@ GDP.CSW = function (args) {
 
 			return abstract;
 		},
+		getUrlToIdentifierFromRecords = function (args) {
+			args = args || {};
+			if (!args.records) {
+				throw "undefined record passed in";
+			}
+			var records = args.records,
+				urlTocswIdentifier = {},
+				rIdx,
+				record,
+				ident,
+				url,
+				toIdx,
+				dtoIdx,
+				idiIdx,
+				distributor,
+				distributionFormat,
+				distributorTransferOptions,
+				distributionTransferOption,
+				distributionTransferOptionName,
+				identificationInfos,
+				identificationInfo,
+				serviceIdentification,
+				operationMetadataName,
+				transferOptions,
+				transferOption,
+				transferOptionName;
+		
+			for (rIdx = 0; rIdx < records.length; rIdx++) {
+				record = records[rIdx];
+				ident = record.fileIdentifier.CharacterString.value;
+				url = '';
+
+				if (record.hasOwnProperty('identificationInfo')) {
+					identificationInfos = record.identificationInfo;
+					for (idiIdx = 0; idiIdx < identificationInfos.length; idiIdx++) {
+						identificationInfo = identificationInfos[idiIdx];
+						if (identificationInfo.hasOwnProperty('serviceIdentification')) {
+							serviceIdentification = identificationInfo.serviceIdentification;
+							operationMetadataName = serviceIdentification.operationMetadata.name.CharacterString.value.toLowerCase();
+							if (operationMetadataName.indexOf('thredds') !== -1 || 
+									operationMetadataName === 'opendap') {
+								url = serviceIdentification.operationMetadata.linkage.URL;
+								urlTocswIdentifier[url] = ident;
+							}
+						}
+					}
+				} else if (record.hasOwnProperty('distributionInfo')) {
+					if (record.distributionInfo.hasOwnProperty('distributor')) {
+						distributor = record.distributionInfo.distributor[0];
+						distributionFormat = distributor.distributorFormat[0].name.CharacterString.value;
+						if (distributionFormat.toLowerCase() === 'opendap') {
+							distributorTransferOptions = distributor.distributorTransferOptions;
+							for (dtoIdx = 0; dtoIdx < distributorTransferOptions.length; dtoIdx++) {
+								distributionTransferOption = distributorTransferOptions[dtoIdx];
+								distributionTransferOptionName = distributionTransferOption.onLine[0].name.CharacterString.value;
+								if (distributionTransferOptionName.toLowerCase() === 'file information') {
+									url = distributionTransferOption.onLine[0].linkage.URL;
+									urlTocswIdentifier[url] = ident;
+								}
+							}
+						}
+					} else if (record.distributionInfo.hasOwnProperty('transferOptions')) {
+						transferOptions = record.distributionInfo.transferOptions;
+						for (toIdx = 0; toIdx < transferOptions.length; toIdx++) {
+							transferOption = transferOptions[toIdx].onLine[0];
+							transferOptionName = transferOption.name.CharacterString.value.toLowerCase();
+							if (transferOptionName === 'opendap' ||
+									transferOptionName.indexOf('wcs') !== -1) {
+								url = transferOption.linkage.URL;
+								urlTocswIdentifier[url] = ident;
+							}
+						}
+					}
+				}
+			}
+			return urlTocswIdentifier;
+		},
 		getEndpointFromRecord = function (args) {
 			args = args || {};
 			if (!args.record) {
@@ -326,6 +403,7 @@ GDP.CSW = function (args) {
 		getTitleFromRecord : getTitleFromRecord,
 		getAbstractFromRecord : getAbstractFromRecord,
 		getEndpointFromRecord : getEndpointFromRecord,
+		getUrlToIdentifierFromRecords : getUrlToIdentifierFromRecords,
 		url : this.url,
 		proxy : this.proxy,
 		capabilitiesDocument : this.capabilitiesDocument

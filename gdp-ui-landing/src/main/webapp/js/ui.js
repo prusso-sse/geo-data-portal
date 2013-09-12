@@ -51,18 +51,21 @@ GDP.UI = function (args) {
 												var records = cswGetRecRespObj.records,
 													wpsToCsw = GDP.CONFIG.offeringMaps.wpsToCsw,
 													cswToWps = GDP.CONFIG.offeringMaps.cswToWps,
-													urlToDataset = GDP.CONFIG.offeringMaps.urlToDataset,
 													rIdx,
 													record,
 													algIdx,
 													algName,
 													ident,
+													url,
 													algorithm,
 													algorithmArray;
+
+												
 
 												for (rIdx = 0; rIdx < records.length; rIdx++) {
 													record = records[rIdx];
 													ident = record.fileIdentifier.CharacterString.value;
+													url = '';
 													if (!GDP.CONFIG.offeringMaps.cswIdentToRecord[ident]) {
 														GDP.CONFIG.offeringMaps.cswIdentToRecord[ident] = record;
 													}
@@ -82,6 +85,10 @@ GDP.UI = function (args) {
 														cswToWps[ident] = [];
 													}
 												}
+												
+												GDP.CONFIG.offeringMaps.urlTocswIdentifier = GDP.CONFIG.cswClient.getUrlToIdentifierFromRecords({
+													records : records
+												});
 
 												for (algName in wpsToCsw) {
 													if (wpsToCsw.hasOwnProperty(algName)) {

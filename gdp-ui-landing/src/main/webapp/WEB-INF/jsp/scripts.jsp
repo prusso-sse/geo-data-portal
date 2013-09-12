@@ -56,7 +56,8 @@
 		offeringMaps : {
 			cswToWps : {},
 			wpsToCsw : {},
-			urlToDataset : {},
+			wpsToUrl : {},
+			urlTocswIdentifier : {},
 			cswIdentToRecord : {}
 		}
 	};
