@@ -18,6 +18,7 @@ GDP.UI = function (args) {
 		$('#ccsa-area').children().slice(0, 2).remove();
 
 		var me = this,
+			chosenStartPath,
 			removeOverlay = function () {
 				$('#overlay').fadeOut(
 					function () {
@@ -85,10 +86,6 @@ GDP.UI = function (args) {
 														cswToWps[ident] = [];
 													}
 												}
-												
-												GDP.CONFIG.offeringMaps.urlTocswIdentifier = GDP.CONFIG.cswClient.getUrlToIdentifierFromRecords({
-													records : records
-												});
 
 												for (algName in wpsToCsw) {
 													if (wpsToCsw.hasOwnProperty(algName)) {
@@ -136,6 +133,7 @@ GDP.UI = function (args) {
 				alg,
 				currentValue,
 				record,
+				isParentRecord,
 				offeringsObj = {};
 
 			if (!value) {
@@ -148,6 +146,9 @@ GDP.UI = function (args) {
 				}
 			} else {
 				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[value];
+//				isParentRecord = GDP.CONFIG.cswClient.isParentRecord({
+//					record : record
+//				});
 				$('#p-csw-information-title').html(GDP.CONFIG.cswClient.getTitleFromRecord({
 					record : record
 				}));
@@ -239,7 +240,8 @@ GDP.UI = function (args) {
 			args = args || {};
 			var offerings =  args.offerings || GDP.CONFIG.offeringMaps.cswToWps,
 				dropdown = $('#form-control-select-csw'),
-				ident;
+				ident,
+				option;
 
 			dropdown.empty();
 			dropdown.append(
@@ -253,6 +255,9 @@ GDP.UI = function (args) {
 			);
 			for (ident in offerings) {
 				if (offerings.hasOwnProperty(ident)) {
+					option = GDP.CONFIG.cswClient.createOptionFromRecord({
+						record : GDP.CONFIG.offeringMaps.cswIdentToRecord[ident]
+					});
 					dropdown.append(
 						$('<option />')
 							.attr({

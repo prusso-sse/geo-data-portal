@@ -392,8 +392,49 @@ GDP.CSW = function (args) {
 			}
 
 			return endpoint;
-		};
+		},
+		createOptionFromRecord = function (args) {
+			args = args || {};
+			if (!args.record) {
+				throw "undefined record passed in";
+			}
+			var record = args.record,
+				identificationInfos,
+				identificationInfo,
+				serviceIdentification,
+				operationMetadata,
+				operationMetadataName,
+				option,
+				options = {},
+				url,
+				title,
+				idiIdx;
 
+			if (record.hasOwnProperty('identificationInfo')) {
+				identificationInfos = record.identificationInfo;
+				for (idiIdx = 0; idiIdx < identificationInfos.length; idiIdx++) {
+					identificationInfo = identificationInfos[idiIdx];
+					if (identificationInfo.hasOwnProperty('serviceIdentification')) {
+						serviceIdentification = identificationInfo.serviceIdentification;
+						operationMetadataName = serviceIdentification.operationMetadata.name.CharacterString.value;
+						operationMetadata = serviceIdentification.operationMetadata;
+						url = operationMetadata.linkage.URL;
+						title = serviceIdentification.citation.title.CharacterString.value;
+
+						if ((operationMetadataName.toLowerCase().indexOf('thredds') !== -1 || operationMetadataName.toLowerCase() === 'opendap') ||
+								(operationMetadataName.toLowerCase().indexOf('wcs') && Object.keys(options).length === 0)) {
+							options[url] = {
+								name : operationMetadataName,
+								title : title
+							};
+						}
+					}
+				}
+			}
+			
+			var a = 1;
+
+		};
 	return {
 		requestGetCapabilities: requestGetCapabilities,
 		getCapabilitiesKeywords : getCapabilitiesKeywords,
@@ -404,6 +445,7 @@ GDP.CSW = function (args) {
 		getAbstractFromRecord : getAbstractFromRecord,
 		getEndpointFromRecord : getEndpointFromRecord,
 		getUrlToIdentifierFromRecords : getUrlToIdentifierFromRecords,
+		createOptionFromRecord : createOptionFromRecord,
 		url : this.url,
 		proxy : this.proxy,
 		capabilitiesDocument : this.capabilitiesDocument
