@@ -311,7 +311,7 @@ GDP.CSW = function (args) {
 				transferOptions,
 				transferOption,
 				transferOptionName;
-		
+
 			for (rIdx = 0; rIdx < records.length; rIdx++) {
 				record = records[rIdx];
 				ident = record.fileIdentifier.CharacterString.value;
@@ -399,6 +399,7 @@ GDP.CSW = function (args) {
 				throw "undefined record passed in";
 			}
 			var record = args.record,
+				ident,
 				distributionInfo,
 				identificationInfos,
 				identificationInfo,
@@ -408,17 +409,23 @@ GDP.CSW = function (args) {
 				transferOptions,
 				transferOption,
 				transferOptionName,
+				parentTitle,
+				opt,
 				option,
+				optionsCount = 0,
 				options = {},
 				url,
 				title,
 				idiIdx,
 				toIdx;
 
+			ident = record.fileIdentifier.CharacterString.value;
+
 			// If there's only one identificationInfo, that means that the identificationInfo array has
 			// no urls and only record identification stuff (name, title, etc)
 			if (record.hasOwnProperty('identificationInfo') && record.identificationInfo.length > 1) {
 				identificationInfos = record.identificationInfo;
+				parentTitle = identificationInfos[0].citation.title.CharacterString.value;
 				for (idiIdx = 0; idiIdx < identificationInfos.length; idiIdx++) {
 					identificationInfo = identificationInfos[idiIdx];
 					if (identificationInfo.hasOwnProperty('serviceIdentification')) {
@@ -429,11 +436,12 @@ GDP.CSW = function (args) {
 						title = serviceIdentification.citation.title.CharacterString.value;
 
 						if ((operationMetadataName.toLowerCase() === 'opendap') ||
-								(operationMetadataName.toLowerCase().indexOf('wcs') !== -1 && Object.keys(options).length === 0)) { // Might consider breaking this out imto a new loop
+								(operationMetadataName.toLowerCase().indexOf('wcs') !== -1 && optionsCount === 0)) { // Might consider breaking this out imto a new loop
 							options[url] = {
 								name : operationMetadataName,
 								title : title
 							};
+							optionsCount++;
 						}
 					}
 				}
@@ -452,19 +460,49 @@ GDP.CSW = function (args) {
 						operationMetadataName = transferOption.onLine[0].name.CharacterString.value;
 						title = record.identificationInfo[0].citation.title.CharacterString.value;
 						if (transferOptionName.toLowerCase() === 'opendap' ||
-								(transferOptionName.toLowerCase().indexOf('wcs') !== -1 && Object.keys(options).length === 0)) {
+								(transferOptionName.toLowerCase().indexOf('wcs') !== -1 && optionsCount === 0)) {
 							options[url] = {
 								name : operationMetadataName,
 								title : title
 							};
+							optionsCount++;
 						}
 					}
 				}
 			}
 
-			var a = 1;
+			if (optionsCount === 1) {
+				for (opt in options) {
+					if (options.hasOwnProperty(opt)) {
+						option = $('<option>').
+							attr({
+								value: opt + ';' + ident
+							}).
+							html(options[opt].title);
+					}
+				}
+			} else if (optionsCount > 1) {
+				option = $('<optgroup>').
+					attr({
+						label : parentTitle
+					});
+				for (opt in options) {
+					if (options.hasOwnProperty(opt)) {
+						option.append(
+							$('<option>').
+								attr({
+									value: opt + ';' + ident
+								}).
+								html(options[opt].title)
+						);
+					}
+				}
+			}
+
+			return option;
 
 		};
+
 	return {
 		requestGetCapabilities: requestGetCapabilities,
 		getCapabilitiesKeywords : getCapabilitiesKeywords,

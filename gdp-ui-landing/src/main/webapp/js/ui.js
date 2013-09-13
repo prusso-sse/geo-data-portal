@@ -128,12 +128,12 @@ GDP.UI = function (args) {
 
 		this.cswDropdownChanged = function (event) {
 			var value = event.target.value,
-				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[value],
+				validAlgorithms,
 				algInd,
 				alg,
 				currentValue,
 				record,
-				isParentRecord,
+				ident,
 				offeringsObj = {};
 
 			if (!value) {
@@ -145,16 +145,17 @@ GDP.UI = function (args) {
 					$('#form-control-select-wps option[value=""]').val('').change();
 				}
 			} else {
-				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[value];
-//				isParentRecord = GDP.CONFIG.cswClient.isParentRecord({
-//					record : record
-//				});
+				ident = value.split(';')[1];
+				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[ident];
+				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[ident];
+				
 				$('#p-csw-information-title').html(GDP.CONFIG.cswClient.getTitleFromRecord({
 					record : record
 				}));
 				$('#p-csw-information-content').html(GDP.CONFIG.cswClient.getAbstractFromRecord({
 					record : record
 				}));
+				
 				if (me.chosenStartPath === 'dataset') {
 					for (algInd = 0; algInd < validAlgorithms.length; algInd++) {
 						alg = validAlgorithms[algInd];
@@ -258,14 +259,7 @@ GDP.UI = function (args) {
 					option = GDP.CONFIG.cswClient.createOptionFromRecord({
 						record : GDP.CONFIG.offeringMaps.cswIdentToRecord[ident]
 					});
-					dropdown.append(
-						$('<option />')
-							.attr({
-								value : ident
-							}).html(GDP.CONFIG.cswClient.getTitleFromRecord({
-								record : GDP.CONFIG.offeringMaps.cswIdentToRecord[ident]
-							}))
-					);
+					dropdown.append(option);
 				}
 			}
 			dropdown.off('change', this.cswDropdownChanged);
@@ -379,13 +373,16 @@ GDP.UI = function (args) {
 			$('#btn-proceed').off('click', this.bindProceedButton);
 			$('#btn-proceed').on('click', function () {
 				var csw,
+					cswIdent,
+					cswUrl,
 					record,
 					wps = $('#form-control-select-wps').val(),
 					win;
-				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[$('#form-control-select-csw').val()];
-				csw = encodeURIComponent(GDP.CONFIG.cswClient.getEndpointFromRecord({
-					record : record
-				}));
+				
+				cswUrl = $('#form-control-select-csw').val().split(';')[0];
+				cswIdent = $('#form-control-select-csw').val().split(';')[1];
+				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent];
+				csw = encodeURIComponent(cswUrl);
 				win = window.open(GDP.CONFIG.hosts.gdp + '?csw=' + csw + '&wps=' + wps, '_gdp');
 				win.focus();
 			});
