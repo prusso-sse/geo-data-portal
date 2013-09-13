@@ -134,6 +134,8 @@ GDP.UI = function (args) {
 				currentValue,
 				record,
 				ident,
+				title,
+				subtitle,
 				offeringsObj = {};
 
 			if (!value) {
@@ -148,14 +150,20 @@ GDP.UI = function (args) {
 				ident = value.split(';')[1];
 				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[ident];
 				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[ident];
-				
-				$('#p-csw-information-title').html(GDP.CONFIG.cswClient.getTitleFromRecord({
+				title = GDP.CONFIG.cswClient.getTitleFromRecord({
 					record : record
-				}));
+				});
+				subtitle = $(event.target).find('option[value="' + value + '"]').html();
+
+				if (subtitle !== title) {
+					title += '<br />' + subtitle;
+				}
+
+				$('#p-csw-information-title').html(title);
 				$('#p-csw-information-content').html(GDP.CONFIG.cswClient.getAbstractFromRecord({
 					record : record
 				}));
-				
+
 				if (me.chosenStartPath === 'dataset') {
 					for (algInd = 0; algInd < validAlgorithms.length; algInd++) {
 						alg = validAlgorithms[algInd];
@@ -378,7 +386,7 @@ GDP.UI = function (args) {
 					record,
 					wps = $('#form-control-select-wps').val(),
 					win;
-				
+
 				cswUrl = $('#form-control-select-csw').val().split(';')[0];
 				cswIdent = $('#form-control-select-csw').val().split(';')[1];
 				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent];
