@@ -48,7 +48,7 @@ WPS = function() {
             xml +=     '<wps:ResponseDocument' + (async ? ' storeExecuteResponse="true" status="true"' : '') + '>';
 			for (var k = 0; k < outputs.length; k++) {
             xml +=
-            '<wps:Output' + (async ? ' asReference="true"' : '') + '> \
+            '<wps:Output' + (async ? ' asReference="true"' : '') + (mimeType ? ' mimeType="' + mimeType + '"' : '') + '> \
                      <ows:Identifier>' + outputs[k] + '</ows:Identifier> \
                    </wps:Output>';
 

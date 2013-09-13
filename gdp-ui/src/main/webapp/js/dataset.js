@@ -699,7 +699,11 @@ var Dataset = function() {
                         $(_RETRIEVE_PROC_INFO_BUTTON).fadeOut(Constant.ui.fadeSpeed);
                         $(_SUBMIT_FOR_PROCESSING_LINK).fadeOut(Constant.ui.fadeSpeed);
                         $(_REDIR_TO_SB_BUTTON).fadeOut(Constant.ui.fadeSpeed);
-                        WPS.sendWpsExecuteRequest(Constant.endpoint.proxy + Constant.endpoint.processwps, submitWpsAlgorithm, submitWpsStringInputs, ['OUTPUT'], true, submitForProcessingCallback, submitWpsXmlInputs);
+                        if (submitWpsStringInputs.DELIMITER) {
+                            var delimiter = submitWpsStringInputs.DELIMITER[0] || 'COMMA';
+                            var mimeType = (delimiter === 'TAB') ? 'text/tab-separated-values' : (delimiter === 'SPACE') ? 'text/plain' : 'text/csv';
+                        }
+                        WPS.sendWpsExecuteRequest(Constant.endpoint.proxy + Constant.endpoint.processwps, submitWpsAlgorithm, submitWpsStringInputs, ['OUTPUT'], true, submitForProcessingCallback, submitWpsXmlInputs, false, 'xml', mimeType);
                     },
                     'CANCEL' : function() {
                         $(this).dialog("close");
