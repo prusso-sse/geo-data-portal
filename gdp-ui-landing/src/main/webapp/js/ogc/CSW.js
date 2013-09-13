@@ -399,18 +399,25 @@ GDP.CSW = function (args) {
 				throw "undefined record passed in";
 			}
 			var record = args.record,
+				distributionInfo,
 				identificationInfos,
 				identificationInfo,
 				serviceIdentification,
 				operationMetadata,
 				operationMetadataName,
+				transferOptions,
+				transferOption,
+				transferOptionName,
 				option,
 				options = {},
 				url,
 				title,
-				idiIdx;
+				idiIdx,
+				toIdx;
 
-			if (record.hasOwnProperty('identificationInfo')) {
+			// If there's only one identificationInfo, that means that the identificationInfo array has
+			// no urls and only record identification stuff (name, title, etc)
+			if (record.hasOwnProperty('identificationInfo') && record.identificationInfo.length > 1) {
 				identificationInfos = record.identificationInfo;
 				for (idiIdx = 0; idiIdx < identificationInfos.length; idiIdx++) {
 					identificationInfo = identificationInfos[idiIdx];
@@ -421,8 +428,8 @@ GDP.CSW = function (args) {
 						url = operationMetadata.linkage.URL;
 						title = serviceIdentification.citation.title.CharacterString.value;
 
-						if ((operationMetadataName.toLowerCase().indexOf('thredds') !== -1 || operationMetadataName.toLowerCase() === 'opendap') ||
-								(operationMetadataName.toLowerCase().indexOf('wcs') && Object.keys(options).length === 0)) {
+						if ((operationMetadataName.toLowerCase() === 'opendap') ||
+								(operationMetadataName.toLowerCase().indexOf('wcs') !== -1 && Object.keys(options).length === 0)) { // Might consider breaking this out imto a new loop
 							options[url] = {
 								name : operationMetadataName,
 								title : title
@@ -431,7 +438,30 @@ GDP.CSW = function (args) {
 					}
 				}
 			}
-			
+
+			// We didn't get a value out of identificationInfo. Try distributionsInfo
+			if (Object.keys(options).length === 0 && record.hasOwnProperty('distributionInfo')) {
+				distributionInfo = record.distributionInfo;
+				// try tranferOptions
+				if (distributionInfo.hasOwnProperty('transferOptions')) {
+					transferOptions = record.distributionInfo.transferOptions;
+					for (toIdx = 0; toIdx < transferOptions.length; toIdx++) {
+						transferOption = transferOptions[toIdx];
+						transferOptionName = transferOption.onLine[0].name.CharacterString.value;
+						url = transferOption.onLine[0].linkage.URL;
+						operationMetadataName = transferOption.onLine[0].name.CharacterString.value;
+						title = record.identificationInfo[0].citation.title.CharacterString.value;
+						if (transferOptionName.toLowerCase() === 'opendap' ||
+								(transferOptionName.toLowerCase().indexOf('wcs') !== -1 && Object.keys(options).length === 0)) {
+							options[url] = {
+								name : operationMetadataName,
+								title : title
+							};
+						}
+					}
+				}
+			}
+
 			var a = 1;
 
 		};
