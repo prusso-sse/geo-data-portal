@@ -324,7 +324,7 @@ GDP.CSW = function (args) {
 						if (identificationInfo.hasOwnProperty('serviceIdentification')) {
 							serviceIdentification = identificationInfo.serviceIdentification;
 							operationMetadataName = serviceIdentification.operationMetadata.name.CharacterString.value.toLowerCase();
-							if (operationMetadataName.indexOf('thredds') !== -1 || 
+							if (operationMetadataName.indexOf('thredds') !== -1 ||
 									operationMetadataName === 'opendap') {
 								url = serviceIdentification.operationMetadata.linkage.URL;
 								urlTocswIdentifier[url] = ident;
@@ -436,7 +436,7 @@ GDP.CSW = function (args) {
 						title = serviceIdentification.citation.title.CharacterString.value;
 
 						if ((operationMetadataName.toLowerCase() === 'opendap') ||
-								(operationMetadataName.toLowerCase().indexOf('wcs') !== -1 && optionsCount === 0)) { // Might consider breaking this out imto a new loop
+								(operationMetadataName.toLowerCase().indexOf('wcs') !== -1 && optionsCount === 0)) {
 							options[url] = {
 								name : operationMetadataName,
 								title : title

@@ -391,7 +391,7 @@ GDP.UI = function (args) {
 				cswIdent = $('#form-control-select-csw').val().split(';')[1];
 				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent];
 				csw = encodeURIComponent(cswUrl);
-				win = window.open(GDP.CONFIG.hosts.gdp + '?csw=' + csw + '&wps=' + wps, '_gdp');
+				win = window.open(GDP.CONFIG.hosts.gdp + '?csw=' + csw + '&algorithm=' + wps, '_gdp');
 				win.focus();
 			});
 		};
