@@ -28,23 +28,7 @@
 		<destDir>${project.build.outputDirectory}/META-INF/resources/</destDir>
 	</properties>
 	
-	<dependencies>
-		<dependency>
-			<groupId>gov.usgs.cida.jslibs</groupId>
-			<artifactId>excat-csw-client-simple</artifactId>
-			<type>jar</type>
-		</dependency>
-	</dependencies>
-	
 	<build>
-		<resources>
-			<resource>
-				<directory>${project.basedir}/src/main/resources</directory>
-				<targetPath>${destDir}</targetPath>
-				<filtering>true</filtering>
-			</resource>
-		</resources>
-		
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -55,15 +39,13 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<version>2.6</version>
-				<configuration>
-					<encoding>UTF-8</encoding>
-					<overwrite>true</overwrite>
-				</configuration>
-			</plugin>
 		</plugins>
+		<resources>
+			<resource>
+				<directory>${project.basedir}/src/main/resources</directory>
+				<targetPath>${destDir}</targetPath>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
 	</build>
 </project>

@@ -110,17 +110,17 @@
 			<artifactId>sarissa</artifactId>
 			<type>jar</type>
 		</dependency>
-<!--		<dependency>
+		<dependency>
 			<groupId>gov.usgs.cida.jslibs</groupId>
 			<artifactId>excat-csw-client-simple</artifactId>
 			<type>jar</type>
-		</dependency>-->
-		<dependency>
+		</dependency>
+<!--		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>gdp-csw-client</artifactId>
 			<version>${project.version}</version>
 			<type>jar</type>
-		</dependency>
+		</dependency>-->
 		<!-- /JS LIBS -->
         
 		<!-- LOGGING START-->
