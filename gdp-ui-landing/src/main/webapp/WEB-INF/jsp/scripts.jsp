@@ -25,6 +25,7 @@
 
 <%-- OpenLayers --%>
 <script type="text/javascript" src="webjars/openlayers/2.13.1/OpenLayers<%= dev ? ".debug" : ""%>.js"></script>
+<script type="text/javascript" src='openlayers/extensions/format/csw/v2_0_2.js'></script>
 
 <%-- Sarissa XML parsing library --%>
 <script type="text/javascript" src="js/sarissa/sarissa.js"></script>
@@ -50,11 +51,13 @@
 			csw : 'http://cida-eros-gdp2.er.usgs.gov:8081/geonetwork/srv/en/csw', <%-- '<%= props.getProperty("gdp.endpoint.csw.url") %>' --%>
 			wps : '<%= props.getProperty("gdp.endpoint.wps.process.url") %>',
 			proxy : '<%= props.getProperty("gdp.endpoint.proxy", "proxy/") %>',
-			gdp : '<%= props.getProperty("gdp.endpoint.gdp", "http://localhost:8080/gdp_ui") %>'
+			gdp : '<%= props.getProperty("gdp.endpoint.gdp", "/GDP_WEB") %>'
 		},
 		offeringMaps : {
 			cswToWps : {},
 			wpsToCsw : {},
+			wpsToUrl : {},
+			urlTocswIdentifier : {},
 			cswIdentToRecord : {}
 		}
 	};

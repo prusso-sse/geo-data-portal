@@ -70,7 +70,7 @@
 			String key = paramNames.nextElement();
 			String value = request.getParameter(key);
     %>
-	incomingParams['<%=key%>'] = '<%=value%>'
+	incomingParams['<%=key%>'] = '<%=value%>';
     <%
 		}
     %>
