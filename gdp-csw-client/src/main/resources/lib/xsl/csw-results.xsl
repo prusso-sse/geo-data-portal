@@ -77,7 +77,7 @@
 							<xsl:attribute name="href">
 								<xsl:value-of select="$pageUrl"/>
 								<xsl:value-of select="number($start)-number(../../request/@maxrecords)"/>
-								<xsl:text>');</xsl:text>
+								<xsl:text>'));</xsl:text>
 								<xsl:text>javascript:(Dataset.createCSWResponseDialog());</xsl:text>
 							</xsl:attribute>
 							<xsl:text>&lt;&lt; previous</xsl:text>
@@ -89,7 +89,7 @@
 							<xsl:attribute name="href">
 								<xsl:value-of select="$pageUrl"/>
 								<xsl:value-of select="$next"/>
-								<xsl:text>');</xsl:text>
+								<xsl:text>'));</xsl:text>
 								<xsl:text>javascript:(Dataset.createCSWResponseDialog());</xsl:text>
 							</xsl:attribute>
 							<xsl:text>next &gt;&gt;</xsl:text>
@@ -176,7 +176,7 @@
 						<xsl:text>javascript:(GDPCSWClient.popupMetadataById</xsl:text>
 						<xsl:text>('</xsl:text>
 						<xsl:value-of select="./dc:identifier"/>
-						<xsl:text>);</xsl:text>
+						<xsl:text>));</xsl:text>
 						<xsl:text>javascript:(Dataset.createCSWResponseDialog('getrecordbyid'));</xsl:text>
 					</xsl:attribute>
 					<xsl:text>Full Record</xsl:text>
@@ -351,7 +351,7 @@
 				<xsl:text>javascript:(GDPCSWClient.popupMetadataById</xsl:text>
 				<xsl:text>('</xsl:text>
 				<xsl:value-of select="../../../../gmd:fileIdentifier/gco:CharacterString"/>
-				<xsl:text>);</xsl:text>
+				<xsl:text>));</xsl:text>
 				<xsl:text>javascript:(Dataset.createCSWResponseDialog('getrecordbyid'));</xsl:text>
 			</xsl:attribute>
 			<xsl:text>Full Record</xsl:text>
