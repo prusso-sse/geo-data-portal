@@ -77,7 +77,7 @@
 							<xsl:attribute name="href">
 								<xsl:value-of select="$pageUrl"/>
 								<xsl:value-of select="number($start)-number(../../request/@maxrecords)"/>
-								<xsl:text>);</xsl:text>
+								<xsl:text>');</xsl:text>
 								<xsl:text>javascript:(Dataset.createCSWResponseDialog());</xsl:text>
 							</xsl:attribute>
 							<xsl:text>&lt;&lt; previous</xsl:text>
@@ -89,7 +89,7 @@
 							<xsl:attribute name="href">
 								<xsl:value-of select="$pageUrl"/>
 								<xsl:value-of select="$next"/>
-								<xsl:text>);</xsl:text>
+								<xsl:text>');</xsl:text>
 								<xsl:text>javascript:(Dataset.createCSWResponseDialog());</xsl:text>
 							</xsl:attribute>
 							<xsl:text>next &gt;&gt;</xsl:text>
