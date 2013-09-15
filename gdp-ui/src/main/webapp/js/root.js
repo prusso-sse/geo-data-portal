@@ -144,6 +144,17 @@ function initializeSteps() {
     var cswEndpoint;
 
     Constant = new Constant(); // important that this gets initialized first
+    Constant.init();
+	
+	// Short cut a special needs here
+	if (Constant.incoming.algorithm) {
+		if ($.isArray(Constant.incoming.algorithm)) {
+			Constant.ui.view_algorithm_list = Constant.incoming.algorithm.join(',');
+		} else {
+			Constant.ui.view_algorithm_list = Constant.incoming.algorithm;
+		}
+	}
+	
     WPS = WPS();
     WFS = WFS();
 	CSW = CSW();
@@ -153,7 +164,6 @@ function initializeSteps() {
     Dataset = new Dataset();
     ScienceBase = new ScienceBase();
 
-    Constant.init();
     ScienceBase.init();
     Algorithm.init();
 
