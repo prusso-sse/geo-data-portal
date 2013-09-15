@@ -32,10 +32,9 @@ var Algorithm = function () {
             this.algorithms = {};
             var wpsURL = Constant.endpoint.proxy + Constant.endpoint.processwps,
 				splitAlgorithm,
-				incomingAlgorithm = Constant.incoming.algorithm,
-				singleAlgorithm = incomingAlgorithm || (function () {
+				singleAlgorithm = (function () {
 					splitAlgorithm = Constant.ui.view_algorithm_list.split(',');
-					if (typeof splitAlgorithm === 'Array' && splitAlgorithm.length !== 1) {
+					if (splitAlgorithm.length !== 1) {
 						return '';
 					}
 					return splitAlgorithm[0];
