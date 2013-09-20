@@ -149,7 +149,7 @@
 			</div>
 
 			<div id="row-proceed" class="row text-center">
-				<button id="btn-proceed" class="btn btn-success">Proceed</button>
+				<button id="btn-proceed" class="btn btn-success">Process Data with the Geo Data Portal</button>
 			</div>
 			<div class="row">
 				<jsp:include page="template/USGSFooter.jsp">
