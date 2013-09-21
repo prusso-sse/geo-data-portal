@@ -80,6 +80,35 @@ GDP.WPS = function (args) {
 				});
 			}
 		},
+				
+		getRecordsByAlgorithmArray = function (args) {
+			args = args || {};
+
+			var algorithms = args.algorithms || [],
+				algorithm,
+				aIdx = 0,
+				wpsToCsw = GDP.CONFIG.offeringMaps.wpsToCsw,
+				records,
+				ident,
+				record,
+				identToCsw = {};
+		
+			for (aIdx; aIdx < algorithms.length; aIdx++) {
+				algorithm = algorithms[aIdx];
+				records = wpsToCsw[algorithm];
+				for (ident in records) {
+					if (records.hasOwnProperty(ident)) {
+						record = records[ident];
+						if (!identToCsw[ident]) {
+							identToCsw[ident] = record;
+						}
+					}
+				}
+			}
+			
+			return identToCsw;
+
+		},
 
 		/**
 		 * Requests a capabilities document from a WPS server
@@ -139,6 +168,7 @@ GDP.WPS = function (args) {
 		getProcessDescription : getProcessDescription,
 		processOfferings : this.processOfferings,
 		processDescriptions : this.processDescriptions,
+		getRecordsByAlgorithmArray : getRecordsByAlgorithmArray,
 		url: this.url,
 		proxy: this.proxy,
 		capabilities : this.capabilities,

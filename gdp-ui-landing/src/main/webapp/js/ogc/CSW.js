@@ -393,6 +393,29 @@ GDP.CSW = function (args) {
 
 			return endpoint;
 		},
+		getCswIdentToRecordMapFromRecordsArray = function (args) {
+			args = args || {};
+
+			if (!args.records) {
+				throw "undefined record response object passed in";
+			}
+
+			var records = args.records,
+				identToRecord = {},
+				rIdx,
+				record,
+				ident;
+
+			for (rIdx = 0; rIdx < records.length; rIdx++) {
+				record = records[rIdx];
+				ident = record.fileIdentifier.CharacterString.value;
+				if (!identToRecord.hasOwnProperty(ident)) {
+					identToRecord[ident] = record;
+				}
+			}
+
+			return identToRecord;
+		},
 		createOptionFromRecord = function (args) {
 			args = args || {};
 			if (!args.record) {
@@ -514,6 +537,7 @@ GDP.CSW = function (args) {
 		getEndpointFromRecord : getEndpointFromRecord,
 		getUrlToIdentifierFromRecords : getUrlToIdentifierFromRecords,
 		createOptionFromRecord : createOptionFromRecord,
+		getCswIdentToRecordMapFromRecordsArray : getCswIdentToRecordMapFromRecordsArray,
 		url : this.url,
 		proxy : this.proxy,
 		capabilitiesDocument : this.capabilitiesDocument

@@ -42,12 +42,13 @@
         </jsp:include>
     </head>
     <body>
-		<div id="overlay">
-			<div id="overlay-content">
-				Application Loading
-			</div>
-		</div>
+
 		<div class="container">
+			<div id="overlay">
+				<div id="overlay-content">
+					Application Loading
+				</div>
+			</div>
 			<div class="row">
 				<jsp:include page="template/USGSHeader.jsp">
                     <jsp:param name="relPath" value="" />
@@ -59,53 +60,83 @@
 			<div id="row-application-intro-text" class="row">
 				<div class="well">
 					<p>
-						At vero eos et accusamus et iusto odio dignissimos ducimus 
-						qui blanditiis praesentium voluptatum deleniti atque corrupti 
-						quos dolores et quas molestias excepturi sint occaecati 
-						cupiditate non provident, similique sunt in culpa qui officia 
-						deserunt mollitia animi, id est laborum et dolorum fuga. 
-					</p>
-					<br /><br />
+						The increasing availability of downscaled climate projections 
+						and other large data products that summarize or predict climate 
+						and land use conditions, is making use of these data more common 
+						in research and management. Scientists and decisionmakers often 
+						need to construct ensembles and compare climate hindcasts and future 
+						projections for particular spatial areas. These tasks generally 
+						require an investigator to procure all datasets of interest en masse, 
+						integrate the various data formats and representations into commonly 
+						accessible and comparable formats, and then extract the subsets of the 
+						datasets that are actually of interest.
+						This process can be challenging 
+						and time intensive due to data-transfer, -storage, and(or) -processing 
+						limits, or unfamiliarity with methods of accessing climate and land use 
+						data. Data management for modeling and assessing the impacts of future 
+						climate conditions is also becoming increasingly expensive due to the 
+						size of the datasets. The Geo Data Portal addresses these limitations, 
+						making access to numerous climate datasets for particular areas of 
+						interest a simple and efficient task.</p>
+
 					<p>
-						Et harum quidem rerum facilis est et expedita distinctio. 
-						Nam libero tempore, cum soluta nobis est eligendi optio cumque 
-						nihil impedit quo minus id quod maxime placeat facere possimus, 
-						omnis voluptas assumenda est, omnis dolor repellendus. 
+						This page is a catalog of the datasets that have been tested to 
+						work well for access with the Geo Data Portal. Select one of the 
+						buttons below to see a list of these datasets. At its core, the 
+						Geo Data Portal is an advanced Open Geospatial Consortium Web 
+						Processing Service that can be used in a wide variety of 
+						applications against any web-accessible standards-compliant 
+						dataset. If you'd like to see all the datasets that are 
+						compatible with one of the processing types the Geo Data 
+						Portal can perform, select one of those buttons below.
 					</p>
 				</div>
 			</div>
 
 			<div id="row-choice-start" class="row">
-				<div id="col-choice-start" class="col-md-12 text-center">
-					<div class="btn-group" data-toggle="buttons">
-						<label class="btn btn-primary">
-							<input type="radio" id="btn-choice-algorithm" name="btn-choice-start" />Begin With An Algorithm
-						</label>
-						<label class="btn btn-primary">
-							<input type="radio" id="btn-choice-dataset" name="btn-choice-start" />Begin With A Dataset
-						</label>
+				<div id="col-choice-start-dataset" class="col-md-5 text-center">
+					<div class="row">
+						<h1>Datasets</h1>
 					</div>
-				</div>
-			</div>
-
-			<div id="row-start-instructions" class="row">
-				<div class="well">
-					<div id="div-start-instructions">
-						<div id="col-start-instructions-title" class="col-md-12 text-center">
-							<p id="p-start-instructions-title" class="lead"></p>
+					<div class="row">
+						<div class="btn-group btn-group-justified" data-toggle="buttons">
+							<label class="btn btn-primary">
+								<input type="radio" id="btn-choice-dataset-all" name="btn-choice-dataset-all" />All
+							</label>
+							<label class="btn btn-primary">
+								<input type="radio" id="btn-choice-dataset-climate" name="btn-choice-dataset-climate" />Climate
+							</label>
+							<label class="btn btn-primary">
+								<input type="radio" id="btn-choice-dataset-landscape" name="btn-choice-dataset-landscape" />Landscape
+							</label>
 						</div>
-						<div id="p-start-instructions-content" class="col-md-12"></div>
+					</div>
+				</div>
+				<div id="col-choice-start-algorithm" class="col-md-5 col-md-offset-2 text-center">
+					<div class="row">
+						<h1>Processing</h1>
+					</div>
+					<div class="row">
+						<div class="btn-group btn-group-justified" data-toggle="buttons">
+							<label class="btn btn-primary">
+								<input type="radio" id="btn-choice-algorithm-areal" name="btn-choice-algorithm-areal" />Areal Statistics
+							</label>
+							<label class="btn btn-primary">
+								<input type="radio" id="btn-choice-algorithm-subset" name="btn-choice-algorithm-subset" />Data Subsets
+							</label>
+						</div>
 					</div>
 				</div>
 			</div>
 
-			<div id="row-csw-select" class="row">
-				<div id="col-csw-select" class="col-md-6">
+			<div id="row-csw-group" class="row">
+				<div id="row-csw-select" class="row text-center">
 					<label>Select Dataset
 						<select id="form-control-select-csw" class="form-control"></select>
 					</label>
+
 				</div>
-				<div id="col-csw-information" class="col-md-6">
+				<div id="row-csw-desc" class="row">
 					<div id="col-csw-information-title" class="text-center col-md-12">
 						<p id="p-csw-information-title" class="lead"></p>
 					</div>
@@ -114,26 +145,11 @@
 					</div>
 				</div>
 			</div>
-			
-			<div id="row-wps-select" class="row">
-				<div id="col-wps-select" class="col-md-6">
-					<label>Select Algorithm
-						<select id="form-control-select-wps" class="form-control"></select>
-					</label>
-				</div>
-				<div id="col-wps-information" class="col-md-6">
-					<div id="col-wps-information-title" class="text-center col-md-12">
-						<p id="p-wps-information-title" class="lead"></p>
-					</div>
-					<div id="col-wps-information-content" class="col-md-12">
-						<p id="p-wps-information-content"></p>
-					</div>
-				</div>
-			</div>
-			
+
 			<div id="row-proceed" class="row text-center">
-				<button id="btn-proceed" class="btn btn-success">Proceed</button>
+				<button id="btn-proceed" class="btn btn-success">Process Data with the Geo Data Portal</button>
 			</div>
+			
 			<div class="row">
 				<jsp:include page="template/USGSFooter.jsp">
                     <jsp:param name="relPath" value="" />
