@@ -42,12 +42,13 @@
         </jsp:include>
     </head>
     <body>
-		<div id="overlay">
-			<div id="overlay-content">
-				Application Loading
-			</div>
-		</div>
+
 		<div class="container">
+			<div id="overlay">
+				<div id="overlay-content">
+					Application Loading
+				</div>
+			</div>
 			<div class="row">
 				<jsp:include page="template/USGSHeader.jsp">
                     <jsp:param name="relPath" value="" />
@@ -93,36 +94,49 @@
 			</div>
 
 			<div id="row-choice-start" class="row">
-				<div id="col-choice-start" class="col-md-12 text-center">
-					<div class="btn-group" data-toggle="buttons">
-						<label class="btn btn-primary">
-							<input type="radio" id="btn-choice-algorithm" name="btn-choice-start" />Begin With An Algorithm
-						</label>
-						<label class="btn btn-primary">
-							<input type="radio" id="btn-choice-dataset" name="btn-choice-start" />Begin With A Dataset
-						</label>
+				<div id="col-choice-start-dataset" class="col-md-5 text-center">
+					<div class="row">
+						<h1>Datasets</h1>
 					</div>
-				</div>
-			</div>
-
-			<div id="row-start-instructions" class="row">
-				<div class="well">
-					<div id="div-start-instructions">
-						<div id="col-start-instructions-title" class="col-md-12 text-center">
-							<p id="p-start-instructions-title" class="lead"></p>
+					<div class="row">
+						<div class="btn-group btn-group-justified" data-toggle="buttons">
+							<label class="btn btn-primary">
+								<input type="radio" id="btn-choice-dataset-all" name="btn-choice-dataset-all" />All
+							</label>
+							<label class="btn btn-primary">
+								<input type="radio" id="btn-choice-dataset-climate" name="btn-choice-dataset-climate" />Climate
+							</label>
+							<label class="btn btn-primary">
+								<input type="radio" id="btn-choice-dataset-landscape" name="btn-choice-dataset-landscape" />Landscape
+							</label>
 						</div>
-						<div id="p-start-instructions-content" class="col-md-12"></div>
+					</div>
+				</div>
+				<div id="col-choice-start-algorithm" class="col-md-5 col-md-offset-2 text-center">
+					<div class="row">
+						<h1>Processing</h1>
+					</div>
+					<div class="row">
+						<div class="btn-group btn-group-justified" data-toggle="buttons">
+							<label class="btn btn-primary">
+								<input type="radio" id="btn-choice-algorithm-areal" name="btn-choice-algorithm-areal" />Areal Statistics
+							</label>
+							<label class="btn btn-primary">
+								<input type="radio" id="btn-choice-algorithm-subset" name="btn-choice-algorithm-subset" />Data Subsets
+							</label>
+						</div>
 					</div>
 				</div>
 			</div>
 
-			<div id="row-csw-select" class="row">
-				<div id="col-csw-select" class="col-md-6">
+			<div id="row-csw-group" class="row">
+				<div id="row-csw-select" class="row text-center">
 					<label>Select Dataset
 						<select id="form-control-select-csw" class="form-control"></select>
 					</label>
+
 				</div>
-				<div id="col-csw-information" class="col-md-6">
+				<div id="row-csw-desc" class="row">
 					<div id="col-csw-information-title" class="text-center col-md-12">
 						<p id="p-csw-information-title" class="lead"></p>
 					</div>
@@ -132,25 +146,10 @@
 				</div>
 			</div>
 
-			<div id="row-wps-select" class="row">
-				<div id="col-wps-select" class="col-md-6">
-					<label>Select Algorithm
-						<select id="form-control-select-wps" class="form-control"></select>
-					</label>
-				</div>
-				<div id="col-wps-information" class="col-md-6">
-					<div id="col-wps-information-title" class="text-center col-md-12">
-						<p id="p-wps-information-title" class="lead"></p>
-					</div>
-					<div id="col-wps-information-content" class="col-md-12">
-						<p id="p-wps-information-content"></p>
-					</div>
-				</div>
-			</div>
-
 			<div id="row-proceed" class="row text-center">
 				<button id="btn-proceed" class="btn btn-success">Process Data with the Geo Data Portal</button>
 			</div>
+			
 			<div class="row">
 				<jsp:include page="template/USGSFooter.jsp">
                     <jsp:param name="relPath" value="" />
