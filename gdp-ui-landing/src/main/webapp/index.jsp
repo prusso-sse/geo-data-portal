@@ -42,6 +42,23 @@
         </jsp:include>
     </head>
     <body>
+		<%-- Full Record Modal Window --%>
+		<div class="modal fade" id='full-record-modal' tabindex='-1' role='dialog' aria-hidden="true">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+						<h4 class="modal-title"></h4>
+					</div>
+					<div class="modal-body">
+						<div id="metadata"></div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					</div>
+				</div>
+			</div>
+		</div>
 
 		<div class="container">
 			<div id="overlay">
@@ -113,8 +130,8 @@
 			<div id="row-proceed" class="row text-center">
 				<button id="btn-proceed" class="btn btn-success">Process Data with the Geo Data Portal</button>
 			</div>
-			
-						<div id="row-application-intro-text" class="row">
+
+			<div id="row-application-intro-text" class="row">
 				<div class="well">
 					<p>
 						The increasing availability of downscaled climate projections 
@@ -149,7 +166,7 @@
 					</p>
 				</div>
 			</div>
-			
+
 			<div class="row">
 				<jsp:include page="template/USGSFooter.jsp">
                     <jsp:param name="relPath" value="" />
