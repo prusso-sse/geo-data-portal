@@ -57,42 +57,6 @@
                 </jsp:include>
 			</div>
 
-			<div id="row-application-intro-text" class="row">
-				<div class="well">
-					<p>
-						The increasing availability of downscaled climate projections 
-						and other large data products that summarize or predict climate 
-						and land use conditions, is making use of these data more common 
-						in research and management. Scientists and decisionmakers often 
-						need to construct ensembles and compare climate hindcasts and future 
-						projections for particular spatial areas. These tasks generally 
-						require an investigator to procure all datasets of interest en masse, 
-						integrate the various data formats and representations into commonly 
-						accessible and comparable formats, and then extract the subsets of the 
-						datasets that are actually of interest.
-						This process can be challenging 
-						and time intensive due to data-transfer, -storage, and(or) -processing 
-						limits, or unfamiliarity with methods of accessing climate and land use 
-						data. Data management for modeling and assessing the impacts of future 
-						climate conditions is also becoming increasingly expensive due to the 
-						size of the datasets. The Geo Data Portal addresses these limitations, 
-						making access to numerous climate datasets for particular areas of 
-						interest a simple and efficient task.</p>
-
-					<p>
-						This page is a catalog of the datasets that have been tested to 
-						work well for access with the Geo Data Portal. Select one of the 
-						buttons below to see a list of these datasets. At its core, the 
-						Geo Data Portal is an advanced Open Geospatial Consortium Web 
-						Processing Service that can be used in a wide variety of 
-						applications against any web-accessible standards-compliant 
-						dataset. If you'd like to see all the datasets that are 
-						compatible with one of the processing types the Geo Data 
-						Portal can perform, select one of those buttons below.
-					</p>
-				</div>
-			</div>
-
 			<div id="row-choice-start" class="row">
 				<div id="col-choice-start-dataset" class="col-md-5 text-center">
 					<div class="row">
@@ -148,6 +112,42 @@
 
 			<div id="row-proceed" class="row text-center">
 				<button id="btn-proceed" class="btn btn-success">Process Data with the Geo Data Portal</button>
+			</div>
+			
+						<div id="row-application-intro-text" class="row">
+				<div class="well">
+					<p>
+						The increasing availability of downscaled climate projections 
+						and other large data products that summarize or predict climate 
+						and land use conditions, is making use of these data more common 
+						in research and management. Scientists and decisionmakers often 
+						need to construct ensembles and compare climate hindcasts and future 
+						projections for particular spatial areas. These tasks generally 
+						require an investigator to procure all datasets of interest en masse, 
+						integrate the various data formats and representations into commonly 
+						accessible and comparable formats, and then extract the subsets of the 
+						datasets that are actually of interest.
+						This process can be challenging 
+						and time intensive due to data-transfer, -storage, and(or) -processing 
+						limits, or unfamiliarity with methods of accessing climate and land use 
+						data. Data management for modeling and assessing the impacts of future 
+						climate conditions is also becoming increasingly expensive due to the 
+						size of the datasets. The Geo Data Portal addresses these limitations, 
+						making access to numerous climate datasets for particular areas of 
+						interest a simple and efficient task.</p>
+
+					<p>
+						This page is a catalog of the datasets that have been tested to 
+						work well for access with the Geo Data Portal. Select one of the 
+						buttons below to see a list of these datasets. At its core, the 
+						Geo Data Portal is an advanced Open Geospatial Consortium Web 
+						Processing Service that can be used in a wide variety of 
+						applications against any web-accessible standards-compliant 
+						dataset. If you'd like to see all the datasets that are 
+						compatible with one of the processing types the Geo Data 
+						Portal can perform, select one of those buttons below.
+					</p>
+				</div>
 			</div>
 			
 			<div class="row">

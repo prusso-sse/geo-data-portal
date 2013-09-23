@@ -113,7 +113,7 @@ GDP.CSW = function (args) {
 				filters.push(
 					new OpenLayers.Filter.Comparison({
 						type: OpenLayers.Filter.Comparison.LIKE,
-						property: "keyword",
+						property: "Anytext",
 						value: '*'
 					})
 				);
@@ -122,8 +122,9 @@ GDP.CSW = function (args) {
 					filters.push(
 						new OpenLayers.Filter.Comparison({
 							type: OpenLayers.Filter.Comparison.LIKE,
-							property: "keyword",
-							value: keywords[fInd]
+							property: "Anytext",
+							value: keywords[fInd],
+							matchCase : false
 						})
 					);
 				}
@@ -501,6 +502,7 @@ GDP.CSW = function (args) {
 							attr({
 								value: opt + ';' + ident
 							}).
+							addClass('top-lvl-opt').
 							html(options[opt].title);
 					}
 				}
@@ -508,7 +510,8 @@ GDP.CSW = function (args) {
 				option = $('<optgroup>').
 					attr({
 						label : parentTitle
-					});
+					}).
+					addClass('top-lvl-opt');
 				for (opt in options) {
 					if (options.hasOwnProperty(opt)) {
 						option.append(

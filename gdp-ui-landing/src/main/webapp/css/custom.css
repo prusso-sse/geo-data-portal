@@ -15,3 +15,11 @@ img {
 #row-proceed {
 	display : none;
 }
+
+.top-lvl-opt {
+	font-weight: bold;
+}
+
+optgroup {
+	margin-left: 3px;
+}
