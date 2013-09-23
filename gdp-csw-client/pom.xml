@@ -7,6 +7,7 @@
 		<groupId>gov.usgs.cida.gdp</groupId>
 		<version>24-SNAPSHOT</version>
 	</parent>
+	<packaging>war</packaging>
 	<artifactId>gdp-csw-client</artifactId>
   
 	<name>GDP CSW JavaScript Client</name>
@@ -28,6 +29,14 @@
 		<destDir>${project.build.outputDirectory}/META-INF/resources/</destDir>
 	</properties>
 	
+	<dependencies>
+		<dependency>
+			<groupId>gov.usgs.cida.jslibs</groupId>
+			<artifactId>excat-csw-client-simple</artifactId>
+			<type>jar</type>
+		</dependency>
+	</dependencies>
+	
 	<build>
 		<plugins>
 			<plugin>
@@ -38,6 +47,10 @@
 					<source>1.6</source>
 					<target>1.6</target>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-war-plugin</artifactId>
 			</plugin>
 		</plugins>
 		<resources>

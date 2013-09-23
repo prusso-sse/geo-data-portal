@@ -289,7 +289,7 @@ GDP.CSW = function (args) {
 		getUrlToIdentifierFromRecords = function (args) {
 			args = args || {};
 			if (!args.records) {
-				throw "undefined record passed in";
+				throw "undefined records passed in";
 			}
 			var records = args.records,
 				urlTocswIdentifier = {},
@@ -417,6 +417,22 @@ GDP.CSW = function (args) {
 
 			return identToRecord;
 		},
+		createFullRecordView = function(args) {
+			args = args || {};
+			if (!args.record && !args.identifier) {
+				throw "undefined record or identifier passed in";
+			}
+			var record = args.record,
+			identifier = args.identifier;
+			
+			if (!record) {
+				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[identifier];
+			}
+			
+			if (record) {
+				var a;
+			}
+		},
 		createOptionFromRecord = function (args) {
 			args = args || {};
 			if (!args.record) {
@@ -541,6 +557,7 @@ GDP.CSW = function (args) {
 		getUrlToIdentifierFromRecords : getUrlToIdentifierFromRecords,
 		createOptionFromRecord : createOptionFromRecord,
 		getCswIdentToRecordMapFromRecordsArray : getCswIdentToRecordMapFromRecordsArray,
+		createFullRecordView : createFullRecordView,
 		url : this.url,
 		proxy : this.proxy,
 		capabilitiesDocument : this.capabilitiesDocument
