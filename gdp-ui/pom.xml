@@ -116,12 +116,6 @@
 			<version>${project.version}</version>
 			<type>war</type>
 		</dependency>
-		<!--		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>gdp-csw-client</artifactId>
-			<version>${project.version}</version>
-			<type>jar</type>
-		</dependency>-->
 		<!-- /JS LIBS -->
         
 		<!-- LOGGING START-->
