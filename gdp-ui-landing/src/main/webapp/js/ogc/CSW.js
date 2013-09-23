@@ -502,6 +502,7 @@ GDP.CSW = function (args) {
 							attr({
 								value: opt + ';' + ident
 							}).
+							addClass('top-lvl-opt').
 							html(options[opt].title);
 					}
 				}
@@ -509,7 +510,8 @@ GDP.CSW = function (args) {
 				option = $('<optgroup>').
 					attr({
 						label : parentTitle
-					});
+					}).
+					addClass('top-lvl-opt');
 				for (opt in options) {
 					if (options.hasOwnProperty(opt)) {
 						option.append(
