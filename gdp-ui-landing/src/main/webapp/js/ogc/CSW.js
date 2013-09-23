@@ -113,7 +113,7 @@ GDP.CSW = function (args) {
 				filters.push(
 					new OpenLayers.Filter.Comparison({
 						type: OpenLayers.Filter.Comparison.LIKE,
-						property: "keyword",
+						property: "Anytext",
 						value: '*'
 					})
 				);
@@ -122,8 +122,9 @@ GDP.CSW = function (args) {
 					filters.push(
 						new OpenLayers.Filter.Comparison({
 							type: OpenLayers.Filter.Comparison.LIKE,
-							property: "keyword",
-							value: keywords[fInd]
+							property: "Anytext",
+							value: keywords[fInd],
+							matchCase : false
 						})
 					);
 				}
