@@ -53,7 +53,6 @@ GDP.UI = function (args) {
 													algorithm,
 													algorithmArray;
 
-												
 												for (rIdx = 0; rIdx < records.length; rIdx++) {
 													record = records[rIdx];
 													ident = record.fileIdentifier.CharacterString.value;
@@ -119,7 +118,7 @@ GDP.UI = function (args) {
 			deselectButtonGroup = function (args) {
 				var group = args.group,
 					labels;
-				
+
 				if (group === 'dset') {
 					labels = $('#btn-choice-dataset-all,#btn-choice-dataset-climate,#btn-choice-dataset-landscape').parent();
 				} else if (group === 'proc') {
@@ -264,9 +263,9 @@ GDP.UI = function (args) {
 				$('#p-csw-information-content').append('&nbsp;&nbsp;&nbsp;&nbsp;',
 					$('<a />')
 						.attr({
-							'id' :  'view-full-info-link',
-							'ident' : ident
-						})
+						'id' :  'view-full-info-link',
+						'ident' : ident
+					})
 						.html('View Full Record')
 					);
 
@@ -274,12 +273,28 @@ GDP.UI = function (args) {
 					$('#row-proceed').fadeIn();
 					me.bindProceedButton();
 				}
-				
-				$('#view-full-info-link').on('click', function() {
+
+				$('#view-full-info-link').on('click', function () {
 					var ident = this.attributes.ident.textContent;
 					GDP.CONFIG.cswClient.createFullRecordView({
 						identifier : ident
 					});
+					
+					// The excat client we are using is specific to the GDP so it has
+					// GDP functionality attached to some of the hrefs. We need to 
+					// extract the links that the javascript are bound to and make 
+					// the href regular hrefs
+					$('.meta-value a[href*="javascript"]').each(function (i, o) {
+						var hrefAttr = o.attributes.href.textContent;
+						var firstIndex = hrefAttr.indexOf("'") + 1;
+						var lastIndex = hrefAttr.lastIndexOf("'");
+						var rootHref = hrefAttr.substring(firstIndex, lastIndex);
+						$(o).attr({
+							'href' : rootHref,
+							'target' : '_datasetTab'
+						});
+					});
+					
 					$('#full-record-modal').modal('show');
 				});
 			}
@@ -349,7 +364,6 @@ GDP.UI = function (args) {
 						algorithms = "gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm," +
 							"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm";
 					}
-					
 				}
 
 				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent];
