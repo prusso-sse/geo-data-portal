@@ -5,7 +5,11 @@
 }
 
 .modal-dialog {
-	width: 70% !important;
+	width: auto !important;
+}
+
+#view-full-info-link:hover {
+	cursor: pointer;
 }
 
 .close-button {
