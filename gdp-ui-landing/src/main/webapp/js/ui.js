@@ -18,14 +18,6 @@ GDP.UI = function (args) {
 		$('#ccsa-area').children().slice(0, 2).remove();
 
 		var me = this,
-			chosenStartPath,
-			removeOverlay = function () {
-				$('#overlay').fadeOut(
-					function () {
-						$('#overlay').remove();
-					}
-				);
-			},
 			updateOfferingMaps = function () {
 				GDP.CONFIG.cswClient.getDomain({
 					propertyName : 'keyword',
@@ -53,31 +45,36 @@ GDP.UI = function (args) {
 													wpsToCsw = GDP.CONFIG.offeringMaps.wpsToCsw,
 													cswToWps = GDP.CONFIG.offeringMaps.cswToWps,
 													rIdx,
-													sIdx,
-													subjectArray,
-													subject,
 													record,
+													algIdx,
 													algName,
-													ident;
+													ident,
+													url,
+													algorithm,
+													algorithmArray;
 
+												
 												for (rIdx = 0; rIdx < records.length; rIdx++) {
 													record = records[rIdx];
-													ident = record.identifier[0].value;
+													ident = record.fileIdentifier.CharacterString.value;
+													url = '';
 													if (!GDP.CONFIG.offeringMaps.cswIdentToRecord[ident]) {
 														GDP.CONFIG.offeringMaps.cswIdentToRecord[ident] = record;
 													}
-													subjectArray = record.subject;
-													for (sIdx = 0; sIdx < subjectArray.length; sIdx++) {
-														subject = subjectArray[sIdx].value;
-														if (subject.toLowerCase().indexOf('gov.usgs.cida.gdp.wps') !== -1) {
-															if (!wpsToCsw[subject][record.identifier[0].value]) {
-																wpsToCsw[subject][record.identifier[0].value] = record;
-															}
+
+													algorithmArray = GDP.CONFIG.cswClient.getAlgorithmArrayFromRecord({
+														record : record
+													});
+
+													for (algIdx = 0; algIdx < algorithmArray.length; algIdx++) {
+														algorithm = algorithmArray[algIdx];
+														if (!wpsToCsw[algorithm][ident]) {
+															wpsToCsw[algorithm][ident] = record;
 														}
 													}
 
-													if (!cswToWps[record.identifier[0].value]) {
-														cswToWps[record.identifier[0].value] = [];
+													if (!cswToWps[ident]) {
+														cswToWps[ident] = [];
 													}
 												}
 
@@ -118,105 +115,154 @@ GDP.UI = function (args) {
 						]
 					}
 				});
+			},
+			deselectButtonGroup = function (args) {
+				var group = args.group,
+					labels;
+				
+				if (group === 'dset') {
+					labels = $('#btn-choice-dataset-all,#btn-choice-dataset-climate,#btn-choice-dataset-landscape').parent();
+				} else if (group === 'proc') {
+					labels = $('#btn-choice-algorithm-areal,#btn-choice-algorithm-subset').parent();
+				}
+				labels.removeClass('active');
+			},
+			buttonSelected = function (event) {
+				var me = this,
+					button = event.target,
+					buttonId = button.id,
+					dropdown = $('#form-control-select-csw'),
+					keywords = Object.keys(GDP.CONFIG.offeringMaps.wpsToCsw),
+					records;
+
+				dropdown.empty();
+
+				if (buttonId === 'btn-choice-dataset-all') {
+					me.updateCswDropdown({
+						offerings : GDP.CONFIG.offeringMaps.cswIdentToRecord
+					});
+					deselectButtonGroup({
+						group : 'proc'
+					});
+				} else if (buttonId === 'btn-choice-dataset-climate') {
+					keywords = ['*climate*'];
+					deselectButtonGroup({
+						group : 'proc'
+					});
+				} else if (buttonId === 'btn-choice-dataset-landscape') {
+					keywords = ['*landscape*'];
+					deselectButtonGroup({
+						group : 'proc'
+					});
+				} else if (buttonId === 'btn-choice-algorithm-areal') {
+					records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
+						algorithms : [
+							"gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm",
+							"gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm",
+							"gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm"
+						]
+					});
+					deselectButtonGroup({
+						group : 'dset'
+					});
+				} else if (buttonId === 'btn-choice-algorithm-subset') {
+					records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
+						algorithms : [
+							"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm",
+							"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm"
+						]
+					});
+					deselectButtonGroup({
+						group : 'dset'
+					});
+				}
+
+				if (records) {
+					me.updateCswDropdown({
+						offerings : records
+					});
+				} else {
+					GDP.CONFIG.cswClient.getRecordsByKeywords({
+						scope : me,
+						keywords : keywords,
+						callbacks : {
+							success : [
+								function (cswGetRecRespObj) {
+									var records;
+
+									records = GDP.CONFIG.cswClient.getCswIdentToRecordMapFromRecordsArray({
+										records : cswGetRecRespObj.records
+									});
+
+									if (Object.keys(cswGetRecRespObj).length > 0) {
+										me.updateCswDropdown({
+											offerings : records
+										});
+									} else {
+										// @todo - handle where we don't have any records 
+										// from request. This should never happen in 
+										// our controlled environment unless the CSW
+										// server is set up wrong
+									}
+								}
+							],
+							error : [
+								function (error) {
+									GDP.CONFIG.ui.errorEncountered({
+										data : error,
+										recoverable : false
+									});
+								}
+							]
+						}
+					});
+				}
 			};
+
+		this.removeOverlay = function () {
+			$('#overlay').fadeOut(
+				function () {
+					$('#overlay').remove();
+				}
+			);
+		};
 
 		this.cswDropdownChanged = function (event) {
 			var value = event.target.value,
-				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[value],
-				algInd,
-				alg,
-				currentValue,
-				offeringsObj = {};
+				validAlgorithms,
+				record,
+				ident,
+				title,
+				subtitle,
+				isDatasetChosen;
 
 			if (!value) {
 				$('#row-proceed').fadeOut();
 				$('#p-csw-information-title').html('');
 				$('#p-csw-information-content').html('');
-				if (me.chosenStartPath === 'dataset') {
-					$('#row-wps-select').fadeOut();
-					$('#form-control-select-wps option[value=""]').val('').change();
-				}
 			} else {
-				$('#p-csw-information-title').html(GDP.CONFIG.offeringMaps.cswIdentToRecord[value].title[0].value);
-				$('#p-csw-information-content').html(GDP.CONFIG.offeringMaps.cswIdentToRecord[value].abstract[0]);
-				if (me.chosenStartPath === 'dataset') {
-					for (algInd = 0; algInd < validAlgorithms.length; algInd++) {
-						alg = validAlgorithms[algInd];
-						offeringsObj[alg] = alg;
-					}
-
-					currentValue = $('#form-control-select-wps').val();
-
-					me.updateWpsDropdown({
-						offerings: offeringsObj
-					});
-
-					if ($('#form-control-select-wps option[value="' + currentValue + '"]').length) {
-						$('#form-control-select-wps').val(currentValue).change();
-					} else {
-						$('#form-control-select-wps option[value=""]').val('').change();
-					}
-					$('#row-wps-select').fadeIn();
-				} else {
-					if ($('#form-control-select-csw').val()) {
-						me.bindProceedButton();
-						$('#row-proceed').fadeIn();
-					}
-				}
-			}
-		};
-
-		this.wpsDropdownChanged = function (event) {
-			var value = event.target.value,
-				validOfferings = GDP.CONFIG.offeringMaps.wpsToCsw[value],
-				currentValue,
-				me = this;
-
-			if (!value) {
-				$('#row-proceed').fadeOut();
-				$('#p-wps-information-title').html('');
-				$('#p-wps-information-content').html('');
-				if (me.chosenStartPath === 'algorithm') {
-					$('#row-csw-select').fadeOut();
-					$('#form-control-select-csw option[value=""]').val('').change();
-				}
-			} else {
-				GDP.CONFIG.wpsClient.getProcessDescription({
-					process : value,
-					callbacks : {
-						success : [
-							function (processResponse) {
-								$('#p-wps-information-title').html(processResponse.title);
-								$('#p-wps-information-content').html(processResponse.abstract);
-								if (me.chosenStartPath === 'algorithm') {
-									currentValue = $('#form-control-select-wps').val();
-
-									me.updateCswDropdown({
-										offerings: validOfferings
-									});
-
-									if ($('#form-control-select-csw option[value="' + currentValue + '"]').length) {
-										$('#form-control-select-csw').val(currentValue).change();
-									} else {
-										$('#form-control-select-csw option[value=""]').val('').change();
-									}
-									$('#row-csw-select').fadeIn();
-								} else {
-									if ($('#form-control-select-wps').val()) {
-										me.bindProceedButton();
-										$('#row-proceed').fadeIn();
-									}
-								}
-							}
-						],
-						error : [
-							function (response) {
-								var msg = 'Unable to get description for this process';
-								$('#p-wps-information-content').html(msg);
-							}
-						]
-					}
+				ident = value.split(';')[1];
+				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[ident];
+				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[ident];
+				title = GDP.CONFIG.cswClient.getTitleFromRecord({
+					record : record
 				});
+				subtitle = $(event.target).find('option[value="' + value + '"]').html();
+				isDatasetChosen = $('.btn-group label.active input').attr('id').indexOf('dataset') !== -1;
+
+				if (subtitle !== title) {
+					title += '<br />' + subtitle;
+				}
+
+				$('#p-csw-information-title').html(title);
+				$('#p-csw-information-content').html(GDP.CONFIG.cswClient.getAbstractFromRecord({
+					record : record
+				}));
+
+				if ($('#form-control-select-csw').val()) {
+					$('#row-proceed').fadeIn();
+					me.bindProceedButton();
+				}
 			}
 		};
 
@@ -224,7 +270,9 @@ GDP.UI = function (args) {
 			args = args || {};
 			var offerings =  args.offerings || GDP.CONFIG.offeringMaps.cswToWps,
 				dropdown = $('#form-control-select-csw'),
-				ident;
+				row = $('#row-csw-group'),
+				ident,
+				option;
 
 			dropdown.empty();
 			dropdown.append(
@@ -238,149 +286,65 @@ GDP.UI = function (args) {
 			);
 			for (ident in offerings) {
 				if (offerings.hasOwnProperty(ident)) {
-					dropdown.append(
-						$('<option />')
-							.attr({
-								value : ident
-							}).html(GDP.CONFIG.offeringMaps.cswIdentToRecord[ident].title[0].value)
-					);
+					option = GDP.CONFIG.cswClient.createOptionFromRecord({
+						record : GDP.CONFIG.offeringMaps.cswIdentToRecord[ident]
+					});
+					dropdown.append(option);
 				}
 			}
+
+			if (row.css('display') === 'none') {
+				row.fadeIn();
+			}
+
 			dropdown.off('change', this.cswDropdownChanged);
 			dropdown.on('change', this.cswDropdownChanged);
-		};
-
-		this.updateWpsDropdown = function (args) {
-			args = args || {};
-			var offerings = args.offerings || GDP.CONFIG.offeringMaps.wpsToCsw,
-				dropdown = $('#form-control-select-wps'),
-				ident;
-
-			dropdown.empty();
-			dropdown.append(
-				$('<option />')
-					.attr({
-						name : '',
-						value : '',
-						label : '',
-						selected : 'selected'
-					}).html('')
-			);
-
-			for (ident in offerings) {
-				if (offerings.hasOwnProperty(ident)) {
-					dropdown.append(
-						$('<option />')
-							.attr({
-								value : ident
-							}).html(ident)
-					);
-				}
-			}
-
-			dropdown.off('change', $.proxy(this.wpsDropdownChanged, this));
-			dropdown.on('change', $.proxy(this.wpsDropdownChanged, this));
 		};
 
 		this.errorEncountered = function (args) {
 
 		};
 
-		this.updateStartInstructions = function (args) {
-			args = args || {};
-			var title = args.title,
-				content = args.content;
-			$('#div-start-instructions').fadeOut(function () {
-				$('#p-start-instructions-title').html(title);
-				$('#p-start-instructions-content').html(content);
-				$('#row-start-instructions').css('visibility', 'visible').removeClass('hidden').fadeIn();
-				$('#div-start-instructions').fadeIn();
-			});
-		};
-
-		this.algorithmStartButtonSelected = function (event) {
-			var me = this;
-			this.chosenStartPath = 'algorithm';
-
-			me.updateWpsDropdown();
-			me.updateCswDropdown();
-			$('#row-proceed').fadeOut();
-
-			this.updateStartInstructions({
-				title : 'Begin By Selecting An Algorithm',
-				content : 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, ' +
-						'sed do eiusmod tempor incididunt ut labore et dolore magna ' +
-						'aliqua. Ut enim ad minim veniam, quis nostrud exercitation ' +
-						'ullamco laboris nisi ut aliquip ex ea commodo consequat. ' +
-						'Duis aute irure dolor in reprehenderit in voluptate velit ' +
-						'esse cillum dolore eu fugiat nulla pariatur. Excepteur sint ' +
-						'occaecat cupidatat non proident, sunt in culpa qui officia ' +
-						'deserunt mollit anim id est laborum.'
-			});
-
-			$('#row-csw-select').fadeOut(function () {
-				$('#row-wps-select').fadeOut(function () {
-					$('#row-wps-select').insertBefore($('#row-csw-select'));
-					$('#row-wps-select').fadeIn();
-				});
-			});
-		};
-
-		this.datasetStartButtonSelected = function (event) {
-			var me = this;
-			me.chosenStartPath = 'dataset';
-
-			me.updateWpsDropdown();
-			me.updateCswDropdown();
-			$('#row-proceed').fadeOut();
-
-			this.updateStartInstructions({
-				title : 'Begin By Selecting A Dataset',
-				content : 'Sed ut perspiciatis unde omnis iste natus error sit ' +
-						'voluptatem accusantium doloremque laudantium, totam rem ' +
-						'aperiam, eaque ipsa quae ab illo inventore veritatis et ' +
-						'quasi architecto beatae vitae dicta sunt explicabo. Nemo ' +
-						'enim ipsam voluptatem quia voluptas sit aspernatur aut odit ' +
-						'aut fugit, sed quia consequuntur magni dolores eos qui ' +
-						'ratione voluptatem sequi nesciunt.'
-			});
-
-			$('#row-wps-select').fadeOut(function () {
-				$('#row-csw-select').fadeOut(function () {
-					$('#row-csw-select').insertBefore($('#row-wps-select'));
-					$('#row-csw-select').fadeIn();
-				});
-			});
-		};
-
 		this.bindProceedButton = function () {
 			$('#btn-proceed').off('click', this.bindProceedButton);
 			$('#btn-proceed').on('click', function () {
 				var csw,
-					cswRecord,
-					uriIndex,
-					uri,
-					wps = $('#form-control-select-wps').val(),
-					win;
-				cswRecord = GDP.CONFIG.offeringMaps.cswIdentToRecord[$('#form-control-select-csw').val()];
-				for (uriIndex = 0; uriIndex < cswRecord.URI.length; uriIndex++) {
-					uri = cswRecord.URI[uriIndex];
-					if (uri.name.toLowerCase() === 'opendap') {
-						csw = encodeURIComponent(uri.value);
+					cswIdent,
+					cswUrl,
+					record,
+					win,
+					algorithms,
+					buttonId = $('.btn-group label.active input').attr('id'),
+					isDatasetChosen = buttonId.indexOf('dataset') !== -1;
+
+				cswUrl = $('#form-control-select-csw').val().split(';')[0];
+				cswIdent = $('#form-control-select-csw').val().split(';')[1];
+
+				if (isDatasetChosen) {
+					algorithms = GDP.CONFIG.offeringMaps.cswToWps[cswIdent].join(',');
+				} else {
+					if (buttonId === 'btn-choice-algorithm-areal') {
+						algorithms = "gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm," +
+							"gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm," +
+							"gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm";
+					} else if (buttonId === 'btn-choice-algorithm-subset') {
+						algorithms = "gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm," +
+							"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm";
 					}
+					
 				}
 
-				win = window.open(GDP.CONFIG.hosts.gdp + '?csw=' + csw + '&wps=' + wps, '_gdp');
+				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent];
+				csw = encodeURIComponent(cswUrl);
+				win = window.open(GDP.CONFIG.hosts.gdp + '?dataset=' + csw + '&algorithm=' + algorithms, '_gdp');
 				win.focus();
 			});
 		};
 
 		this.initializationCompleted = function () {
-			me.updateWpsDropdown();
-			me.updateCswDropdown();
-			removeOverlay();
-			$('#btn-choice-algorithm').on('change', $.proxy(this.algorithmStartButtonSelected, this));
-			$('#btn-choice-dataset').on('change', $.proxy(this.datasetStartButtonSelected, this));
+			$('#btn-choice-dataset-all,#btn-choice-dataset-climate,#btn-choice-dataset-landscape,#btn-choice-algorithm-areal,#btn-choice-algorithm-subset').
+				on('change', $.proxy(buttonSelected, this));
+			this.removeOverlay();
 		};
 
 		GDP.CONFIG.cswClient.requestGetCapabilities({
@@ -429,10 +393,8 @@ GDP.UI = function (args) {
 	return {
 		bindProceedButton : this.bindProceedButton,
 		updateCswDropdown : this.updateCswDropdown,
-		updateWpsDropdown : this.updateWpsDropdown,
 		cswDropdownUpdated : this.cswDropdownChanged,
-		wpsDropdownUpdated : this.wpsDropdownChanged,
 		errorEncountered : this.errorEncountered,
-		chosenStartPath : this.chosenStartPath
+		removeOverlay : this.removeOverlay
 	};
 };

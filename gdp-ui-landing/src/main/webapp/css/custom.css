@@ -10,8 +10,16 @@ img {
 }
 
 #row-start-instructions,
-#row-csw-select,
+#row-csw-group,
 #row-wps-select,
 #row-proceed {
 	display : none;
+}
+
+.top-lvl-opt {
+	font-weight: bold;
+}
+
+optgroup {
+	margin-left: 3px;
 }

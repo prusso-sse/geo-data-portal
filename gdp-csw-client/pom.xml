@@ -29,13 +29,6 @@
 	</properties>
 	
 	<build>
-		<resources>
-			<resource>
-				<directory>${project.basedir}/src/main/resources</directory>
-				<targetPath>${destDir}</targetPath>
-			</resource>
-		</resources>
-		
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -47,5 +40,12 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<resources>
+			<resource>
+				<directory>${project.basedir}/src/main/resources</directory>
+				<targetPath>${destDir}</targetPath>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
 	</build>
 </project>

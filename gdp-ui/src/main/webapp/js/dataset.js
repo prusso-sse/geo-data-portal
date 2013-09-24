@@ -67,7 +67,7 @@ var Dataset = function() {
         }
         
         logger.debug('GDP: Creating algorithm dropdown container.');
-        if (_algorithmList.length == 1) {
+        if (_algorithmList.length === 1) {
             logger.trace('GDP: Configured to display a single algorithm.');
             $(_ALGORITHM_DROPDOWN_CONTAINER).prepend('Algorithm: ' + Algorithm.algorithms[_algorithmList[0]].title);
             $(_ALGORITHM_DROPDOWN).addClass('hidden');
