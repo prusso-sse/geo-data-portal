@@ -111,16 +111,11 @@
 			<type>jar</type>
 		</dependency>
 		<dependency>
-			<groupId>gov.usgs.cida.jslibs</groupId>
-			<artifactId>excat-csw-client-simple</artifactId>
-			<type>jar</type>
-		</dependency>
-<!--		<dependency>
-			<groupId>${project.groupId}</groupId>
+			<groupId>gov.usgs.cida.gdp</groupId>
 			<artifactId>gdp-csw-client</artifactId>
 			<version>${project.version}</version>
-			<type>jar</type>
-		</dependency>-->
+			<type>war</type>
+		</dependency>
 		<!-- /JS LIBS -->
         
 		<!-- LOGGING START-->

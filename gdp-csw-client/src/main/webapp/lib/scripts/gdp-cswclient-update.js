@@ -115,18 +115,19 @@ CSWClient.prototype.getRecordById = function (id) {
  * @param {type} xml
  * @returns {undefined}
  */
-CSWClient.prototype.handleCSWResponse = function (request, xml) {
+CSWClient.prototype.handleCSWResponse = function (request, xml, displaymode) {
 	var stylesheet = "lib/xsl/prettyxml.xsl",
 		xslt,
 		processor = new XSLTProcessor(),
 		serializer = new XMLSerializer(),
 		XmlDom,
 		output,
+		displaymode = displaymode || document.theForm.displaymode.value,
 		outputDiv = document.getElementById("csw-output");
 
-	if (request === "getrecords" && document.theForm.displaymode.value !== "xml") {
+	if (request === "getrecords" && displaymode !== "xml") {
 		stylesheet = "lib/xsl/csw-results.xsl";
-	} else if (request === "getrecordbyid" && document.theForm.displaymode.value !== "xml") {
+	} else if (request === "getrecordbyid" && displaymode !== "xml") {
 		stylesheet = "lib/xsl/csw-metadata.xsl";
 	}
 

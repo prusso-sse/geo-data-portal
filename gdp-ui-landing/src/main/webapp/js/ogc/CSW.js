@@ -11,7 +11,7 @@ GDP.CSW = function (args) {
 	this.url = args.url;
 	this.proxy = args.proxy;
 	this.capabilitiesDocument = args.capabilitiesDocument;
-
+	this.cswClient = new CSWClient(this.url, this.proxy);
 	/**
 	 * Create a CSW GetCapabilities request
 	 * @param args {Object}
@@ -289,7 +289,7 @@ GDP.CSW = function (args) {
 		getUrlToIdentifierFromRecords = function (args) {
 			args = args || {};
 			if (!args.records) {
-				throw "undefined record passed in";
+				throw "undefined records passed in";
 			}
 			var records = args.records,
 				urlTocswIdentifier = {},
@@ -417,6 +417,21 @@ GDP.CSW = function (args) {
 
 			return identToRecord;
 		},
+		createFullRecordView = function(args) {
+			args = args || {};
+			if (!args.identifier) {
+				throw "undefined identifier passed in";
+			}
+			var identifier = args.identifier,
+				cswResponse;
+			
+			var getrecordXML = '<csw:GetRecordById xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" ' + 
+					'xmlns:xlink="http://www.w3.org/1999/xlink" service="CSW" version="2.0.2" ' + 
+					'outputFormat="application/xml" outputSchema="http://www.isotc211.org/2005/gmd">' + 
+					'<csw:Id>'+identifier+'</csw:Id><csw:ElementSetName>full</csw:ElementSetName></csw:GetRecordById>';
+			cswResponse = this.client.sendCSWRequest(getrecordXML);
+			this.client.handleCSWResponse("getrecordbyid", cswResponse, "html");
+		},
 		createOptionFromRecord = function (args) {
 			args = args || {};
 			if (!args.record) {
@@ -541,8 +556,10 @@ GDP.CSW = function (args) {
 		getUrlToIdentifierFromRecords : getUrlToIdentifierFromRecords,
 		createOptionFromRecord : createOptionFromRecord,
 		getCswIdentToRecordMapFromRecordsArray : getCswIdentToRecordMapFromRecordsArray,
+		createFullRecordView : createFullRecordView,
 		url : this.url,
 		proxy : this.proxy,
+		client : this.cswClient,
 		capabilitiesDocument : this.capabilitiesDocument
 	};
 };
