@@ -32,6 +32,8 @@
 		<GeneratorList>
 			<Generator name="CSVGenerator" className="gov.usgs.cida.gdp.wps.generator.CSVGenerator" active="true">
 				<Format mimetype="text/csv"/>
+                <Format mimetype="text/tab-separated-values"/>
+                <Format mimetype="text/plain"/>
 			</Generator>
 			<Generator name="GeoTIFFGenerator" className="gov.usgs.cida.gdp.wps.generator.GeoTIFFGenerator" active="true">
                 <Format mimetype="image/geotiff"/>

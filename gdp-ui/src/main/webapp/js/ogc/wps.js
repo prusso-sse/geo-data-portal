@@ -51,15 +51,16 @@ var WPS = function () {
 			'</wps:DataInputs>' +
 			'<wps:ResponseForm>';
 
+        var mimeTypeAttr = (mimeType) ? ' mimeType="' + mimeType + '"' : '';
 		if (rawOutput) {
-			xml += '<wps:RawDataOutput mimeType="' + mimeType + '">';
+			xml += '<wps:RawDataOutput' + mimeTypeAttr + '>';
             xml += '<ows:Identifier>' + outputs[0] + '</ows:Identifier>';
 			xml += '</wps:RawDataOutput>';
 		} else {
             xml +=     '<wps:ResponseDocument' + (async ? ' storeExecuteResponse="true" status="true"' : '') + '>';
 			for (outputsIdx = 0; outputsIdx < outputs.length; outputsIdx++) {
 				xml +=
-					'<wps:Output' + (async ? ' asReference="true"' : '') + '>' +
+					'<wps:Output' + (async ? ' asReference="true"' : '') + mimeTypeAttr +'>' +
 					'<ows:Identifier>' + outputs[outputsIdx] + '</ows:Identifier>' +
 					'</wps:Output>';
 			}

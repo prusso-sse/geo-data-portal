@@ -6,14 +6,18 @@ package gov.usgs.cida.gdp.coreprocessing;
  */
 public enum Delimiter {
 
-        COMMA(","),
-        TAB("\t"),
-        SPACE(" ");
+        COMMA(",", ".csv", "text/csv"),
+        TAB("\t", ".tsv", "text/tab-separated-values"),
+        SPACE(" ", ".txt", "text/plain");
 
         public final String delimiter;
+        public final String extension;
+        public final String mimeType;
 
-        private Delimiter(String value) {
+        private Delimiter(String value, String extension, String mimeType) {
             this.delimiter = value;
+            this.extension = extension;
+            this.mimeType = mimeType;
         }
 
         public static Delimiter getDefault() {
