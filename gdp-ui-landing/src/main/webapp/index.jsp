@@ -43,23 +43,6 @@
     </head>
     <body>
 		<%-- Full Record Modal Window --%>
-		<div class="modal fade" id='full-record-modal' tabindex='-1' role='dialog' aria-hidden="true">
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-						<h4 class="modal-title"></h4>
-					</div>
-					<div class="modal-body">
-						<div id="metadata"></div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-					</div>
-				</div>
-			</div>
-		</div>
-
 		<div class="container">
 			<div id="overlay">
 				<div id="overlay-content">
@@ -72,6 +55,22 @@
                     <jsp:param name="header-class" value="" />
                     <jsp:param name="site-title" value="USGS Geo Data Portal" />
                 </jsp:include>
+			</div>
+
+			<div class="row">
+				<div class="well">
+					<p>
+						This page is a catalog of the datasets that have been tested to 
+						work well for access with the Geo Data Portal. Select one of the 
+						buttons below to see a list of these datasets. At its core, the 
+						Geo Data Portal is an advanced Open Geospatial Consortium Web 
+						Processing Service that can be used in a wide variety of 
+						applications against any web-accessible standards-compliant 
+						dataset. If you'd like to see all the datasets that are 
+						compatible with one of the processing types the Geo Data 
+						Portal can perform, select one of those buttons below.
+					</p>
+				</div>
 			</div>
 
 			<div id="row-choice-start" class="row">
@@ -131,7 +130,7 @@
 				<button id="btn-proceed" class="btn btn-success">Process Data with the Geo Data Portal</button>
 			</div>
 
-			<div id="row-application-intro-text" class="row">
+			<div class="row">
 				<div class="well">
 					<p>
 						The increasing availability of downscaled climate projections 
@@ -151,18 +150,7 @@
 						climate conditions is also becoming increasingly expensive due to the 
 						size of the datasets. The Geo Data Portal addresses these limitations, 
 						making access to numerous climate datasets for particular areas of 
-						interest a simple and efficient task.</p>
-
-					<p>
-						This page is a catalog of the datasets that have been tested to 
-						work well for access with the Geo Data Portal. Select one of the 
-						buttons below to see a list of these datasets. At its core, the 
-						Geo Data Portal is an advanced Open Geospatial Consortium Web 
-						Processing Service that can be used in a wide variety of 
-						applications against any web-accessible standards-compliant 
-						dataset. If you'd like to see all the datasets that are 
-						compatible with one of the processing types the Geo Data 
-						Portal can perform, select one of those buttons below.
+						interest a simple and efficient task.
 					</p>
 				</div>
 			</div>
@@ -179,5 +167,22 @@
 		<jsp:include page="WEB-INF/jsp/scripts.jsp">
 			<jsp:param name="development" value="<%= development%>" />
 		</jsp:include>
+
+		<div  class="modal fade" role="dialog" aria-labelledby="modal-window-label" aria-hidden="true" id='full-record-modal'>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close close-button" data-dismiss="modal" style="color:#000000;">X</button>
+						<h4  aria-labelledby="modal-window-label" class="modal-title">Dataset Information</h4>
+					</div>
+					<div class="modal-body">
+						<div id="metadata"></div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal" aria-hidden="true">Close</button>
+					</div>
+				</div>
+			</div>
+		</div>
     </body>
 </html>

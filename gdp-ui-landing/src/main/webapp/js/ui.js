@@ -234,6 +234,7 @@ GDP.UI = function (args) {
 				ident,
 				title,
 				subtitle,
+				content,
 				isDatasetChosen;
 
 			if (!value) {
@@ -254,15 +255,33 @@ GDP.UI = function (args) {
 					title += '<br />' + subtitle;
 				}
 
-				$('#p-csw-information-title').html(title);
-				$('#p-csw-information-content').html(GDP.CONFIG.cswClient.getAbstractFromRecord({
+				content = GDP.CONFIG.cswClient.getAbstractFromRecord({
 					record : record
-				}));
+				});
+
+				$('#p-csw-information-title').html(title);
+				$('#p-csw-information-content').html(content);
+				$('#p-csw-information-content').append('&nbsp;&nbsp;&nbsp;&nbsp;',
+					$('<a />')
+						.attr({
+							'id' :  'view-full-info-link',
+							'ident' : ident
+						})
+						.html('View Full Record')
+					);
 
 				if ($('#form-control-select-csw').val()) {
 					$('#row-proceed').fadeIn();
 					me.bindProceedButton();
 				}
+				
+				$('#view-full-info-link').on('click', function() {
+					var ident = this.attributes.ident.textContent;
+					GDP.CONFIG.cswClient.createFullRecordView({
+						identifier : ident
+					});
+					$('#full-record-modal').modal('show');
+				});
 			}
 		};
 
@@ -280,8 +299,7 @@ GDP.UI = function (args) {
 					.attr({
 						name : '',
 						value : '',
-						label : '',
-						selected : 'selected'
+						label : ''
 					}).html('')
 			);
 			for (ident in offerings) {
