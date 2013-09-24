@@ -699,9 +699,18 @@ var Dataset = function() {
                         $(_RETRIEVE_PROC_INFO_BUTTON).fadeOut(Constant.ui.fadeSpeed);
                         $(_SUBMIT_FOR_PROCESSING_LINK).fadeOut(Constant.ui.fadeSpeed);
                         $(_REDIR_TO_SB_BUTTON).fadeOut(Constant.ui.fadeSpeed);
-                        if (submitWpsStringInputs.DELIMITER) {
-                            var delimiter = submitWpsStringInputs.DELIMITER[0] || 'COMMA';
-                            var mimeType = (delimiter === 'TAB') ? 'text/tab-separated-values' : (delimiter === 'SPACE') ? 'text/plain' : 'text/csv';
+                        var mimeType;
+                        if (submitWpsStringInputs.hasOwnProperty('DELIMITER') &&
+                            Object.prototype.toString.call(submitWpsStringInputs.DELIMITER) === "[object Array]" &&
+                            submitWpsStringInputs.DELIMITER.length > 0) {
+                                var delimiter = submitWpsStringInputs.DELIMITER[0] || 'COMMA';
+                                if (delimiter === 'TAB') {
+                                    mimeType = 'text/tab-separated-values';
+                                } else if (delimiter === 'SPACE') {
+                                    mimeType = 'text/plain';
+                                } else {
+                                    mimeType = 'text/csv';
+                                }
                         }
                         WPS.sendWpsExecuteRequest(Constant.endpoint.proxy + Constant.endpoint.processwps, submitWpsAlgorithm, submitWpsStringInputs, ['OUTPUT'], true, submitForProcessingCallback, submitWpsXmlInputs, false, 'xml', mimeType);
                     },
