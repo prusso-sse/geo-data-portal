@@ -136,12 +136,16 @@
 				}
 			} else if ('<%=method%>' === 'POST') {
 				if ((!incomingParams['algorithm'] || !incomingParams['dataset'])) {
+					var formContainer = $('<div />').attr({
+						'style' : 'display:none;'	
+					});
 					var form = $('<form />').attr({
-						'action': '<%= props.getProperty("gdp.endpoint.landing", "/gdp-ui-landing")%>',
-						'method': 'POST'
+						'action': '<%= props.getProperty("gdp.endpoint.landing", "/gdp-ui-landing/")%>',
+						'method': 'POST',
+						'name': 'gdp-landing-redirect-post-form'
 					});
 					for (key in incomingParams) {
-						if (incomingParams.hasOwnProperty(key)) {
+						if (key && incomingParams.hasOwnProperty(key)) {
 							form.append($('<input />').attr({
 								'type': 'hidden',
 								'name': key,
@@ -149,8 +153,9 @@
 							}));
 						}
 					}
-					$('body').append(form);
-					document.forms[2].submit();
+					formContainer.append(form);
+					$('body').append(formContainer);
+					document.forms['gdp-landing-redirect-post-form'].submit();
 				}
 			}
 		});
