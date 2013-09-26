@@ -167,7 +167,7 @@ function initializeSteps() {
     ScienceBase.init();
     Algorithm.init();
 
-	cswEndpoint = ScienceBase.useSB ? Constant.endpoint['sciencebase-csw'] :  Constant.endpoint.csw;
+	cswEndpoint = /*ScienceBase.useSB ? Constant.endpoint['sciencebase-csw'] : */ Constant.endpoint.csw;
 	GDPCSWClient = new CSWClient(cswEndpoint, Constant.endpoint.proxy);
 	GDPCSWClient.sbEndpoint = Constant.endpoint['sciencebase-csw'];
 	GDPCSWClient.writeClient('csw-wrapper');

@@ -1,3 +1,4 @@
+<%@page import="java.util.Enumeration"%>
 <%@page import="org.slf4j.LoggerFactory"%>
 <%@page import="gov.usgs.cida.config.DynamicReadOnlyProperties"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
@@ -12,7 +13,7 @@
 		}
 	}
 %>
-<% Boolean dev = Boolean.parseBoolean(request.getParameter("development")); %>
+<% Boolean dev = Boolean.parseBoolean(request.getParameter("development"));%>
 
 <%-- JQuery + JQuery UI --%>
 <script type="text/javascript" src="webjars/jquery/1.9.1/jquery<%= dev ? "" : ".min"%>.js"></script>
@@ -47,37 +48,79 @@
 <script type="text/javascript">
 	GDP = GDP || {};
 	GDP.CONFIG = {
-		hosts : {
-			csw : 'http://cida-eros-gdp2.er.usgs.gov:8081/geonetwork/srv/en/csw', <%-- '<%= props.getProperty("gdp.endpoint.csw.url") %>' --%>
-			wps : '<%= props.getProperty("gdp.endpoint.wps.process.url") %>',
-			proxy : '<%= props.getProperty("gdp.endpoint.proxy", "proxy/") %>',
-			gdp : '<%= props.getProperty("gdp.endpoint.gdp", "/GDP_WEB") %>'
+		incomingMethod: '<%= request.getMethod() %>',
+		incomingParams: {},
+		hosts: {
+			csw: '<%= props.getProperty("gdp.endpoint.csw.url", "http://cida-eros-gdp2.er.usgs.gov:8081/geonetwork/srv/en/csw") %>',
+			wps: '<%= props.getProperty("gdp.endpoint.wps.process.url")%>',
+			proxy: '<%= props.getProperty("gdp.endpoint.proxy", "proxy/")%>',
+			gdp: '<%= props.getProperty("gdp.endpoint.gdp", "/GDP_WEB/")%>'
 		},
-		offeringMaps : {
-			cswToWps : {},
-			wpsToCsw : {},
-			wpsToUrl : {},
-			urlTocswIdentifier : {},
-			cswIdentToRecord : {}
+		offeringMaps: {
+			cswToWps: {},
+			wpsToCsw: {},
+			wpsToUrl: {},
+			urlTocswIdentifier: {},
+			cswIdentToRecord: {}
 		}
 	};
-	
-	// <IE9 Fix for Object
-	Object.keys = Object.keys || (function () {
-		var hasOwnProperty = Object.prototype.hasOwnProperty,
-			hasDontEnumBug = !{toString:null}.propertyIsEnumerable("toString"),
-			DontEnums = [
-				'toString',
-				'toLocaleString',
-				'valueOf',
-				'hasOwnProperty',
-				'isPrototypeOf',
-				'propertyIsEnumerable',
-				'constructor'
-			],
-			DontEnumsLength = DontEnums.length;
 
-		return function (o) {
+	<%
+		Enumeration<String> paramNames = (Enumeration<String>) request.getParameterNames();
+		while (paramNames.hasMoreElements()) {
+			String key = paramNames.nextElement();
+			String value = request.getParameter(key);
+    %>
+		if ('<%=key%>') {
+			GDP.CONFIG.incomingParams['<%=key%>'] = '<%=value%>';
+		}
+    <%
+		}
+    %>
+		
+	(function(incomingParams) {
+		var kvp = window.location.search.substring(1),
+				vars = kvp.split('&'),
+				vIdx = 0,
+				pair,
+				key,
+				value;
+
+		for (vIdx; vIdx < vars.length; vIdx++) {
+			pair = vars[vIdx].split('=');
+			key = pair[0];
+			value = pair[1];
+			incomingParams[key] = value;
+		}
+	})(GDP.CONFIG.incomingParams);
+
+
+	// http://stackoverflow.com/questions/37684/how-to-replace-plain-urls-with-links
+	function replaceURLWithHTMLLinks(text) {
+		var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+		if (text && !text.toLowerCase().contains('noreplace')) {
+			return text.replace(exp, "<a href='$1' target='_blank'>$1</a>");
+		} else {
+			return text;
+		}
+	}
+
+	// <IE9 Fix for Object
+	Object.keys = Object.keys || (function() {
+		var hasOwnProperty = Object.prototype.hasOwnProperty,
+				hasDontEnumBug = !{toString: null}.propertyIsEnumerable("toString"),
+				DontEnums = [
+			'toString',
+			'toLocaleString',
+			'valueOf',
+			'hasOwnProperty',
+			'isPrototypeOf',
+			'propertyIsEnumerable',
+			'constructor'
+		],
+				DontEnumsLength = DontEnums.length;
+
+		return function(o) {
 			if (typeof o !== "object" && typeof o !== "function" || o === null)
 				throw new TypeError("Object.keys called on a non-object");
 
@@ -91,7 +134,7 @@
 				for (var i = 0; i < DontEnumsLength; i++) {
 					if (hasOwnProperty.call(o, DontEnums[i]))
 						result.push(DontEnums[i]);
-				}   
+				}
 			}
 
 			return result;

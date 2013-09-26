@@ -5,6 +5,26 @@
 --%>
 
 <%@page import="java.util.Enumeration"%>
+<%@page import="org.slf4j.LoggerFactory"%>
+<%@page import="java.io.File"%>
+<%@page import="gov.usgs.cida.config.DynamicReadOnlyProperties"%>
+<%@page import="javax.servlet.http.HttpServletRequest"%>
+<%!	protected DynamicReadOnlyProperties props = null;
+
+	{
+		try {
+			File propsFile = new File(getClass().getClassLoader().getResource("application.properties").toURI());
+			props = new DynamicReadOnlyProperties(propsFile);
+			props = props.addJNDIContexts(new String[0]);
+		} catch (Exception e) {
+			LoggerFactory.getLogger("index.jsp").error("Could not find JNDI - Application will probably not function correctly");
+		}
+	}
+	boolean development = Boolean.parseBoolean(props.getProperty("development", "false"));
+%>
+<%
+	String method = request.getMethod();
+%>
 <script type="text/javascript" src="js/cookie/cookie.js"></script>
 
 <jsp:include page="../js/log4javascript/log4javascript.jsp">
@@ -52,16 +72,16 @@
 			return oNode.xml;
 		};
 	}
-	
+
 	// http://stackoverflow.com/questions/37684/how-to-replace-plain-urls-with-links
-    function replaceURLWithHTMLLinks(text) {
-        var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-        if (text && !text.toLowerCase().contains('noreplace')) {
-            return text.replace(exp, "<a href='$1' target='_blank'>$1</a>");
-        } else {
-            return text;
-        }
-    }
+	function replaceURLWithHTMLLinks(text) {
+		var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+		if (text && !text.toLowerCase().contains('noreplace')) {
+			return text.replace(exp, "<a href='$1' target='_blank'>$1</a>");
+		} else {
+			return text;
+		}
+	}
 
 	var incomingParams = {};
     <%
@@ -74,6 +94,8 @@
     <%
 		}
     %>
+
+
 
     <%-- Google Analytics --%> 
     <%-- http://internal.cida.usgs.gov/jira/browse/GDP-500 --%>
@@ -90,5 +112,52 @@
 			var s = document.getElementsByTagName('script')[0];
 			s.parentNode.insertBefore(ga, s);
 		})();
+
+		$(document).ready(function() {
+			// I want to do this here so we can redirect out before diving too far 
+			// into the application if need be
+			var kvp = window.location.search.substring(1),
+				vars = kvp.split('&'),
+				vIdx = 0,
+				pair,
+				key,
+				value;
+				
+			for (vIdx; vIdx < vars.length; vIdx++) {
+				pair = vars[vIdx].split('=');
+				key = pair[0];
+				value = pair[1];
+				incomingParams[key] = value;
+			}
+			
+			if ('<%=method%>' === 'GET') {
+				if (!incomingParams['algorithm'] || !incomingParams['dataset']) {
+					window.location = '<%= props.getProperty("gdp.endpoint.landing", "/gdp-ui-landing")%>' + window.location.search;
+				}
+			} else if ('<%=method%>' === 'POST') {
+				if ((!incomingParams['algorithm'] || !incomingParams['dataset'])) {
+					var formContainer = $('<div />').attr({
+						'style' : 'display:none;'	
+					});
+					var form = $('<form />').attr({
+						'action': '<%= props.getProperty("gdp.endpoint.landing", "/gdp-ui-landing/")%>',
+						'method': 'POST',
+						'name': 'gdp-landing-redirect-post-form'
+					});
+					for (key in incomingParams) {
+						if (key && incomingParams.hasOwnProperty(key)) {
+							form.append($('<input />').attr({
+								'type': 'hidden',
+								'name': key,
+								'value': incomingParams[key]
+							}));
+						}
+					}
+					formContainer.append(form);
+					$('body').append(formContainer);
+					document.forms['gdp-landing-redirect-post-form'].submit();
+				}
+			}
+		});
 
 </script>

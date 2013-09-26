@@ -122,7 +122,8 @@ var Constant = function() {
             $.extend(
                 true,
                 Constant.incoming,
-                getUrlParameters()
+                getUrlParameters(),
+				incomingParams
                 );
         },
         getConstantsFromServer : function() {
@@ -145,7 +146,7 @@ var Constant = function() {
                         Constant = $.extend(
                             true,
                             {}, 
-                            buildJsonFromProperty($(sElement).attr('key').split('.'), ($(sElement).text() == undefined) ? '' : $(sElement).text()),
+                            buildJsonFromProperty($(sElement).attr('key').split('.'), ($(sElement).text() === undefined) ? '' : $(sElement).text()),
                             Constant
                             );
                     });

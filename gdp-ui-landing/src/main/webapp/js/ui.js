@@ -3,6 +3,7 @@ var GDP = GDP || {};
 // JSLint fixes
 /*global $ */
 /*global window */
+/*global document */
 /*jslint plusplus: true */
 
 GDP.UI = function (args) {
@@ -279,7 +280,7 @@ GDP.UI = function (args) {
 					GDP.CONFIG.cswClient.createFullRecordView({
 						identifier : ident
 					});
-					
+
 					// The excat client we are using is specific to the GDP so it has
 					// GDP functionality attached to some of the hrefs. We need to 
 					// extract the links that the javascript are bound to and make 
@@ -294,7 +295,7 @@ GDP.UI = function (args) {
 							'target' : '_datasetTab'
 						});
 					});
-					
+
 					$('#full-record-modal').modal('show');
 				});
 			}
@@ -340,13 +341,18 @@ GDP.UI = function (args) {
 
 		this.bindProceedButton = function () {
 			$('#btn-proceed').off('click', this.bindProceedButton);
+
 			$('#btn-proceed').on('click', function () {
 				var csw,
 					cswIdent,
 					cswUrl,
-					record,
 					win,
+					url,
+					pKey,
 					algorithms,
+					formContainer,
+					form,
+					incomingParams = GDP.CONFIG.incomingParams,
 					buttonId = $('.btn-group label.active input').attr('id'),
 					isDatasetChosen = buttonId.indexOf('dataset') !== -1;
 
@@ -366,10 +372,58 @@ GDP.UI = function (args) {
 					}
 				}
 
-				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent];
 				csw = encodeURIComponent(cswUrl);
-				win = window.open(GDP.CONFIG.hosts.gdp + '?dataset=' + csw + '&algorithm=' + algorithms, '_gdp');
-				win.focus();
+
+				if (GDP.CONFIG.incomingMethod === 'GET') {
+					url = GDP.CONFIG.hosts.gdp + '?dataset=' + csw + '&algorithm=' + algorithms;
+
+					for (pKey in incomingParams) {
+						if (incomingParams.hasOwnProperty(pKey) && pKey) {
+							url += '&' + pKey + '=' + incomingParams[pKey];
+						}
+					}
+
+					win = window.open(url);
+					win.focus();
+				} else if (GDP.CONFIG.incomingMethod === 'POST') {
+					$('#gdp-redir-div').remove();
+					formContainer = $('<div />').attr({
+						'id': 'gdp-redir-div',
+						'style': 'display:none;'
+					});
+
+					form = $('<form />').attr({
+						'action': GDP.CONFIG.hosts.gdp,
+						'method': 'POST',
+						'name': 'gdp-redirect-post-form'
+					});
+
+					for (pKey in incomingParams) {
+						if (incomingParams.hasOwnProperty(pKey) && pKey) {
+							form.append($('<input />').attr({
+								'type': 'hidden',
+								'name': pKey,
+								'value': incomingParams[pKey]
+							}));
+						}
+					}
+
+					form.append($('<input />').attr({
+						'type': 'hidden',
+						'name': 'algorithm',
+						'value': algorithms
+					}));
+
+					form.append($('<input />').attr({
+						'type': 'hidden',
+						'name': 'dataset',
+						'value': csw
+					}));
+
+					formContainer.append(form);
+					$('body').append(formContainer);
+					document.forms['gdp-redirect-post-form'].submit();
+				}
 			});
 		};
 

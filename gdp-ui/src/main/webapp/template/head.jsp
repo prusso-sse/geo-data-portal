@@ -3,9 +3,10 @@
     Created on : Jul 21, 2011, 1:22:33 PM
     Author     : Ivan Suftin <isuftin@usgs.gov>
 --%>
+
 <head>
     <title>Geo Data Portal</title>
-<!--    <META HTTP-EQUIV="X-UA-Compatible" content="IE-EmulateIE8" />-->
+	<!--    <META HTTP-EQUIV="X-UA-Compatible" content="IE-EmulateIE8" />-->
     <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
     <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
     <meta name="title" content="Geo Data Portal">
