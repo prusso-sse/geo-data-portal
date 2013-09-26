@@ -156,7 +156,7 @@ var Dataset = function() {
                 draggable: false,
                 zIndex: 9999
             });
-        })
+        });
     }
 
     function bindAlgorithmDropDown() {
@@ -183,7 +183,7 @@ var Dataset = function() {
                 logger.debug('GDP: Hiding CSW Client');
                 $(_CSW_CLIENT).fadeOut(Constant.ui.fadespeed);
                 
-                if (_algorithmList.length == 0) {
+                if (_algorithmList.length === 0) {
                     logger.trace('GDP: Configuring documentation for all algorithms.');
                     configureDocumentationLink('All Algorithms', 
                         function() {
@@ -191,7 +191,7 @@ var Dataset = function() {
                             $.each(Algorithm.algorithms, function(i,v) {
                                 aText += '<h3>' + v.title + '</h3>';
                                 aText += v.abstrakt + '<br /><br />';
-                            })
+                            });
                             return aText;
                         }()
                         );
@@ -250,7 +250,7 @@ var Dataset = function() {
      * Goes through the WPS DescribeProcess response and uses each <input> field
      * to create a dynamic form
      */
-    function populateDynamicContent(xml) {
+    function populateDynamicContent (xml) {
         logger.trace('GDP: Removing all information from the algorithm dynamic input container and beginning rebuild.');
         $(_ALGORITHM_DYNAMIC_CONTAINER_CONTENT).html('');
         
@@ -1653,7 +1653,7 @@ var Dataset = function() {
             logger.info("GDP: Initializing Dataset/Submit View.");
             
             _algorithmList = (Constant.ui.view_algorithm_list.length > 0) ? Constant.ui.view_algorithm_list.split(',') : new Array();
-            logger.debug('GDP: We are working with ' + ((_algorithmList.length == 0) ? 'all' : _algorithmList.length) + ' algorithm(s).');
+            logger.debug('GDP: We are working with ' + ((_algorithmList.length === 0) ? 'all' : _algorithmList.length) + ' algorithm(s).');
             
             createAlgorithmDropdown();
             
@@ -1702,7 +1702,7 @@ var Dataset = function() {
         },
 
         getFromDate: function() { 
-            if (gDatasetType != this.datasetTypeEnum.OPENDAP) return null;
+            if (gDatasetType !== this.datasetTypeEnum.OPENDAP) return null;
 
             var from = $(_DATE_RANGE_FROM_INPUT_BOX).datepicker('getDate');
 
@@ -1711,7 +1711,7 @@ var Dataset = function() {
         },
 
         getToDate: function() {
-            if (gDatasetType != this.datasetTypeEnum.OPENDAP) return null;
+            if (gDatasetType !== this.datasetTypeEnum.OPENDAP) return null;
             
             var to = $(_DATE_RANGE_TO_INPUT_BOX).datepicker('getDate');
             return $.datepicker.formatDate('yy-mm-ddT00:00:00.000Z', to);
@@ -1736,7 +1736,7 @@ var Dataset = function() {
 
             clearDatasetOverlay();
 
-            if (datasetURL == '') {
+            if (datasetURL === '') {
                 logger.debug('GDP: User has entered nothing or selected a blank option for the dataset URL. Halting further view changes.');
                 showNotification("You have not entered a valid dataset URL. Please try again.")
                 return;
@@ -1744,7 +1744,7 @@ var Dataset = function() {
 
             var uri = parseUri(datasetURL);
 
-            if (uri.protocol == '') {
+            if (uri.protocol === '') {
                 // initially assume http
                 datasetURL = datasetURL.replace(/^/, 'http://');
                 uri.protocol = 'http';
@@ -1752,7 +1752,7 @@ var Dataset = function() {
 
             // TODO: need a cleaner way of testing service type and failing over
             // to a different service
-            if (uri.protocol == 'http' || uri.protocol == 'https') {
+            if (uri.protocol === 'http' || uri.protocol === 'https') {
 
                 // Try wcs first. If it doesn't succeed, try opendap.
                 wcsDatasetSelected(datasetURL, function() {
@@ -1762,7 +1762,7 @@ var Dataset = function() {
                     opendapDatasetSelected(datasetURL, useCache);
                 });
                 
-            } else if (uri.protocol == 'dods') {
+            } else if (uri.protocol === 'dods') {
                 opendapDatasetSelected(datasetURL, useCache);
             } else {
                 showErrorNotification("Unknown dataset protocol: " + uri.protocol);
@@ -1772,7 +1772,7 @@ var Dataset = function() {
             if (gWmsURL) getWmsLayers(gWmsURL);
         },
         stepLoading: function() {
-            if (_algorithmList.length == 1 
+            if (_algorithmList.length === 1 
                 && Algorithm.algorithms[_algorithmList[0]].needsConfiguration
                 && !_configured) {
                 logger.trace('GDP: Single algorithm view found and algorithm chosen needs configuration. Automatically displaying configuration window.');
