@@ -54,7 +54,7 @@
 			csw: '<%= props.getProperty("gdp.endpoint.csw.url", "http://cida-eros-gdp2.er.usgs.gov:8081/geonetwork/srv/en/csw") %>',
 			wps: '<%= props.getProperty("gdp.endpoint.wps.process.url")%>',
 			proxy: '<%= props.getProperty("gdp.endpoint.proxy", "proxy/")%>',
-			gdp: '<%= props.getProperty("gdp.endpoint.gdp", "/GDP_WEB")%>'
+			gdp: '<%= props.getProperty("gdp.endpoint.gdp", "/GDP_WEB/")%>'
 		},
 		offeringMaps: {
 			cswToWps: {},
