@@ -131,8 +131,7 @@ GDP.UI = function (args) {
 				var me = this,
 					button = event.target,
 					buttonId = button.id,
-					dropdown = $('#form-control-select-csw'),
-					keywords = [Object.keys(GDP.CONFIG.offeringMaps.wpsToCsw)],
+					keywords = [],
 					dbIdx = 0,
 					dId,
 					depressedButtons = $('#row-choice-start label.active input'), // [:(]
@@ -179,13 +178,33 @@ GDP.UI = function (args) {
 						keywords.push(subsetAlgs);
 					}
 				} else if (buttonId === btnAlgorithmArealId) {
-					records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
-						algorithms : arealAlgs
-					});
-				} else if (buttonId === btnAlgorithmSubsetId) {
+					if (depressedButtonIds.indexOf(btnDatasetClimateId) === -1 &&
+						depressedButtonIds.indexOf(btnDatasetLandscapeId) === -1) {
 						records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
-						algorithms : subsetAlgs
-					});
+							algorithms : arealAlgs
+						});
+					} else {
+						keywords.push(arealAlgs);
+						if (depressedButtonIds.indexOf(btnDatasetClimateId) !== -1) {
+							keywords.push(['*climate*']);
+						} else if (depressedButtonIds.indexOf(btnDatasetLandscapeId) !== -1) {
+							keywords.push(['*landscape*']);
+						}
+					}
+				} else if (buttonId === btnAlgorithmSubsetId) {
+					if (depressedButtonIds.indexOf(btnDatasetClimateId) === -1 &&
+						depressedButtonIds.indexOf(btnDatasetLandscapeId) === -1) {
+						records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
+							algorithms : subsetAlgs
+						});
+					} else {
+						keywords.push(subsetAlgs);
+						if (depressedButtonIds.indexOf(btnDatasetClimateId) !== -1) {
+							keywords.push(['*climate*']);
+						} else if (depressedButtonIds.indexOf(btnDatasetLandscapeId) !== -1) {
+							keywords.push(['*landscape*']);
+						}
+					}
 				}
 
 				if (records) {
@@ -196,7 +215,6 @@ GDP.UI = function (args) {
 					GDP.CONFIG.cswClient.getRecordsByKeywordsFromServer({
 						scope : me,
 						keywords : keywords,
-						algorithms : [],
 						callbacks : {
 							success : [
 								function (cswGetRecRespObj) {
