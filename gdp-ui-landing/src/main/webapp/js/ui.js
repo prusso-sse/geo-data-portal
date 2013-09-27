@@ -36,9 +36,9 @@ GDP.UI = function (args) {
 									}
 								}
 
-								this.getRecordsByKeywords({
+								this.getRecordsByKeywordsFromServer({
 									scope : me,
-									keywords : Object.keys(GDP.CONFIG.offeringMaps.wpsToCsw),
+									keywords : [Object.keys(GDP.CONFIG.offeringMaps.wpsToCsw)],
 									callbacks : {
 										success : [
 											function (cswGetRecRespObj) {
@@ -132,48 +132,59 @@ GDP.UI = function (args) {
 					button = event.target,
 					buttonId = button.id,
 					dropdown = $('#form-control-select-csw'),
-					keywords = Object.keys(GDP.CONFIG.offeringMaps.wpsToCsw),
-					records;
+					keywords = [Object.keys(GDP.CONFIG.offeringMaps.wpsToCsw)],
+					dbIdx = 0,
+					dId,
+					depressedButtons = $('#row-choice-start label.active input'), // [:(]
+					depressedButtonIds = [event.target.id], // [:(].killMe
+					records,
+					arealAlgs = [
+						"gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm",
+						"gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm",
+						"gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm"
+					],
+					subsetAlgs = [
+						"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm",
+						"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm"
+					],
+					btnDatasetAllId = 'btn-choice-dataset-all',
+					btnDatasetClimateId = 'btn-choice-dataset-climate',
+					btnDatasetLandscapeId = 'btn-choice-dataset-landscape',
+					btnAlgorithmArealId = 'btn-choice-algorithm-areal',
+					btnAlgorithmSubsetId = 'btn-choice-algorithm-subset';
 
-				dropdown.empty();
+				for (dbIdx; dbIdx < depressedButtons.length; dbIdx++) {
+					dId = depressedButtons[dbIdx].id;
+					if (depressedButtonIds.indexOf(dId) === -1) {
+						depressedButtonIds.push(dId);
+					}
+				}
 
-				if (buttonId === 'btn-choice-dataset-all') {
-					me.updateCswDropdown({
-						offerings : GDP.CONFIG.offeringMaps.cswIdentToRecord
-					});
-					deselectButtonGroup({
-						group : 'proc'
-					});
-				} else if (buttonId === 'btn-choice-dataset-climate') {
-					keywords = ['*climate*'];
-					deselectButtonGroup({
-						group : 'proc'
-					});
-				} else if (buttonId === 'btn-choice-dataset-landscape') {
-					keywords = ['*landscape*'];
-					deselectButtonGroup({
-						group : 'proc'
-					});
-				} else if (buttonId === 'btn-choice-algorithm-areal') {
+				if (buttonId === btnDatasetAllId) {
+					records = GDP.CONFIG.offeringMaps.cswIdentToRecord;
+				} else if (buttonId === btnDatasetClimateId) {
+					keywords = [['*climate*']];
+					if (depressedButtonIds.indexOf(btnAlgorithmArealId) !== -1) {
+						keywords.push(arealAlgs);
+					}
+					if (depressedButtonIds.indexOf(btnAlgorithmSubsetId) !== -1) {
+						keywords.push(subsetAlgs);
+					}
+				} else if (buttonId === btnDatasetLandscapeId) {
+					keywords = [['*landscape*']];
+					if (depressedButtonIds.indexOf(btnAlgorithmArealId) !== -1) {
+						keywords.push(arealAlgs);
+					}
+					if (depressedButtonIds.indexOf(btnAlgorithmSubsetId) !== -1) {
+						keywords.push(subsetAlgs);
+					}
+				} else if (buttonId === btnAlgorithmArealId) {
 					records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
-						algorithms : [
-							"gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm",
-							"gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm",
-							"gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm"
-						]
+						algorithms : arealAlgs
 					});
-					deselectButtonGroup({
-						group : 'dset'
-					});
-				} else if (buttonId === 'btn-choice-algorithm-subset') {
-					records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
-						algorithms : [
-							"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm",
-							"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm"
-						]
-					});
-					deselectButtonGroup({
-						group : 'dset'
+				} else if (buttonId === btnAlgorithmSubsetId) {
+						records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
+						algorithms : subsetAlgs
 					});
 				}
 
@@ -182,9 +193,10 @@ GDP.UI = function (args) {
 						offerings : records
 					});
 				} else {
-					GDP.CONFIG.cswClient.getRecordsByKeywords({
+					GDP.CONFIG.cswClient.getRecordsByKeywordsFromServer({
 						scope : me,
 						keywords : keywords,
+						algorithms : [],
 						callbacks : {
 							success : [
 								function (cswGetRecRespObj) {
@@ -199,10 +211,11 @@ GDP.UI = function (args) {
 											offerings : records
 										});
 									} else {
-										// @todo - handle where we don't have any records 
-										// from request. This should never happen in 
-										// our controlled environment unless the CSW
-										// server is set up wrong
+										$.bootstrapGrowl('Could not find any records to match your criteria',
+											{
+												type : 'info',
+												'allow_dismiss' : false
+											});
 									}
 								}
 							],
@@ -223,8 +236,7 @@ GDP.UI = function (args) {
 			$('#overlay').fadeOut(800,
 				function () {
 					$('#overlay').remove();
-				}
-			);
+				});
 		};
 
 		this.cswDropdownChanged = function (event) {
@@ -286,10 +298,11 @@ GDP.UI = function (args) {
 					// extract the links that the javascript are bound to and make 
 					// the href regular hrefs
 					$('.meta-value a[href*="javascript"]').each(function (i, o) {
-						var hrefAttr = o.attributes.href.textContent;
-						var firstIndex = hrefAttr.indexOf("'") + 1;
-						var lastIndex = hrefAttr.lastIndexOf("'");
-						var rootHref = hrefAttr.substring(firstIndex, lastIndex);
+						var hrefAttr = o.attributes.href.textContent,
+							firstIndex = hrefAttr.indexOf("'") + 1,
+							lastIndex = hrefAttr.lastIndexOf("'"),
+							rootHref = hrefAttr.substring(firstIndex, lastIndex);
+
 						$(o).attr({
 							'href' : rootHref,
 							'target' : '_datasetTab'
@@ -305,9 +318,10 @@ GDP.UI = function (args) {
 			args = args || {};
 			var offerings =  args.offerings || GDP.CONFIG.offeringMaps.cswToWps,
 				dropdown = $('#form-control-select-csw'),
-				row = $('#row-csw-group'),
+				cswGroupRow = $('#row-csw-group'),
 				ident,
-				option;
+				option,
+				currentlySelectedOption = dropdown.val();
 
 			dropdown.empty();
 			dropdown.append(
@@ -327,8 +341,10 @@ GDP.UI = function (args) {
 				}
 			}
 
-			if (row.css('display') === 'none') {
-				row.fadeIn();
+			$('#form-control-select-csw').val(currentlySelectedOption);
+
+			if (cswGroupRow.css('display') === 'none') {
+				cswGroupRow.fadeIn();
 			}
 
 			dropdown.off('change', this.cswDropdownChanged);
@@ -340,7 +356,7 @@ GDP.UI = function (args) {
 		};
 
 		this.bindProceedButton = function () {
-			$('#btn-proceed').off('click', this.bindProceedButton);
+			$('#btn-proceed').off();
 
 			$('#btn-proceed').on('click', function () {
 				var csw,
