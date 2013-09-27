@@ -24,7 +24,7 @@
 	</modules>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<n52-wps.version>3.1.1</n52-wps.version>
+		<n52-wps.version>3.2.0</n52-wps.version>
 		<geotools.version>8.7</geotools.version>
 		<slf4j.version>1.7.5</slf4j.version>
 		<logback.version>0.9.26</logback.version>
@@ -318,6 +318,11 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
+            <dependency>
+                <groupId>org.n52.wps</groupId>
+                <artifactId>52n-wps-r</artifactId>
+                <version>${n52-wps.version}</version>
+            </dependency>
 			<!-- NetCDF-Java BOM -->
 			<dependency>
 				<groupId>edu.ucar</groupId>
