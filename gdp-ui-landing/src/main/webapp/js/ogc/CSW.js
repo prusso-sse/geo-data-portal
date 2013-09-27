@@ -164,6 +164,7 @@ GDP.CSW = function (args) {
 		getRecordsByKeywordsFromServer = function (args) {
 			args = args || {};
 			var keywords = args.keywords || [],
+				keyword,
 				callbacks = args.callbacks || {
 					success : [],
 					error : []
@@ -171,15 +172,21 @@ GDP.CSW = function (args) {
 				maxRecords = args.maxRecords || 1000,
 				scope = args.scope || this,
 				fInd,
+				kwInd,
 				cswGetRecFormat = new OpenLayers.Format.CSWGetRecords(),
 				filters = [],
 				filter,
+				andFilter = new OpenLayers.Filter.Logical({
+					type: OpenLayers.Filter.Logical.AND,
+					filters: filters[fInd]
+				}),
+				orFilter,
 				getRecRequest,
 				getRecordsResponse = new OpenLayers.Protocol.Response({
 					requestType: "read"
 				});
 
-			if (!keywords.length) {
+			if (!keywords.length || !keywords[0].length) {
 				filters.push(
 					new OpenLayers.Filter.Comparison({
 						type: OpenLayers.Filter.Comparison.LIKE,
@@ -189,21 +196,33 @@ GDP.CSW = function (args) {
 				);
 			} else {
 				for (fInd = 0; fInd < keywords.length; fInd++) {
-					filters.push(
-						new OpenLayers.Filter.Comparison({
+					var keywordArr = keywords[fInd];
+					
+					orFilter = new OpenLayers.Filter.Logical({
+						type: OpenLayers.Filter.Logical.OR
+					});
+					
+					for (kwInd = 0; kwInd < keywordArr.length; kwInd++) {
+						keyword = keywordArr[kwInd];
+						if (filters.length < fInd + 1) {
+							filters.push([]);
+						}
+						
+						filter = new OpenLayers.Filter.Comparison({
 							type: OpenLayers.Filter.Comparison.LIKE,
 							property: "Anytext",
-							value: keywords[fInd],
+							value: keyword,
 							matchCase : false
-						})
-					);
+						});
+						
+						orFilter.filters.push(filter);
+					}
+					
+					if (orFilter && orFilter.filters.length) {
+						andFilter.filters.push(orFilter);
+					}
 				}
 			}
-
-			filter = new OpenLayers.Filter.Logical({
-				type: OpenLayers.Filter.Logical.OR,
-				filters: filters
-			});
 
 			getRecRequest = cswGetRecFormat.write({
 				resultType: "results",
@@ -215,7 +234,7 @@ GDP.CSW = function (args) {
 					},
 					Constraint: {
 						"version": "1.1.0",
-						"Filter": filter
+						"Filter": andFilter
 					}
 				}
 			});
