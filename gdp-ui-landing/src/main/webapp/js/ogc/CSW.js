@@ -3,6 +3,7 @@
 /*global $ */
 /*global OpenLayers */
 /*global Sarissa */
+/*global CSWClient */
 
 var GDP = GDP || {};
 GDP.CSW = function (args) {
@@ -93,12 +94,81 @@ GDP.CSW = function (args) {
 		},
 		getRecordsByKeywords = function (args) {
 			args = args || {};
+			var rId,
+				keywords = args.keywords || [],
+				record,
+				records = [],
+				recordSet = GDP.CONFIG.offeringMaps.cswIdentToRecord,
+				keyword,
+				recordKeyword,
+				kwIdx,
+				rkwIdx,
+				recordKeywords;
+
+			if (keywords && keywords.length) {
+				for (rId in recordSet) {
+					if (recordSet.hasOwnProperty(rId)) {
+						record = recordSet[rId];
+						recordKeywords = this.getKeywordsForRecord({
+							recordId : rId
+						});
+
+						for (rkwIdx = 0; rkwIdx < recordKeywords.length && records.indexOf(record) === -1; rkwIdx++) {
+							recordKeyword = String(recordKeywords[rkwIdx]).toLowerCase();
+							for (kwIdx = 0; kwIdx < keywords.length && records.indexOf(record) === -1; kwIdx++) {
+								keyword = String(keywords[kwIdx]).toLowerCase();
+								if (recordKeyword.indexOf(keyword) !== -1) {
+									records.push(record);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			return records;
+		},
+		/**
+		 * Returns all keywords associated with a specific record
+		 */
+		getKeywordsForRecord = function (args) {
+			args = args || {};
+			var rId = args.recordId,
+				keywords = [],
+				keywordSet,
+				kwsIdx,
+				kaIdx,
+				keywordArr,
+				keyword,
+				record;
+
+			if (!rId) {
+				throw "recordId cannot be empty";
+			}
+
+			record = GDP.CONFIG.offeringMaps.cswIdentToRecord[rId];
+
+			if (record) {
+				keywordSet = record.identificationInfo[0].descriptiveKeywords;
+				for (kwsIdx = 0; kwsIdx < keywordSet.length; kwsIdx++) {
+					keywordArr = keywordSet[kwsIdx].keyword;
+					for (kaIdx = 0; kaIdx < keywordArr.length; kaIdx++) {
+						keyword = keywordArr[kaIdx].CharacterString.value;
+						keywords.push(keyword);
+					}
+				}
+			}
+
+			return keywords;
+		},
+		getRecordsByKeywordsFromServer = function (args) {
+			args = args || {};
 			var keywords = args.keywords || [],
 				callbacks = args.callbacks || {
 					success : [],
 					error : []
 				},
-				maxRecords = args.maxRecords || 100,
+				maxRecords = args.maxRecords || 1000,
 				scope = args.scope || this,
 				fInd,
 				cswGetRecFormat = new OpenLayers.Format.CSWGetRecords(),
@@ -417,18 +487,17 @@ GDP.CSW = function (args) {
 
 			return identToRecord;
 		},
-		createFullRecordView = function(args) {
+		createFullRecordView = function (args) {
 			args = args || {};
 			if (!args.identifier) {
 				throw "undefined identifier passed in";
 			}
 			var identifier = args.identifier,
-				cswResponse;
-			
-			var getrecordXML = '<csw:GetRecordById xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" ' + 
-					'xmlns:xlink="http://www.w3.org/1999/xlink" service="CSW" version="2.0.2" ' + 
-					'outputFormat="application/xml" outputSchema="http://www.isotc211.org/2005/gmd">' + 
-					'<csw:Id>'+identifier+'</csw:Id><csw:ElementSetName>full</csw:ElementSetName></csw:GetRecordById>';
+				cswResponse,
+				getrecordXML = '<csw:GetRecordById xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" ' +
+					'xmlns:xlink="http://www.w3.org/1999/xlink" service="CSW" version="2.0.2" ' +
+					'outputFormat="application/xml" outputSchema="http://www.isotc211.org/2005/gmd">' +
+					'<csw:Id>' + identifier + '</csw:Id><csw:ElementSetName>full</csw:ElementSetName></csw:GetRecordById>';
 			cswResponse = this.client.sendCSWRequest(getrecordXML);
 			this.client.handleCSWResponse("getrecordbyid", cswResponse, "html");
 		},
@@ -547,6 +616,7 @@ GDP.CSW = function (args) {
 	return {
 		requestGetCapabilities: requestGetCapabilities,
 		getCapabilitiesKeywords : getCapabilitiesKeywords,
+		getRecordsByKeywordsFromServer : getRecordsByKeywordsFromServer,
 		getRecordsByKeywords : getRecordsByKeywords,
 		getDomain : getDomain,
 		getAlgorithmArrayFromRecord : getAlgorithmArrayFromRecord,
@@ -557,6 +627,7 @@ GDP.CSW = function (args) {
 		createOptionFromRecord : createOptionFromRecord,
 		getCswIdentToRecordMapFromRecordsArray : getCswIdentToRecordMapFromRecordsArray,
 		createFullRecordView : createFullRecordView,
+		getKeywordsForRecord : getKeywordsForRecord,
 		url : this.url,
 		proxy : this.proxy,
 		client : this.cswClient,
