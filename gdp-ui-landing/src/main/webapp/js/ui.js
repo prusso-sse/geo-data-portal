@@ -360,7 +360,8 @@ GDP.UI = function (args) {
 			}
 
 			$('#form-control-select-csw').val(currentlySelectedOption);
-
+			$('#form-control-select-csw').trigger('change');
+			
 			if (cswGroupRow.css('display') === 'none') {
 				cswGroupRow.fadeIn();
 			}
@@ -383,31 +384,46 @@ GDP.UI = function (args) {
 					win,
 					url,
 					pKey,
-					algorithms,
+					algorithms = [],
+					recordAlgorithms,
 					formContainer,
 					form,
 					incomingParams = GDP.CONFIG.incomingParams,
-					buttonId = $('.btn-group label.active input').attr('id'),
-					isDatasetChosen = buttonId.indexOf('dataset') !== -1;
+					datasetButtonId = $('#col-choice-start-dataset .btn-group label.active input').attr('id'),
+					algorithmButtonId = $('#col-choice-start-algorithm .btn-group label.active input').attr('id'),
+					isDatasetChosen = datasetButtonId.indexOf('dataset') !== -1;
 
 				cswUrl = $('#form-control-select-csw').val().split(';')[0];
 				cswIdent = $('#form-control-select-csw').val().split(';')[1];
 
 				if (isDatasetChosen) {
-					algorithms = GDP.CONFIG.offeringMaps.cswToWps[cswIdent].join(',');
-				} else {
-					if (buttonId === 'btn-choice-algorithm-areal') {
-						algorithms = "gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm," +
-							"gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm," +
-							"gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm";
-					} else if (buttonId === 'btn-choice-algorithm-subset') {
-						algorithms = "gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm," +
-							"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm";
+					recordAlgorithms = GDP.CONFIG.cswClient.getAlgorithmArrayFromRecord({
+						record : GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent]
+					});
+					
+					if (algorithmButtonId === 'btn-choice-algorithm-areal') {
+						if (recordAlgorithms.indexOf("gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm") !== -1) {
+							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm");
+						}
+						if (recordAlgorithms.indexOf("gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm") !== -1) {
+							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm");
+						}
+						if (recordAlgorithms.indexOf("gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm") !== -1) {
+							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm");
+						}
+					} else if (algorithmButtonId === 'btn-choice-algorithm-subset') {
+						if (recordAlgorithms.indexOf("gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm") !== -1) {
+							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm");
+						}
+						if (recordAlgorithms.indexOf("gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm") !== -1) {
+							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm");
+						}
 					}
+					algorithms = algorithms.join(',');
 				}
-
+				
 				csw = encodeURIComponent(cswUrl);
-
+				
 				if (GDP.CONFIG.incomingMethod === 'GET') {
 					url = GDP.CONFIG.hosts.gdp + '?dataset=' + csw + '&algorithm=' + algorithms;
 
