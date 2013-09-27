@@ -220,7 +220,7 @@ GDP.UI = function (args) {
 			};
 
 		this.removeOverlay = function () {
-			$('#overlay').fadeOut(
+			$('#overlay').fadeOut(800,
 				function () {
 					$('#overlay').remove();
 				}

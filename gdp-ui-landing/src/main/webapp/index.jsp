@@ -44,11 +44,7 @@
     <body>
 		<%-- Full Record Modal Window --%>
 		<div class="container">
-			<div id="overlay">
-				<div id="overlay-content">
-					Application Loading
-				</div>
-			</div>
+			<div id="overlay"></div>
 			<div class="row">
 				<jsp:include page="template/USGSHeader.jsp">
                     <jsp:param name="relPath" value="" />

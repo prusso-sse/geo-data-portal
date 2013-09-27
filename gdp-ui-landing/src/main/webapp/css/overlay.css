@@ -7,14 +7,3 @@
     width: 100%;
     height: 100%;
 }
-
-#overlay-content {
-    font-family:  'Gill Sans', sans-serif;
-    font-size: 36px;
-    line-height: 36px;
-    letter-spacing: 0.1em;
-    color: #444;
-    font-weight: 100;
-    position: absolute;
-    font-weight: 200;
-}
