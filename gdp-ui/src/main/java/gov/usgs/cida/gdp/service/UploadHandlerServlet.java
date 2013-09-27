@@ -1,4 +1,4 @@
-package gov.usgs.service;
+package gov.usgs.cida.gdp.service;
 
 import gov.usgs.cida.gdp.utilities.FileHelper;
 import java.io.BufferedInputStream;

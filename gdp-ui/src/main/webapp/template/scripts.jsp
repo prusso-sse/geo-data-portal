@@ -83,6 +83,8 @@
 		}
 	}
 
+	var landingPage = '<%= props.getProperty("gdp.endpoint.landing", "/gdp-ui-landing/")%>';
+	var incomingMethod = '<%=method%>';
 	var incomingParams = {};
     <%
 		Enumeration<String> paramNames = (Enumeration<String>) request.getParameterNames();
@@ -108,56 +110,10 @@
 			var ga = document.createElement('script');
 			ga.type = 'text/javascript';
 			ga.async = true;
-			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			ga.src = ('https:' === document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
 			var s = document.getElementsByTagName('script')[0];
 			s.parentNode.insertBefore(ga, s);
 		})();
 
-		$(document).ready(function() {
-			// I want to do this here so we can redirect out before diving too far 
-			// into the application if need be
-			var kvp = window.location.search.substring(1),
-				vars = kvp.split('&'),
-				vIdx = 0,
-				pair,
-				key,
-				value;
-				
-			for (vIdx; vIdx < vars.length; vIdx++) {
-				pair = vars[vIdx].split('=');
-				key = pair[0];
-				value = pair[1];
-				incomingParams[key] = value;
-			}
-			
-			if ('<%=method%>' === 'GET') {
-				if (!incomingParams['algorithm'] || !incomingParams['dataset']) {
-					window.location = '<%= props.getProperty("gdp.endpoint.landing", "/gdp-ui-landing")%>' + window.location.search;
-				}
-			} else if ('<%=method%>' === 'POST') {
-				if ((!incomingParams['algorithm'] || !incomingParams['dataset'])) {
-					var formContainer = $('<div />').attr({
-						'style' : 'display:none;'	
-					});
-					var form = $('<form />').attr({
-						'action': '<%= props.getProperty("gdp.endpoint.landing", "/gdp-ui-landing/")%>',
-						'method': 'POST',
-						'name': 'gdp-landing-redirect-post-form'
-					});
-					for (key in incomingParams) {
-						if (key && incomingParams.hasOwnProperty(key)) {
-							form.append($('<input />').attr({
-								'type': 'hidden',
-								'name': key,
-								'value': incomingParams[key]
-							}));
-						}
-					}
-					formContainer.append(form);
-					$('body').append(formContainer);
-					document.forms['gdp-landing-redirect-post-form'].submit();
-				}
-			}
-		});
 
 </script>

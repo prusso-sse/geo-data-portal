@@ -20,9 +20,13 @@
 <script type="text/javascript" src="webjars/jquery-ui/1.10.2/ui<%= dev ? "" : "/minified"%>/jquery-ui<%= dev ? "" : ".min"%>.js"></script>
 <link type="text/css" rel="stylesheet" href="webjars/jquery-ui/1.10.2/themes/base<%= dev ? "" : "/minified"%>/jquery-ui<%= dev ? "" : ".min"%>.css" />
 
+
 <%-- Bootstrap --%>
 <link type="text/css" rel="stylesheet" href="webjars/bootstrap/3.0.0/css/bootstrap<%= dev ? "" : ".min"%>.css" />
 <script type="text/javascript" src="webjars/bootstrap/3.0.0/js/bootstrap<%= dev ? "" : ".min"%>.js"></script>
+
+<%-- bootstrap growl --%>
+<script type="text/javascript" src="js/bootstrap-growl/jquery.bootstrap-growl.min.js"></script>
 
 <%-- OpenLayers --%>
 <script type="text/javascript" src="webjars/openlayers/2.13.1/OpenLayers<%= dev ? ".debug" : ""%>.js"></script>

@@ -5,6 +5,8 @@
 /*global cookie */
 /*global window */
 /*global CSWClient */
+/*global incomingParams */
+/*global incomingMethod */
 
 var MAXIMUM_STEPS = 2;
 var AJAX_TIMEOUT = 5 * 60 * 1000;
@@ -141,7 +143,8 @@ function removeOverlay() {
 
 function initializeSteps() {
     logger.info('GDP:root.js:initializeSteps():Initializing steps (creating global JS objects)');
-    var cswEndpoint;
+    var cswEndpoint,
+		stepsCounter;
 
     Constant = new Constant(); // important that this gets initialized first
     Constant.init();
@@ -154,7 +157,7 @@ function initializeSteps() {
 			Constant.ui.view_algorithm_list = Constant.incoming.algorithm;
 		}
 	}
-	
+
     WPS = WPS();
     WFS = WFS();
 	CSW = CSW();
@@ -175,7 +178,7 @@ function initializeSteps() {
     steps = [AOI, Dataset];
 
     logger.debug('GDP: Moving all steps content into respective page content sections');
-    for (var stepsCounter = 0; stepsCounter < steps.length; stepsCounter++) {
+    for (stepsCounter = 0; stepsCounter < steps.length; stepsCounter++) {
         var htmlID = '#' + steps[stepsCounter].htmlID;
         
         $(STEPS_HEADER).append($(htmlID + ' ' + STEP_HEADER_CLASS));
@@ -544,8 +547,65 @@ function init() {
         && initializeView();
 }
 
+/**
+ * Checks to make sure that required incoming parameters are available either 
+ * via GET or POST. If not, sends the user to the landing page to further 
+ * configure their session 
+ * 
+ * @returns {Boolean}
+ */
+function testPreflightParams () {
+	var kvp = window.location.search.substring(1),
+		vars = kvp.split('&'),
+		vIdx = 0,
+		pair,
+		key,
+		value;
+
+	for (vIdx; vIdx < vars.length; vIdx++) {
+		pair = vars[vIdx].split('=');
+		key = pair[0];
+		value = pair[1];
+		incomingParams[key] = value;
+	}
+
+	if (incomingMethod === 'GET') {
+		if (!incomingParams['algorithm'] || !incomingParams['dataset']) {
+			window.location = landingPage + window.location.search;
+		}
+	} else if (incomingMethod === 'POST') {
+		if ((!incomingParams['algorithm'] || !incomingParams['dataset'])) {
+			var formContainer = $('<div />').attr({
+				'style' : 'display:none;'	
+			});
+			var form = $('<form />').attr({
+				'action': landingPage,
+				'method': 'POST',
+				'name': 'gdp-landing-redirect-post-form'
+			});
+			for (key in incomingParams) {
+				if (key && incomingParams.hasOwnProperty(key)) {
+					form.append($('<input />').attr({
+						'type': 'hidden',
+						'name': key,
+						'value': incomingParams[key]
+					}));
+				}
+			}
+			formContainer.append(form);
+			$('body').append(formContainer);
+			document.forms['gdp-landing-redirect-post-form'].submit();
+		}
+	} else {
+		delete window.landingPage;
+		delete window.incomingMethod;
+		return true;
+	}
+}
+
 $(document).ready(function () {
     try {
+		testPreflightParams();
         initializeLogging();
 
         if (init()) {

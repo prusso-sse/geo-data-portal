@@ -1,6 +1,6 @@
-package gov.usgs.service;
+package gov.usgs.cida.gdp.service;
 
-import gov.usgs.service.SecurityImageGenerator.Operations;
+import gov.usgs.cida.gdp.service.SecurityImageGenerator.Operations;
 import java.awt.*;
 import java.awt.geom.*;
 import java.awt.image.*;
