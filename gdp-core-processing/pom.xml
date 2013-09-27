@@ -72,11 +72,11 @@
 			<scope>test</scope>
 		</dependency>
 		<!-- needed for NcML -->
-		<dependency>
+<!--		<dependency>
 			<artifactId>je</artifactId>
 			<groupId>com.sleepycat</groupId>
 			<scope>test</scope>
-		</dependency>
+		</dependency>-->
 		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-main</artifactId>
