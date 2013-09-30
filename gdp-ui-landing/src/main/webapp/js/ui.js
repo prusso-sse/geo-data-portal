@@ -14,6 +14,21 @@ GDP.UI = function (args) {
 	this.init = function (args) {
 		args = args || {};
 
+		// Attach arrays of algorithm names to their respective buttons
+		$('#btn-choice-algorithm-areal').data({
+			algorithms : [
+				"gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm",
+				"gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm",
+				"gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm"
+			]
+		});
+		$('#btn-choice-algorithm-subset').data({
+			algorithms : [
+				"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm",
+				"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm"
+			]
+		});
+
 		// Fix the header of the application by removing unused elements in the 
 		// right container
 		$('#ccsa-area').children().slice(0, 2).remove();
@@ -279,7 +294,7 @@ GDP.UI = function (args) {
 				});
 
 				$('#p-csw-information-title').html(title);
-				$('#p-csw-information-content').html(replaceURLWithHTMLLinks(content));
+				$('#p-csw-information-content').html(window.replaceURLWithHTMLLinks(content));
 				$('#p-csw-information-content').append('&nbsp;&nbsp;&nbsp;&nbsp;',
 					$('<a />')
 						.attr({
@@ -295,7 +310,7 @@ GDP.UI = function (args) {
 				}
 
 				$('#view-full-info-link').on('click', function () {
-					var ident = this.attributes.ident.textContent;
+					var ident = this.attributes.ident.value;
 					GDP.CONFIG.cswClient.createFullRecordView({
 						identifier : ident
 					});
@@ -305,7 +320,7 @@ GDP.UI = function (args) {
 					// extract the links that the javascript are bound to and make 
 					// the href regular hrefs
 					$('.meta-value a[href*="javascript"]').each(function (i, o) {
-						var hrefAttr = o.attributes.href.textContent,
+						var hrefAttr = o.attributes.href.value,
 							firstIndex = hrefAttr.indexOf("'") + 1,
 							lastIndex = hrefAttr.lastIndexOf("'"),
 							rootHref = hrefAttr.substring(firstIndex, lastIndex);
@@ -382,7 +397,7 @@ GDP.UI = function (args) {
 				if (datasetDropdownValue) {
 					cswUrl = datasetDropdownValue.split(';')[0];
 					cswIdent = datasetDropdownValue.split(';')[1];
-					
+
 					recordAlgorithms = GDP.CONFIG.cswClient.getAlgorithmArrayFromRecord({
 						record : GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent]
 					});
@@ -405,7 +420,7 @@ GDP.UI = function (args) {
 							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm");
 						}
 					}
-					
+
 					algorithms = algorithms.join(',');
 					csw = encodeURIComponent(cswUrl);
 
