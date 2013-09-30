@@ -329,6 +329,11 @@ GDP.UI = function (args) {
 						});
 					});
 
+					// Create HTML links in the full record view
+					$('.captioneddiv .meta td.meta-value').each(function (i, o) {
+						$(o).html(window.replaceURLWithHTMLLinks($(o).html()));
+					});
+
 					$('#full-record-modal').modal('show');
 				});
 			}
