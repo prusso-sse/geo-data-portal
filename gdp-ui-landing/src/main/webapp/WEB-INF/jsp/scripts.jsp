@@ -107,7 +107,7 @@
 		} else {
 			return text;
 		}
-	}
+	};
 
 	// <IE9 Fix for Object
 	Object.keys = Object.keys || (function() {

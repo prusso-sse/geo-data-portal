@@ -279,7 +279,7 @@ GDP.UI = function (args) {
 				});
 
 				$('#p-csw-information-title').html(title);
-				$('#p-csw-information-content').html(content);
+				$('#p-csw-information-content').html(replaceURLWithHTMLLinks(content));
 				$('#p-csw-information-content').append('&nbsp;&nbsp;&nbsp;&nbsp;',
 					$('<a />')
 						.attr({
