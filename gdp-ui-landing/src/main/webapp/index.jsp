@@ -42,7 +42,6 @@
         </jsp:include>
     </head>
     <body>
-		<%-- Full Record Modal Window --%>
 		<div class="container">
 			<div id="overlay"></div>
 			<div class="row">
@@ -164,6 +163,20 @@
 			<jsp:param name="development" value="<%= development%>" />
 		</jsp:include>
 
+		<%-- Unrecoverable Error Modal --%>
+		<div  class="modal fade" role="dialog" aria-labelledby="modal-window-label" aria-hidden="true" data-backdrop="static" data-keyboard="false" id='unrecoverable-error-modal'>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h4  aria-labelledby="modal-window-label" class="modal-title">Application Error</h4>
+					</div>
+					<div class="modal-body">
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<%-- Full Record Modal Window --%>
 		<div  class="modal fade" role="dialog" aria-labelledby="modal-window-label" aria-hidden="true" id='full-record-modal'>
 			<div class="modal-dialog">
 				<div class="modal-content">
