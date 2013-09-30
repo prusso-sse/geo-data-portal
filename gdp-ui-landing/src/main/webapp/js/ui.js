@@ -307,7 +307,7 @@ GDP.UI = function (args) {
 					me.bindProceedButton();
 				}
 
-				fullInfoLink.on('click', function () {
+				$('#view-full-info-link').on('click', function () {
 					var ident = this.attributes.ident.value;
 					GDP.CONFIG.cswClient.createFullRecordView({
 						identifier : ident
