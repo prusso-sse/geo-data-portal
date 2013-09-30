@@ -116,17 +116,6 @@ GDP.UI = function (args) {
 					}
 				});
 			},
-			deselectButtonGroup = function (args) {
-				var group = args.group,
-					labels;
-
-				if (group === 'dset') {
-					labels = $('#btn-choice-dataset-all,#btn-choice-dataset-climate,#btn-choice-dataset-landscape').parent();
-				} else if (group === 'proc') {
-					labels = $('#btn-choice-algorithm-areal,#btn-choice-algorithm-subset').parent();
-				}
-				labels.removeClass('active');
-			},
 			buttonSelected = function (event) {
 				var me = this,
 					button = event.target,
@@ -179,7 +168,7 @@ GDP.UI = function (args) {
 					}
 				} else if (buttonId === btnAlgorithmArealId) {
 					if (depressedButtonIds.indexOf(btnDatasetClimateId) === -1 &&
-						depressedButtonIds.indexOf(btnDatasetLandscapeId) === -1) {
+							depressedButtonIds.indexOf(btnDatasetLandscapeId) === -1) {
 						records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
 							algorithms : arealAlgs
 						});
@@ -193,7 +182,7 @@ GDP.UI = function (args) {
 					}
 				} else if (buttonId === btnAlgorithmSubsetId) {
 					if (depressedButtonIds.indexOf(btnDatasetClimateId) === -1 &&
-						depressedButtonIds.indexOf(btnDatasetLandscapeId) === -1) {
+							depressedButtonIds.indexOf(btnDatasetLandscapeId) === -1) {
 						records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
 							algorithms : subsetAlgs
 						});
@@ -300,7 +289,7 @@ GDP.UI = function (args) {
 						.html('View Full Record')
 					);
 
-				if ($('#form-control-select-csw').val()) {
+				if ($('#form-control-select-csw').val() && me.isProcessingButtonSelected()) {
 					$('#row-proceed').fadeIn();
 					me.bindProceedButton();
 				}
@@ -361,17 +350,13 @@ GDP.UI = function (args) {
 
 			$('#form-control-select-csw').val(currentlySelectedOption);
 			$('#form-control-select-csw').trigger('change');
-			
+
 			if (cswGroupRow.css('display') === 'none') {
 				cswGroupRow.fadeIn();
 			}
 
 			dropdown.off('change', this.cswDropdownChanged);
 			dropdown.on('change', this.cswDropdownChanged);
-		};
-
-		this.errorEncountered = function (args) {
-
 		};
 
 		this.bindProceedButton = function () {
@@ -389,18 +374,19 @@ GDP.UI = function (args) {
 					formContainer,
 					form,
 					incomingParams = GDP.CONFIG.incomingParams,
-					datasetButtonId = $('#col-choice-start-dataset .btn-group label.active input').attr('id'),
-					algorithmButtonId = $('#col-choice-start-algorithm .btn-group label.active input').attr('id'),
-					isDatasetChosen = datasetButtonId.indexOf('dataset') !== -1;
+					datasetDropdown = $('#form-control-select-csw'),
+					datasetDropdownValue = datasetDropdown.val(),
+					algorithmButtonId = $('#col-choice-start-algorithm .btn-group label.active input').attr('id');
 
-				cswUrl = $('#form-control-select-csw').val().split(';')[0];
-				cswIdent = $('#form-control-select-csw').val().split(';')[1];
 
-				if (isDatasetChosen) {
+				if (datasetDropdownValue) {
+					cswUrl = datasetDropdownValue.split(';')[0];
+					cswIdent = datasetDropdownValue.split(';')[1];
+					
 					recordAlgorithms = GDP.CONFIG.cswClient.getAlgorithmArrayFromRecord({
 						record : GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent]
 					});
-					
+
 					if (algorithmButtonId === 'btn-choice-algorithm-areal') {
 						if (recordAlgorithms.indexOf("gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm") !== -1) {
 							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm");
@@ -419,62 +405,71 @@ GDP.UI = function (args) {
 							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm");
 						}
 					}
+					
 					algorithms = algorithms.join(',');
-				}
-				
-				csw = encodeURIComponent(cswUrl);
-				
-				if (GDP.CONFIG.incomingMethod === 'GET') {
-					url = GDP.CONFIG.hosts.gdp + '?dataset=' + csw + '&algorithm=' + algorithms;
+					csw = encodeURIComponent(cswUrl);
 
-					for (pKey in incomingParams) {
-						if (incomingParams.hasOwnProperty(pKey) && pKey) {
-							url += '&' + pKey + '=' + incomingParams[pKey];
+					if (GDP.CONFIG.incomingMethod === 'GET') {
+						url = GDP.CONFIG.hosts.gdp + '?dataset=' + csw + '&algorithm=' + algorithms;
+
+						for (pKey in incomingParams) {
+							if (incomingParams.hasOwnProperty(pKey) && pKey) {
+								url += '&' + pKey + '=' + incomingParams[pKey];
+							}
 						}
-					}
 
-					win = window.open(url);
-					win.focus();
-				} else if (GDP.CONFIG.incomingMethod === 'POST') {
-					$('#gdp-redir-div').remove();
-					formContainer = $('<div />').attr({
-						'id': 'gdp-redir-div',
-						'style': 'display:none;'
-					});
+						win = window.open(url);
+						win.focus();
+					} else if (GDP.CONFIG.incomingMethod === 'POST') {
+						$('#gdp-redir-div').remove();
+						formContainer = $('<div />').attr({
+							'id': 'gdp-redir-div',
+							'style': 'display:none;'
+						});
 
-					form = $('<form />').attr({
-						'action': GDP.CONFIG.hosts.gdp,
-						'method': 'POST',
-						'name': 'gdp-redirect-post-form'
-					});
+						form = $('<form />').attr({
+							'action': GDP.CONFIG.hosts.gdp,
+							'method': 'POST',
+							'name': 'gdp-redirect-post-form'
+						});
 
-					for (pKey in incomingParams) {
-						if (incomingParams.hasOwnProperty(pKey) && pKey) {
-							form.append($('<input />').attr({
-								'type': 'hidden',
-								'name': pKey,
-								'value': incomingParams[pKey]
-							}));
+						for (pKey in incomingParams) {
+							if (incomingParams.hasOwnProperty(pKey) && pKey) {
+								form.append($('<input />').attr({
+									'type': 'hidden',
+									'name': pKey,
+									'value': incomingParams[pKey]
+								}));
+							}
 						}
+
+						form.append($('<input />').attr({
+							'type': 'hidden',
+							'name': 'algorithm',
+							'value': algorithms
+						}));
+
+						form.append($('<input />').attr({
+							'type': 'hidden',
+							'name': 'dataset',
+							'value': csw
+						}));
+
+						formContainer.append(form);
+						$('body').append(formContainer);
+						document.forms['gdp-redirect-post-form'].submit();
 					}
-
-					form.append($('<input />').attr({
-						'type': 'hidden',
-						'name': 'algorithm',
-						'value': algorithms
-					}));
-
-					form.append($('<input />').attr({
-						'type': 'hidden',
-						'name': 'dataset',
-						'value': csw
-					}));
-
-					formContainer.append(form);
-					$('body').append(formContainer);
-					document.forms['gdp-redirect-post-form'].submit();
 				}
+
 			});
+		};
+
+		this.isProcessingButtonSelected = function () {
+			return $('#col-choice-start-algorithm label.active').length > 0 ? true : false;
+		};
+
+		this.isDatasetChosen = function () {
+			return $('#form-control-select-csw').val() ? true : false;
 		};
 
 		this.initializationCompleted = function () {
@@ -527,6 +522,8 @@ GDP.UI = function (args) {
 	this.init();
 
 	return {
+		isDatasetChosen : this.isDatasetChosen,
+		isProcessingButtonSelected : this.isProcessingButtonSelected,
 		bindProceedButton : this.bindProceedButton,
 		updateCswDropdown : this.updateCswDropdown,
 		cswDropdownUpdated : this.cswDropdownChanged,
