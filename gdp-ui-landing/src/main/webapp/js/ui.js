@@ -14,6 +14,21 @@ GDP.UI = function (args) {
 	this.init = function (args) {
 		args = args || {};
 
+		// Attach arrays of algorithm names to their respective buttons
+		$('#btn-choice-algorithm-areal').data({
+			algorithms : [
+				"gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm",
+				"gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm",
+				"gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm"
+			]
+		});
+		$('#btn-choice-algorithm-subset').data({
+			algorithms : [
+				"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm",
+				"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm"
+			]
+		});
+
 		// Fix the header of the application by removing unused elements in the 
 		// right container
 		$('#ccsa-area').children().slice(0, 2).remove();
@@ -126,20 +141,13 @@ GDP.UI = function (args) {
 					depressedButtons = $('#row-choice-start label.active input'), // [:(]
 					depressedButtonIds = [event.target.id], // [:(].killMe
 					records,
-					arealAlgs = [
-						"gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm",
-						"gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm",
-						"gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm"
-					],
-					subsetAlgs = [
-						"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm",
-						"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm"
-					],
 					btnDatasetAllId = 'btn-choice-dataset-all',
 					btnDatasetClimateId = 'btn-choice-dataset-climate',
 					btnDatasetLandscapeId = 'btn-choice-dataset-landscape',
 					btnAlgorithmArealId = 'btn-choice-algorithm-areal',
-					btnAlgorithmSubsetId = 'btn-choice-algorithm-subset';
+					btnAlgorithmSubsetId = 'btn-choice-algorithm-subset',
+					arealAlgs = $('#' + btnAlgorithmArealId).data('algorithms'),
+					subsetAlgs = $('#' + btnAlgorithmSubsetId).data('algorithms');
 
 				for (dbIdx; dbIdx < depressedButtons.length; dbIdx++) {
 					dId = depressedButtons[dbIdx].id;
@@ -254,12 +262,17 @@ GDP.UI = function (args) {
 				title,
 				subtitle,
 				content,
-				isDatasetChosen;
+				isDatasetChosen,
+				datasetDropdown = $('#form-control-select-csw'),
+				proceedRow = $('#row-proceed'),
+				fullInfoLink = $('#view-full-info-link'),
+				contentContainer = $('#p-csw-information-content'),
+				titleContainer = $('#p-csw-information-title');
 
 			if (!value) {
-				$('#row-proceed').fadeOut();
-				$('#p-csw-information-title').html('');
-				$('#p-csw-information-content').html('');
+				proceedRow.fadeOut();
+				titleContainer.html('');
+				contentContainer.html('');
 			} else {
 				ident = value.split(';')[1];
 				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[ident];
@@ -278,9 +291,9 @@ GDP.UI = function (args) {
 					record : record
 				});
 
-				$('#p-csw-information-title').html(title);
-				$('#p-csw-information-content').html(replaceURLWithHTMLLinks(content));
-				$('#p-csw-information-content').append('&nbsp;&nbsp;&nbsp;&nbsp;',
+				titleContainer.html(title);
+				contentContainer.html(window.replaceURLWithHTMLLinks(content));
+				contentContainer.append('&nbsp;&nbsp;&nbsp;&nbsp;',
 					$('<a />')
 						.attr({
 						'id' :  'view-full-info-link',
@@ -289,13 +302,13 @@ GDP.UI = function (args) {
 						.html('View Full Record')
 					);
 
-				if ($('#form-control-select-csw').val() && me.isProcessingButtonSelected()) {
-					$('#row-proceed').fadeIn();
+				if (datasetDropdown.val() && me.isProcessingButtonSelected()) {
+					proceedRow.fadeIn();
 					me.bindProceedButton();
 				}
 
-				$('#view-full-info-link').on('click', function () {
-					var ident = this.attributes.ident.textContent;
+				fullInfoLink.on('click', function () {
+					var ident = this.attributes.ident.value;
 					GDP.CONFIG.cswClient.createFullRecordView({
 						identifier : ident
 					});
@@ -305,7 +318,7 @@ GDP.UI = function (args) {
 					// extract the links that the javascript are bound to and make 
 					// the href regular hrefs
 					$('.meta-value a[href*="javascript"]').each(function (i, o) {
-						var hrefAttr = o.attributes.href.textContent,
+						var hrefAttr = o.attributes.href.value,
 							firstIndex = hrefAttr.indexOf("'") + 1,
 							lastIndex = hrefAttr.lastIndexOf("'"),
 							rootHref = hrefAttr.substring(firstIndex, lastIndex);
@@ -324,14 +337,14 @@ GDP.UI = function (args) {
 		this.updateCswDropdown = function (args) {
 			args = args || {};
 			var offerings =  args.offerings || GDP.CONFIG.offeringMaps.cswToWps,
-				dropdown = $('#form-control-select-csw'),
+				datasetDropDown = $('#form-control-select-csw'),
 				cswGroupRow = $('#row-csw-group'),
 				ident,
 				option,
-				currentlySelectedOption = dropdown.val();
+				currentlySelectedOption = datasetDropDown.val();
 
-			dropdown.empty();
-			dropdown.append(
+			datasetDropDown.empty();
+			datasetDropDown.append(
 				$('<option />')
 					.attr({
 						name : '',
@@ -344,19 +357,41 @@ GDP.UI = function (args) {
 					option = GDP.CONFIG.cswClient.createOptionFromRecord({
 						record : GDP.CONFIG.offeringMaps.cswIdentToRecord[ident]
 					});
-					dropdown.append(option);
+					datasetDropDown.append(option);
 				}
 			}
 
-			$('#form-control-select-csw').val(currentlySelectedOption);
-			$('#form-control-select-csw').trigger('change');
+			datasetDropDown.val(currentlySelectedOption);
+			datasetDropDown.trigger('change');
 
 			if (cswGroupRow.css('display') === 'none') {
 				cswGroupRow.fadeIn();
 			}
 
-			dropdown.off('change', this.cswDropdownChanged);
-			dropdown.on('change', this.cswDropdownChanged);
+			datasetDropDown.off('change', this.cswDropdownChanged);
+			datasetDropDown.on('change', this.cswDropdownChanged);
+		};
+
+		this.errorEncountered = function (args) {
+			args = args || {};
+
+			var data = args.data,
+				recoverable = args.recoverable;
+
+			if (recoverable) {
+				$.bootstrapGrowl(data,
+					{
+						type : 'info',
+						'allow_dismiss' : false
+					});
+			} else {
+				$('#unrecoverable-error-modal .modal-body').append(
+					$('<div />').attr({
+						'id' : 'unrecoverable-error-modal-modal-body-content'
+					}).html(data + '<br /><br />Please try to reload the application or contact the system administrator for support with this error.')
+				);
+				$('#unrecoverable-error-modal').modal('show');
+			}
 		};
 
 		this.bindProceedButton = function () {
@@ -369,7 +404,10 @@ GDP.UI = function (args) {
 					win,
 					url,
 					pKey,
+					aIdx,
+					algorithm,
 					algorithms = [],
+					buttonAlgoritms,
 					recordAlgorithms,
 					formContainer,
 					form,
@@ -382,31 +420,23 @@ GDP.UI = function (args) {
 				if (datasetDropdownValue) {
 					cswUrl = datasetDropdownValue.split(';')[0];
 					cswIdent = datasetDropdownValue.split(';')[1];
-					
+
 					recordAlgorithms = GDP.CONFIG.cswClient.getAlgorithmArrayFromRecord({
 						record : GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent]
 					});
 
-					if (algorithmButtonId === 'btn-choice-algorithm-areal') {
-						if (recordAlgorithms.indexOf("gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm") !== -1) {
-							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm");
-						}
-						if (recordAlgorithms.indexOf("gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm") !== -1) {
-							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm");
-						}
-						if (recordAlgorithms.indexOf("gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm") !== -1) {
-							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm");
-						}
-					} else if (algorithmButtonId === 'btn-choice-algorithm-subset') {
-						if (recordAlgorithms.indexOf("gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm") !== -1) {
-							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm");
-						}
-						if (recordAlgorithms.indexOf("gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm") !== -1) {
-							algorithms.push("gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm");
+					// Try to figure out which algorithsm from the selected 
+					// algorithm button go with the selected dataset and only 
+					// pass in the union of those algorithms over to the GDP
+					buttonAlgoritms = $('#' + algorithmButtonId).data('algorithms');
+					for (aIdx = 0; aIdx < buttonAlgoritms.length; aIdx++) {
+						algorithm = buttonAlgoritms[aIdx];
+						if (recordAlgorithms.indexOf(buttonAlgoritms[aIdx]) !== -1) {
+							algorithms.push(buttonAlgoritms[aIdx]);
 						}
 					}
-					
 					algorithms = algorithms.join(',');
+
 					csw = encodeURIComponent(cswUrl);
 
 					if (GDP.CONFIG.incomingMethod === 'GET') {
@@ -468,13 +498,8 @@ GDP.UI = function (args) {
 			return $('#col-choice-start-algorithm label.active').length > 0 ? true : false;
 		};
 
-		this.isDatasetChosen = function () {
-			return $('#form-control-select-csw').val() ? true : false;
-		};
-
 		this.initializationCompleted = function () {
-			$('#btn-choice-dataset-all,#btn-choice-dataset-climate,#btn-choice-dataset-landscape,#btn-choice-algorithm-areal,#btn-choice-algorithm-subset').
-				on('change', $.proxy(buttonSelected, this));
+			$('#row-choice-start input').on('change', $.proxy(buttonSelected, this));
 			this.removeOverlay();
 		};
 
@@ -522,7 +547,6 @@ GDP.UI = function (args) {
 	this.init();
 
 	return {
-		isDatasetChosen : this.isDatasetChosen,
 		isProcessingButtonSelected : this.isProcessingButtonSelected,
 		bindProceedButton : this.bindProceedButton,
 		updateCswDropdown : this.updateCswDropdown,

@@ -102,13 +102,23 @@
 	// http://stackoverflow.com/questions/37684/how-to-replace-plain-urls-with-links
 	function replaceURLWithHTMLLinks(text) {
 		var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-		if (text && !text.toLowerCase().contains('noreplace')) {
+		if (text && text.toLowerCase().indexOf('noreplace') === -1) {
 			return text.replace(exp, "<a href='$1' target='_blank'>$1</a>");
 		} else {
 			return text;
 		}
 	};
-
+	
+	// <IE9 Fix for Array
+	if (!Array.prototype.indexOf) {
+		Array.prototype.indexOf = function (obj, start) {
+			for (var i = (start || 0), j = this.length; i < j; i++) {
+				if (this[i] === obj) { return i; }
+			}
+			return -1;
+	   };
+	}
+	
 	// <IE9 Fix for Object
 	Object.keys = Object.keys || (function() {
 		var hasOwnProperty = Object.prototype.hasOwnProperty,
