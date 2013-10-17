@@ -1,67 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <WPSConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://n52.org/wps schema_v2.xsd" xmlns="http://n52.org/wps">
     <Datahandlers>
-		<ParserList>
+        <ParserList>
             <Parser name="GMLStreamingParser" className="gov.usgs.cida.gdp.wps.parser.GMLStreamingParser" active="true">
-				<Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/2.0.0/feature.xsd"/>
-				<Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/2.1.1/feature.xsd"/>
-				<Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/2.1.2/feature.xsd"/>
+                <Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/2.0.0/feature.xsd"/>
+                <Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/2.1.1/feature.xsd"/>
+                <Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/2.1.2/feature.xsd"/>
                 <Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/2.1.2.1/feature.xsd"/>
-				<Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/3.0.0/base/feature.xsd"/>
-				<Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/3.0.1/base/feature.xsd"/>
-				<Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/3.1.0/base/feature.xsd"/>
-				<Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/3.1.1/base/feature.xsd"/>
-				<Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/3.2.1/base/feature.xsd"/>
-				<Format mimetype="text/xml; subtype=gml/2.0.0" schema="http://schemas.opengis.net/gml/2.0.0/feature.xsd"/>
-				<Format mimetype="text/xml; subtype=gml/2.1.1" schema="http://schemas.opengis.net/gml/2.1.1/feature.xsd"/>
-				<Format mimetype="text/xml; subtype=gml/2.1.2" schema="http://schemas.opengis.net/gml/2.1.2/feature.xsd"/>
-				<Format mimetype="text/xml; subtype=gml/2.1.2.1" schema="http://schemas.opengis.net/gml/2.1.2.1/feature.xsd"/>
-				<Format mimetype="text/xml; subtype=gml/3.0.0" schema="http://schemas.opengis.net/gml/3.0.0/base/feature.xsd"/>
-				<Format mimetype="text/xml; subtype=gml/3.0.1" schema="http://schemas.opengis.net/gml/3.0.1/base/feature.xsd"/>
-				<Format mimetype="text/xml; subtype=gml/3.1.0" schema="http://schemas.opengis.net/gml/3.1.0/base/feature.xsd"/>
-				<Format mimetype="text/xml; subtype=gml/3.1.1" schema="http://schemas.opengis.net/gml/3.1.1/base/feature.xsd"/>
-				<Format mimetype="text/xml; subtype=gml/3.2.1" schema="http://schemas.opengis.net/gml/3.2.1/base/feature.xsd"/>
-			</Parser>
-            <Parser name="GeoTIFFParser" className="gov.usgs.cida.gdp.wps.parser.GeoTIFFParser" active="true">
-				<Format mimetype="image/tiff"/>
-				<Format mimetype="image/geotiff"/>
-                <Format mimetype="image/tiff" encoding="base64"/>
-				<Format mimetype="image/geotiff" encoding="base64"/>
+                <Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/3.0.0/base/feature.xsd"/>
+                <Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/3.0.1/base/feature.xsd"/>
+                <Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/3.1.0/base/feature.xsd"/>
+                <Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/3.1.1/base/feature.xsd"/>
+                <Format mimetype="text/xml" schema="http://schemas.opengis.net/gml/3.2.1/base/feature.xsd"/>
+                <Format mimetype="text/xml; subtype=gml/2.0.0" schema="http://schemas.opengis.net/gml/2.0.0/feature.xsd"/>
+                <Format mimetype="text/xml; subtype=gml/2.1.1" schema="http://schemas.opengis.net/gml/2.1.1/feature.xsd"/>
+                <Format mimetype="text/xml; subtype=gml/2.1.2" schema="http://schemas.opengis.net/gml/2.1.2/feature.xsd"/>
+                <Format mimetype="text/xml; subtype=gml/2.1.2.1" schema="http://schemas.opengis.net/gml/2.1.2.1/feature.xsd"/>
+                <Format mimetype="text/xml; subtype=gml/3.0.0" schema="http://schemas.opengis.net/gml/3.0.0/base/feature.xsd"/>
+                <Format mimetype="text/xml; subtype=gml/3.0.1" schema="http://schemas.opengis.net/gml/3.0.1/base/feature.xsd"/>
+                <Format mimetype="text/xml; subtype=gml/3.1.0" schema="http://schemas.opengis.net/gml/3.1.0/base/feature.xsd"/>
+                <Format mimetype="text/xml; subtype=gml/3.1.1" schema="http://schemas.opengis.net/gml/3.1.1/base/feature.xsd"/>
+                <Format mimetype="text/xml; subtype=gml/3.2.1" schema="http://schemas.opengis.net/gml/3.2.1/base/feature.xsd"/>
             </Parser>
-		</ParserList>
-		<GeneratorList>
-			<Generator name="CSVGenerator" className="gov.usgs.cida.gdp.wps.generator.CSVGenerator" active="true">
-				<Format mimetype="text/csv"/>
+            <Parser name="GeoTIFFParser" className="gov.usgs.cida.gdp.wps.parser.GeoTIFFParser" active="true">
+                <Format mimetype="image/tiff"/>
+                <Format mimetype="image/geotiff"/>
+                <Format mimetype="image/tiff" encoding="base64"/>
+                <Format mimetype="image/geotiff" encoding="base64"/>
+            </Parser>
+        </ParserList>
+        <GeneratorList>
+            <Generator name="CSVGenerator" className="gov.usgs.cida.gdp.wps.generator.CSVGenerator" active="true">
+                <Format mimetype="text/csv"/>
                 <Format mimetype="text/tab-separated-values"/>
                 <Format mimetype="text/plain"/>
-			</Generator>
-			<Generator name="GeoTIFFGenerator" className="gov.usgs.cida.gdp.wps.generator.GeoTIFFGenerator" active="true">
+            </Generator>
+            <Generator name="GeoTIFFGenerator" className="gov.usgs.cida.gdp.wps.generator.GeoTIFFGenerator" active="true">
                 <Format mimetype="image/geotiff"/>
                 <Format mimetype="image/geotiff" encoding="base64"/>
-			</Generator>
-			<Generator name="NetCDFGenerator" className="gov.usgs.cida.gdp.wps.generator.NetCDFGenerator" active="true">
+            </Generator>
+            <Generator name="NetCDFGenerator" className="gov.usgs.cida.gdp.wps.generator.NetCDFGenerator" active="true">
                 <Format mimetype="application/netcdf" />
                 <Format mimetype="application/netcdf" encoding="base64"/>
-			</Generator>
-			<Generator name="ZipGenerator" className="gov.usgs.cida.gdp.wps.generator.ZipGenerator" active="true">
-				<Format mimetype="application/zip"/>
+            </Generator>
+            <Generator name="ZipGenerator" className="gov.usgs.cida.gdp.wps.generator.ZipGenerator" active="true">
+                <Format mimetype="application/zip"/>
                 <Format mimetype="application/zip" encoding="base64"/>
-			</Generator>
-		</GeneratorList>
-	</Datahandlers>
-	<AlgorithmRepositoryList>
-		<Repository name="LocalAlgorithmRepository" className="org.n52.wps.server.LocalAlgorithmRepository" active="true">
+            </Generator>
+        </GeneratorList>
+    </Datahandlers>
+    <AlgorithmRepositoryList>
+        <Repository name="LocalAlgorithmRepository" className="org.n52.wps.server.LocalAlgorithmRepository" active="true">
             <Property name="Algorithm" active="true">gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm</Property>
             <Property name="Algorithm" active="true">gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm</Property>
             <Property name="Algorithm" active="true">gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm</Property>
             <Property name="Algorithm" active="true">gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm</Property>
             <Property name="Algorithm" active="true">gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm</Property>
             <Property name="Algorithm" active="true">gov.usgs.cida.gdp.wps.algorithm.PRMSParameterGeneratorAlgorithm</Property>
-		</Repository>
-	</AlgorithmRepositoryList>
+        </Repository>
+        <Repository name="LocalRAlgorithmRepository" className="org.n52.wps.server.r.LocalRAlgorithmRepository" active="true">
+            <Property name="Enable_Batch_Start" active="true">true</Property>
+            <Property name="R_Datatype_Config" active="true">R/R_Datatype.conf</Property>
+            <Property name="R_Work_Dir" active="true">default</Property>
+            <Property name="Resource_Dir" active="true">R/resources</Property>
+            <Property name="Script_Dir" active="true">R/scripts</Property>
+            <Property active="true" name="Rserve_Host">${rserve.host}</Property>
+            <Property active="true" name="Rserve_Port">${rserve.port}</Property>
+            <Property name="Rserve_User" active="true">${rserve.user}</Property>
+            <Property active="true" name="Rserve_Password">${rserve.password}</Property>
+        </Repository>
+    </AlgorithmRepositoryList>
     <!-- @hostname@, @hostport@ and @webappPath@ are filtered and replaced by values derived from
-         HttpServelRequest instance of getRequestURL() in response using a Filter -->
-	<Server hostname="@hostname@" hostport="@hostport@" webappPath="@webappPath@" includeDataInputsInResponse="true" computationTimeoutMilliSeconds="5" cacheCapabilites="false">
+    HttpServelRequest instance of getRequestURL() in response using a Filter -->
+    <Server hostname="@hostname@" hostport="@hostport@" webappPath="@webappPath@" includeDataInputsInResponse="true" computationTimeoutMilliSeconds="5" cacheCapabilites="false">
         <Property active="true" name="responseURLFilterEnabled">true</Property>
         <Database/>
     </Server>

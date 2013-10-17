@@ -25,6 +25,10 @@
     <properties>
         <version.maven.failsafe.plugin>2.12.2</version.maven.failsafe.plugin>
         <version.maven.jetty.plugin>6.1.26</version.maven.jetty.plugin>
+        <rserve.host>localhost</rserve.host>
+        <rserve.port>6311</rserve.port>
+        <rserve.user>gdp</rserve.user>
+        <rserve.password>not_real</rserve.password>
         <!--<version.maven.jetty.plugin>7.0.0.pre5</version.maven.jetty.plugin>-->
     </properties>
     
