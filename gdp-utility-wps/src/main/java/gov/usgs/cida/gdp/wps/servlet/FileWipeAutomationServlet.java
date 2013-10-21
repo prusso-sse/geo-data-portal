@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -24,7 +22,7 @@ public class FileWipeAutomationServlet implements ServletContextListener {
 
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(FileWipeAutomationServlet.class);
     private static final long serialVersionUID = 1L;
-    private static final long MAX_FILE_AGE = 3600000l;//30000l;
+    private static final long WIPER_CHECK_RATE = Long.parseLong(AppConstant.FILE_WIPE_CHECK_RATE.getValue());
     private static Timer task;
 
     /**
@@ -64,7 +62,7 @@ public class FileWipeAutomationServlet implements ServletContextListener {
         FileHelper.createDir(workSpaceDir);
 
         task = new Timer("File-Wipe-Timer",true);
-        task.scheduleAtFixedRate(new ScanFileTask(workSpaceDir, fileAgeLong), 0l, MAX_FILE_AGE);
+        task.scheduleAtFixedRate(new ScanFileTask(workSpaceDir, fileAgeLong), 0l, WIPER_CHECK_RATE);
         
         LOG.info("File Wipe system started.");
     }
@@ -80,12 +78,12 @@ public class FileWipeAutomationServlet implements ServletContextListener {
             try {
                 GeoserverManager gm = new GeoserverManager(AppConstant.WFS_ENDPOINT.getValue(),
                         AppConstant.WFS_USER.getValue(), AppConstant.WFS_PASS.getValue());
-                
-                gm.deleteOutdatedDataStores(hoursToWipe, "upload", "waters", "draw");
+                String[] checkWorkspaces = AppConstant.FILE_WIPE_CHECK_WORKSPACES.getValue().split(",");
+                gm.deleteOutdatedDataStores(hoursToWipe, checkWorkspaces);
             } catch (IOException ex) {
-                Logger.getLogger(FileWipeAutomationServlet.class.getName()).log(Level.SEVERE, null, ex);
+				LOG.error("File Wipe Task Error. Error encountered: " + ex.getMessage());
             } catch (XPathExpressionException ex) {
-                Logger.getLogger(FileWipeAutomationServlet.class.getName()).log(Level.SEVERE, null, ex);
+				LOG.error("File Wipe Task Error. Error encountered: " + ex.getMessage());
             }
             
             if (getWorkspaceDir() != null && getWorkspaceDir().exists()) {

@@ -14,7 +14,9 @@ public enum AppConstant {
     SHAPEFILE_LOCATION("gdp.path.shapefile"), // The Base Shapefile Space Directory
     WORK_LOCATION("gdp.path.workspace"), // A temporary location for the app to work (unzipping files to, etc)
     CACHE_LOCATION("gdp.path.cache"), // A Dataset Extent and Variable Cache Directory
+    FILE_WIPE_CHECK_WORKSPACES("gdp.file.wipe.workspace.check"), // Which workspaces do we check for file wiping
     FILE_WIPE_MILLIS("gdp.file.age.limit"), // Age, in milliseconds, that a file can be before it gets wiped (Default: 48 hours)
+    FILE_WIPE_CHECK_RATE("gdp.file.wipe.check.rate"), // Rate, in milliseconds, at which to run the file wipe timer
 
     WFS_ENDPOINT("gdp.geoserver.url"), // Default location where Geoserver can be found
     WFS_USER("gdp.geoserver.username"), // Username for Geoserver endpoint if needed
@@ -59,11 +61,18 @@ public enum AppConstant {
             if (input.equals("gdp.path.cache")) {
                 result = this.BASE_LOCATION + File.separator + "Cache";
             }
+			// FILE_WIPE_CHECK_WORKSPACES
+            if (input.equals("gdp.file.wipe.workspace.check")) {
+                result = "upload,waters,draw";
+            }
             // FILE_WIPE_MILLIS
             if (input.equals("gdp.file.age.limit")) {
                 result = Long.valueOf(this.FILE_AGE_LIMIT_IN_HOURS * 3600000l).toString();
             }
-
+            // FILE_WIPE_CHECK_RATE
+            if (input.equals("gdp.file.wipe.check.rate")) {
+                result = "3600000";
+            }
             ///////////////////// Endpoint constants
             // WFS_ENDPOINT
             if (input.equals("gdp.geoserver.url")) {
