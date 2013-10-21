@@ -1,7 +1,6 @@
 package gov.usgs.cida.n52.wps.config;
 
 import static gov.usgs.cida.gdp.constants.AppConstant.*;
-import gov.usgs.cida.n52.wps.servlet.DeregisterServiceProviderServletListener;
 import java.io.IOException;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
