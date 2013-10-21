@@ -24,7 +24,7 @@ public class FileWipeAutomationServlet implements ServletContextListener {
 
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(FileWipeAutomationServlet.class);
     private static final long serialVersionUID = 1L;
-    private static final long MAX_FILE_AGE = Long.parseLong(AppConstant.FILE_WIPE_MILLIS.getValue());
+    private static final long WIPER_CHECK_RATE = Long.parseLong(AppConstant.FILE_WIPE_CHECK_RATE.getValue());
     private static Timer task;
 
     /**
@@ -64,7 +64,7 @@ public class FileWipeAutomationServlet implements ServletContextListener {
         FileHelper.createDir(workSpaceDir);
 
         task = new Timer("File-Wipe-Timer",true);
-        task.scheduleAtFixedRate(new ScanFileTask(workSpaceDir, fileAgeLong), 0l, MAX_FILE_AGE);
+        task.scheduleAtFixedRate(new ScanFileTask(workSpaceDir, fileAgeLong), 0l, WIPER_CHECK_RATE);
         
         LOG.info("File Wipe system started.");
     }
