@@ -80,8 +80,8 @@ public class FileWipeAutomationServlet implements ServletContextListener {
             try {
                 GeoserverManager gm = new GeoserverManager(AppConstant.WFS_ENDPOINT.getValue(),
                         AppConstant.WFS_USER.getValue(), AppConstant.WFS_PASS.getValue());
-                
-                gm.deleteOutdatedDataStores(hoursToWipe, "upload", "waters", "draw");
+                String[] checkWorkspaces = AppConstant.FILE_WIPE_CHECK_WORKSPACES.getValue().split(",");
+                gm.deleteOutdatedDataStores(hoursToWipe, checkWorkspaces);
             } catch (IOException ex) {
                 Logger.getLogger(FileWipeAutomationServlet.class.getName()).log(Level.SEVERE, null, ex);
             } catch (XPathExpressionException ex) {
