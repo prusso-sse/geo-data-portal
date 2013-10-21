@@ -14,10 +14,10 @@ public enum AppConstant {
     SHAPEFILE_LOCATION("gdp.path.shapefile"), // The Base Shapefile Space Directory
     WORK_LOCATION("gdp.path.workspace"), // A temporary location for the app to work (unzipping files to, etc)
     CACHE_LOCATION("gdp.path.cache"), // A Dataset Extent and Variable Cache Directory
-	FILE_WIPE_CHECK_WORKSPACES("gdp.file.wipe.workspace.check"), // Which workspaces do we check for file wiping
+    FILE_WIPE_CHECK_WORKSPACES("gdp.file.wipe.workspace.check"), // Which workspaces do we check for file wiping
     FILE_WIPE_MILLIS("gdp.file.age.limit"), // Age, in milliseconds, that a file can be before it gets wiped (Default: 48 hours)
-	FILE_WIPE_CHECK_RATE("gdp.file.wipe.check.rate"), // Rate, in milliseconds, at which to run the file wipe timer
-	
+    FILE_WIPE_CHECK_RATE("gdp.file.wipe.check.rate"), // Rate, in milliseconds, at which to run the file wipe timer
+
     WFS_ENDPOINT("gdp.geoserver.url"), // Default location where Geoserver can be found
     WFS_USER("gdp.geoserver.username"), // Username for Geoserver endpoint if needed
     WFS_PASS("gdp.geoserver.password"), // Passwords for Geoserver endpoint if needed
