@@ -1,7 +1,6 @@
 package gov.usgs.cida.gdp.service;
 
 import gov.usgs.cida.gdp.utilities.FileHelper;
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -9,10 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
@@ -20,6 +15,7 @@ import org.apache.commons.codec.binary.Base64OutputStream;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
@@ -32,14 +28,11 @@ import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.LoggerFactory;
 
 public class UploadHandlerServlet extends HttpServlet {
-
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(UploadHandlerServlet.class);
     private static final long serialVersionUID = 1L;
-    private static final String SUFFIX_SHP = ".shp";
-    private static final String SUFFIX_SHX = ".shx";
-    private static final String SUFFIX_PRJ = ".prj";
-    private static final String SUFFIX_DBF = ".dbf";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, FileNotFoundException {
@@ -81,16 +74,18 @@ public class UploadHandlerServlet extends HttpServlet {
                         break;
                     }
                 }
-            } catch (Exception ex) {
+            } catch (FileUploadException ex) {
                 sendErrorResponse(response, "Unable to upload file");
                 return;
-            }
+            } catch (IOException ex) {
+				sendErrorResponse(response, "Unable to upload file");
+                return;			}
         } else {
             // Handle octet streams (from standards browsers)
             try {
                 saveFileFromRequest(request.getInputStream(), destinationFile);
             } catch (IOException ex) {
-                Logger.getLogger(UploadHandlerServlet.class.getName()).log(Level.SEVERE, null, ex);
+				LOG.error(ex.getMessage());
             }
         }
         try {
@@ -109,8 +104,12 @@ public class UploadHandlerServlet extends HttpServlet {
             responseText = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     + "<wpsResponse><![CDATA[" + wpsResponse + "]]></wpsResponse>";
 
-        } catch (Exception ex) {
-            Logger.getLogger(UploadHandlerServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            LOG.error(ex.getMessage());
+            sendErrorResponse(response, "Unable to upload file");
+            return;
+        } catch (MessagingException ex) {
+            LOG.error(ex.getMessage());
             sendErrorResponse(response, "Unable to upload file");
             return;
         } finally {
@@ -126,7 +125,6 @@ public class UploadHandlerServlet extends HttpServlet {
     }
 
     public static void sendResponse(HttpServletResponse response, String text) {
-
         response.setContentType("text/xml");
         response.setCharacterEncoding("utf-8");
 
@@ -135,7 +133,7 @@ public class UploadHandlerServlet extends HttpServlet {
             writer.write(text);
             writer.close();
         } catch (IOException ex) {
-            Logger.getLogger(UploadHandlerServlet.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage());
         }
     }
 
