@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -83,9 +81,9 @@ public class FileWipeAutomationServlet implements ServletContextListener {
                 String[] checkWorkspaces = AppConstant.FILE_WIPE_CHECK_WORKSPACES.getValue().split(",");
                 gm.deleteOutdatedDataStores(hoursToWipe, checkWorkspaces);
             } catch (IOException ex) {
-                Logger.getLogger(FileWipeAutomationServlet.class.getName()).log(Level.SEVERE, null, ex);
+				LOG.error("File Wipe Task Error. Error encountered: " + ex.getMessage());
             } catch (XPathExpressionException ex) {
-                Logger.getLogger(FileWipeAutomationServlet.class.getName()).log(Level.SEVERE, null, ex);
+				LOG.error("File Wipe Task Error. Error encountered: " + ex.getMessage());
             }
             
             if (getWorkspaceDir() != null && getWorkspaceDir().exists()) {
