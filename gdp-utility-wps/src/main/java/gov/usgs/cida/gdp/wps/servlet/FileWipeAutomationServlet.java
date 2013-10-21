@@ -24,7 +24,7 @@ public class FileWipeAutomationServlet implements ServletContextListener {
 
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(FileWipeAutomationServlet.class);
     private static final long serialVersionUID = 1L;
-    private static final long MAX_FILE_AGE = 3600000l;//30000l;
+    private static final long MAX_FILE_AGE = Long.parseLong(AppConstant.FILE_WIPE_MILLIS.getValue());
     private static Timer task;
 
     /**
