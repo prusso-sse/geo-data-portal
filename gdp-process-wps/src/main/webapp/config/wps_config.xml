@@ -58,16 +58,16 @@
             <Property name="Algorithm" active="true">gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm</Property>
             <Property name="Algorithm" active="true">gov.usgs.cida.gdp.wps.algorithm.PRMSParameterGeneratorAlgorithm</Property>
         </Repository>
-        <Repository name="LocalRAlgorithmRepository" className="org.n52.wps.server.r.LocalRAlgorithmRepository" active="true">
+        <Repository name="LocalRAlgorithmRepository" className="org.n52.wps.server.r.LocalRAlgorithmRepository" active="false">
             <Property name="Enable_Batch_Start" active="true">true</Property>
             <Property name="R_Datatype_Config" active="true">R/R_Datatype.conf</Property>
             <Property name="R_Work_Dir" active="true">default</Property>
             <Property name="Resource_Dir" active="true">R/resources</Property>
             <Property name="Script_Dir" active="true">R/scripts</Property>
-            <Property active="true" name="Rserve_Host">${rserve.host}</Property>
-            <Property active="true" name="Rserve_Port">${rserve.port}</Property>
-            <Property name="Rserve_User" active="true">${rserve.user}</Property>
-            <Property active="true" name="Rserve_Password">${rserve.password}</Property>
+            <Property active="true" name="Rserve_Host">localhost</Property>
+            <Property active="true" name="Rserve_Port">6311</Property>
+            <Property name="Rserve_User" active="true">user</Property>
+            <Property active="true" name="Rserve_Password">not_actually_password</Property>
         </Repository>
     </AlgorithmRepositoryList>
     <!-- @hostname@, @hostport@ and @webappPath@ are filtered and replaced by values derived from
