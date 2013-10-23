@@ -73,6 +73,14 @@
 			<organizationUrl>http://cida.usgs.gov</organizationUrl>
 			<timezone>-6</timezone>
 		</developer>
+		<developer>
+			<name>Phil Russo</name>
+			<email>prusso@usgs.gov</email>
+			<id>prusso</id>
+			<organization>Center for Integrated Data Analytics</organization>
+			<organizationUrl>http://cida.usgs.gov</organizationUrl>
+			<timezone>-6</timezone>
+		</developer>
 	</developers>
 	<licenses>
 		<license>
