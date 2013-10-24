@@ -1,13 +1,24 @@
 package org.n52.wps.server.database;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.Properties;
+import java.util.UUID;
+import org.n52.wps.ServerDocument;
+import org.n52.wps.commons.WPSConfig;
 import static org.n52.wps.server.database.AbstractDatabase.getDatabasePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +33,9 @@ public class PostgresDatabase extends AbstractDatabase {
     private static PostgresDatabase db;
     private static String connectionURL = null;
     private static Connection conn = null;
+    private static final ServerDocument.Server server = WPSConfig.getInstance().getWPSConfig().getServer();
+    private static final String baseResultURL = String.format("http://%s:%s/%s/RetrieveResultServlet?id=",
+                server.getHostname(), server.getHostport(), server.getWebappPath());
     public static final String pgCreationString = "CREATE TABLE RESULTS ("
             + "REQUEST_ID VARCHAR(100) NOT NULL PRIMARY KEY, "
             + "REQUEST_DATE TIMESTAMP, "
@@ -35,7 +49,7 @@ public class PostgresDatabase extends AbstractDatabase {
             PostgresDatabase.connectionURL = "jdbc:postgresql:" + getDatabasePath() + File.separator + getDatabaseName();
             LOGGER.debug("Database connection URL is: " + PostgresDatabase.connectionURL);
         } catch (ClassNotFoundException cnf_ex) {
-            LOGGER.error("Database class could not be loaded: " + connectionURL);
+            LOGGER.error("Database class could not be loaded", cnf_ex);
             throw new UnsupportedDatabaseException("The database class could not be loaded.");
         }
     }
@@ -61,11 +75,16 @@ public class PostgresDatabase extends AbstractDatabase {
 
     private static boolean createConnection() {
         Properties props = new Properties();
+        String username = getDatabaseProperties("username");
+        String password = getDatabaseProperties("password");
         props.setProperty("create", "true");
+        props.setProperty("user", username);
+        props.setProperty("password", password);
         PostgresDatabase.conn = null;
         try {
             PostgresDatabase.conn = DriverManager.getConnection(
                     PostgresDatabase.connectionURL, props);
+            conn.setAutoCommit(false);
             LOGGER.info("Connected to WPS database.");
         } catch (SQLException e) {
             LOGGER.error("Could not connect to or create the database.");
@@ -73,6 +92,92 @@ public class PostgresDatabase extends AbstractDatabase {
         }
         return true;
     }
+    
+    @Override
+	public synchronized void insertRequest(String id, InputStream inputStream, boolean xml) {			
+        insertResultEntity(inputStream, "REQ_" + id, "ExecuteRequest", xml ? "text/xml" : "text/plain");
+	}
+    
+    @Override
+	public synchronized String insertResponse(String id, InputStream inputStream) {			
+        return insertResultEntity(inputStream, id, "ExecuteResponse", "text/xml");
+	}
+    
+    @Override
+    protected synchronized String insertResultEntity(InputStream stream, String id, String type, String mimeType) {
+		Timestamp timestamp = new Timestamp(Calendar.getInstance().getTimeInMillis());
+        Path tempFilePath = null;
+        FileInputStream fis = null;
+		try {
+            tempFilePath = Files.createTempFile(UUID.randomUUID().toString(), null);
+            Files.copy(stream, tempFilePath, StandardCopyOption.REPLACE_EXISTING);
+            fis = new FileInputStream(tempFilePath.toFile());
+            
+			AbstractDatabase.insertSQL.setString(INSERT_COLUMN_REQUEST_ID, id);
+			AbstractDatabase.insertSQL.setTimestamp(INSERT_COLUMN_REQUEST_DATE, timestamp);
+			AbstractDatabase.insertSQL.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
+			AbstractDatabase.insertSQL.setAsciiStream(INSERT_COLUMN_RESPONSE, fis, (int) tempFilePath.toFile().length());
+			AbstractDatabase.insertSQL.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
+		
+			AbstractDatabase.insertSQL.executeUpdate();
+			getConnection().commit();
+		} catch (SQLException e) {
+			LOGGER.error("Could not insert Response into database: " + e.getMessage());
+		} catch (IOException e) {
+            LOGGER.error("Could not insert Response into database: " + e.getMessage());
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    LOGGER.error("Could not close file input stream", e);
+                }
+            }
+            if (tempFilePath != null) {
+                try {
+                    Files.deleteIfExists(tempFilePath);
+                } catch (IOException e) {
+                    LOGGER.error("Could not delete file: " + tempFilePath.toString(), e);
+                }
+            }
+        }
+        return generateRetrieveResultURL(id);
+	}
+    
+    @Override
+	public synchronized void updateResponse(String id, InputStream stream) {
+        Path tempFilePath = null;
+        FileInputStream fis = null;
+		try {
+            tempFilePath = Files.createTempFile(UUID.randomUUID().toString(), null);
+            Files.copy(stream, tempFilePath, StandardCopyOption.REPLACE_EXISTING);
+            fis = new FileInputStream(tempFilePath.toFile());
+            
+			AbstractDatabase.updateSQL.setString(UPDATE_COLUMN_REQUEST_ID, id);
+			AbstractDatabase.updateSQL.setAsciiStream(UPDATE_COLUMN_RESPONSE,  fis, (int) tempFilePath.toFile().length());
+			AbstractDatabase.updateSQL.executeUpdate();
+			getConnection().commit();
+		} catch (SQLException e) {
+			LOGGER.error("Could not insert Response into database", e);
+		} catch (IOException e) {
+            LOGGER.error("Could not insert Response into database", e);
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    LOGGER.error("Could not close file input stream", e);
+                }
+            }
+            if (tempFilePath != null) {
+                try {
+                    Files.deleteIfExists(tempFilePath);
+                } catch (IOException e) {
+                    LOGGER.error("Could not delete file: " + tempFilePath.toString(), e);
+                }
+            }
+        }
+	}
 
     private static boolean createResultTable() {
         try {
@@ -95,7 +200,6 @@ public class PostgresDatabase extends AbstractDatabase {
                     LOGGER.error("Could not create table RESULTS.");
                     return false;
                 }
-                PostgresDatabase.conn.setAutoCommit(false);
             }
         } catch (SQLException e) {
             LOGGER.error("Connection to the Postgres database failed: " + e.getMessage());
@@ -175,6 +279,11 @@ public class PostgresDatabase extends AbstractDatabase {
             }
         }
         LOGGER.info("Postgres database connection is closed succesfully");
+    }
+    
+    @Override
+    public String generateRetrieveResultURL(String id) {
+        return baseResultURL + id;
     }
 
     @Override

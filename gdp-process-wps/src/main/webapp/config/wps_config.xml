@@ -78,6 +78,9 @@
             <Property active="true" name="databaseClass">org.n52.wps.server.database.PostgresDatabase</Property> 
             <Property active="true" name="databaseName">postgres</Property>
             <Property active="true" name="databasePath">//localhost:5432</Property>
+            <Property active="true" name="username">isuftin</Property>
+            <Property active="true" name="password"></Property>
         </Database>
+        <Database />
     </Server>
 </WPSConfiguration>
