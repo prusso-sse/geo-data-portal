@@ -75,8 +75,9 @@
     <Server hostname="@hostname@" hostport="@hostport@" webappPath="@webappPath@" includeDataInputsInResponse="true" computationTimeoutMilliSeconds="5" cacheCapabilites="false">
         <Property active="true" name="responseURLFilterEnabled">true</Property>
         <Database>
-            <Property active="true" name="databaseClass">org.n52.wps.server.database.PostgresDatabase</Property> 
-            <Property active="true" name="jndiName">gdp</Property>
+            <Property active="true" name="databaseClass">org.n52.wps.server.database.PostgresDatabase</Property>
+            <Property active="true" name="jndiName">gdp</Property> 
+            <Property active="true" name="saveResultsToDb">false</Property>
 <!--        
             Alternative connection method    
             <Property active="true" name="databaseName">postgres</Property>
@@ -85,6 +86,5 @@
             <Property active="true" name="password">your-password</Property>
 -->
         </Database>
-        <Database />
     </Server>
 </WPSConfiguration>

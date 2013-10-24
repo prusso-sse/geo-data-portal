@@ -1,9 +1,14 @@
 package org.n52.wps.server.database;
 
+import com.google.common.base.Joiner;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -18,10 +23,14 @@ import java.util.Calendar;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
+import java.util.zip.GZIPInputStream;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import org.apache.commons.io.IOUtils;
+import org.n52.wps.DatabaseDocument;
 import org.n52.wps.ServerDocument;
+import org.n52.wps.commons.PropertyUtil;
 import org.n52.wps.commons.WPSConfig;
 import static org.n52.wps.server.database.AbstractDatabase.getDatabasePath;
 import org.slf4j.Logger;
@@ -37,32 +46,44 @@ public class PostgresDatabase extends AbstractDatabase {
     private static PostgresDatabase db;
     private static String connectionURL = null;
     private static Connection conn = null;
+    private final static String KEY_DATABASE_ROOT = "org.n52.wps.server.database";
+    private final static String KEY_DATABASE_PATH = "path";
+    private final static String SUFFIX_GZIP = "gz";
+    private final static String DEFAULT_DATABASE_PATH
+            = Joiner.on(File.separator).join(
+                    System.getProperty("java.io.tmpdir", "."),
+                    "Database",
+                    "Results");
+    private static File BASE_DIRECTORY;
     private static final ServerDocument.Server server = WPSConfig.getInstance().getWPSConfig().getServer();
     private static final String baseResultURL = String.format("http://%s:%s/%s/RetrieveResultServlet?id=",
-                server.getHostname(), server.getHostport(), server.getWebappPath());
+            server.getHostname(), server.getHostport(), server.getWebappPath());
     public static final String pgCreationString = "CREATE TABLE RESULTS ("
             + "REQUEST_ID VARCHAR(100) NOT NULL PRIMARY KEY, "
             + "REQUEST_DATE TIMESTAMP, "
             + "RESPONSE_TYPE VARCHAR(100), "
             + "RESPONSE TEXT, "
             + "RESPONSE_MIMETYPE VARCHAR(100))";
+    protected final Object storeResponseSerialNumberLock;
 
     private PostgresDatabase() {
         try {
             Class.forName("org.postgresql.Driver");
             PostgresDatabase.connectionURL = "jdbc:postgresql:" + getDatabasePath() + File.separator + getDatabaseName();
             LOGGER.debug("Database connection URL is: " + PostgresDatabase.connectionURL);
+
+            storeResponseSerialNumberLock = new Object();
         } catch (ClassNotFoundException cnf_ex) {
             LOGGER.error("Database class could not be loaded", cnf_ex);
             throw new UnsupportedDatabaseException("The database class could not be loaded.");
         }
     }
-    
+
     public static synchronized PostgresDatabase getInstance() {
         if (PostgresDatabase.db == null) {
             PostgresDatabase.db = new PostgresDatabase();
         }
-        
+
         if (db.getConnection() == null) {
             if (!PostgresDatabase.createConnection()) {
                 throw new RuntimeException("Creating database connection failed.");
@@ -74,6 +95,17 @@ public class PostgresDatabase extends AbstractDatabase {
                 throw new RuntimeException("Creating prepared statements failed.");
             }
         }
+
+        DatabaseDocument.Database database = server.getDatabase();
+        PropertyUtil propertyUtil = new PropertyUtil(database.getPropertyArray(), KEY_DATABASE_ROOT);
+        String baseDirectoryPath = propertyUtil.extractString(KEY_DATABASE_PATH, DEFAULT_DATABASE_PATH);
+        BASE_DIRECTORY = new File(baseDirectoryPath);
+        LOGGER.info("Using \"{}\" as base directory for results database", baseDirectoryPath);
+        if (!BASE_DIRECTORY.exists()) {
+            LOGGER.info("Results database does not exist, creating.", baseDirectoryPath);
+            BASE_DIRECTORY.mkdirs();
+        }
+
         return PostgresDatabase.db;
     }
 
@@ -83,7 +115,7 @@ public class PostgresDatabase extends AbstractDatabase {
         String jndiName = getDatabaseProperties("jndiName");
         String username = getDatabaseProperties("username");
         String password = getDatabaseProperties("password");
-        
+
         if (jndiName != null) {
             InitialContext context;
             try {
@@ -97,7 +129,7 @@ public class PostgresDatabase extends AbstractDatabase {
                 return false;
             } catch (SQLException e) {
                 LOGGER.error("Could not connect to or create the database.", e);
-                return false; 
+                return false;
             }
         } else {
             props.setProperty("create", "true");
@@ -116,38 +148,52 @@ public class PostgresDatabase extends AbstractDatabase {
         }
         return true;
     }
-    
+
     @Override
-	public synchronized void insertRequest(String id, InputStream inputStream, boolean xml) {			
+    public synchronized void insertRequest(String id, InputStream inputStream, boolean xml) {
         insertResultEntity(inputStream, "REQ_" + id, "ExecuteRequest", xml ? "text/xml" : "text/plain");
-	}
-    
+    }
+
     @Override
-	public synchronized String insertResponse(String id, InputStream inputStream) {			
+    public synchronized String insertResponse(String id, InputStream inputStream) {
         return insertResultEntity(inputStream, id, "ExecuteResponse", "text/xml");
-	}
-    
+    }
+
     @Override
     protected synchronized String insertResultEntity(InputStream stream, String id, String type, String mimeType) {
-		Timestamp timestamp = new Timestamp(Calendar.getInstance().getTimeInMillis());
-        Path tempFilePath = null;
+        Timestamp timestamp = new Timestamp(Calendar.getInstance().getTimeInMillis());
         FileInputStream fis = null;
-		try {
-            tempFilePath = Files.createTempFile(UUID.randomUUID().toString(), null);
-            Files.copy(stream, tempFilePath, StandardCopyOption.REPLACE_EXISTING);
-            fis = new FileInputStream(tempFilePath.toFile());
-            
-			AbstractDatabase.insertSQL.setString(INSERT_COLUMN_REQUEST_ID, id);
-			AbstractDatabase.insertSQL.setTimestamp(INSERT_COLUMN_REQUEST_DATE, timestamp);
-			AbstractDatabase.insertSQL.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
-			AbstractDatabase.insertSQL.setAsciiStream(INSERT_COLUMN_RESPONSE, fis, (int) tempFilePath.toFile().length());
-			AbstractDatabase.insertSQL.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
-		
-			AbstractDatabase.insertSQL.executeUpdate();
-			getConnection().commit();
-		} catch (SQLException e) {
-			LOGGER.error("Could not insert Response into database: " + e.getMessage());
-		} catch (IOException e) {
+        Boolean storingOutput = null != id && id.toLowerCase().contains("output");
+        Boolean saveResultsToDB = Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"));
+        String filename = storingOutput ? id : UUID.randomUUID().toString();
+        Path filePath = new File(BASE_DIRECTORY, filename).toPath();
+
+        try {
+            filePath = Files.createFile(filePath);
+            Files.copy(stream, filePath, StandardCopyOption.REPLACE_EXISTING);
+            fis = new FileInputStream(filePath.toFile());
+
+            AbstractDatabase.insertSQL.setString(INSERT_COLUMN_REQUEST_ID, id);
+            AbstractDatabase.insertSQL.setTimestamp(INSERT_COLUMN_REQUEST_DATE, timestamp);
+            AbstractDatabase.insertSQL.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
+            AbstractDatabase.insertSQL.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
+
+            if (storingOutput) {
+                if (!saveResultsToDB) {
+                    byte[] filePathByteArray = filePath.toUri().toString().getBytes();
+                    AbstractDatabase.insertSQL.setAsciiStream(INSERT_COLUMN_RESPONSE, new ByteArrayInputStream(filePathByteArray), filePathByteArray.length);
+                } else {
+                    AbstractDatabase.insertSQL.setAsciiStream(INSERT_COLUMN_RESPONSE, fis, (int) filePath.toFile().length());
+                }
+            } else {
+                AbstractDatabase.insertSQL.setAsciiStream(INSERT_COLUMN_RESPONSE, fis, (int) filePath.toFile().length());
+            }
+
+            AbstractDatabase.insertSQL.executeUpdate();
+            getConnection().commit();
+        } catch (SQLException e) {
+            LOGGER.error("Could not insert Response into database: " + e.getMessage());
+        } catch (IOException e) {
             LOGGER.error("Could not insert Response into database: " + e.getMessage());
         } finally {
             if (fis != null) {
@@ -157,33 +203,43 @@ public class PostgresDatabase extends AbstractDatabase {
                     LOGGER.error("Could not close file input stream", e);
                 }
             }
-            if (tempFilePath != null) {
+
+            // If we are storing output, we want to only delete the file if we're
+            // storing the results to the database. Otherwise, don't delete the
+            // file since that will be served on request
+            if (filePath != null) {
                 try {
-                    Files.deleteIfExists(tempFilePath);
+                    if (storingOutput) {
+                        if (saveResultsToDB) {
+                            Files.deleteIfExists(filePath);
+                        }
+                    } else {
+                        Files.deleteIfExists(filePath);
+                    }
                 } catch (IOException e) {
-                    LOGGER.error("Could not delete file: " + tempFilePath.toString(), e);
+                    LOGGER.error("Could not delete file: " + filePath.toString(), e);
                 }
             }
         }
         return generateRetrieveResultURL(id);
-	}
-    
+    }
+
     @Override
-	public synchronized void updateResponse(String id, InputStream stream) {
+    public synchronized void updateResponse(String id, InputStream stream) {
         Path tempFilePath = null;
         FileInputStream fis = null;
-		try {
+        try {
             tempFilePath = Files.createTempFile(UUID.randomUUID().toString(), null);
             Files.copy(stream, tempFilePath, StandardCopyOption.REPLACE_EXISTING);
             fis = new FileInputStream(tempFilePath.toFile());
-            
-			AbstractDatabase.updateSQL.setString(UPDATE_COLUMN_REQUEST_ID, id);
-			AbstractDatabase.updateSQL.setAsciiStream(UPDATE_COLUMN_RESPONSE,  fis, (int) tempFilePath.toFile().length());
-			AbstractDatabase.updateSQL.executeUpdate();
-			getConnection().commit();
-		} catch (SQLException e) {
-			LOGGER.error("Could not insert Response into database", e);
-		} catch (IOException e) {
+
+            AbstractDatabase.updateSQL.setString(UPDATE_COLUMN_REQUEST_ID, id);
+            AbstractDatabase.updateSQL.setAsciiStream(UPDATE_COLUMN_RESPONSE, fis, (int) tempFilePath.toFile().length());
+            AbstractDatabase.updateSQL.executeUpdate();
+            getConnection().commit();
+        } catch (SQLException e) {
+            LOGGER.error("Could not insert Response into database", e);
+        } catch (IOException e) {
             LOGGER.error("Could not insert Response into database", e);
         } finally {
             if (fis != null) {
@@ -201,7 +257,7 @@ public class PostgresDatabase extends AbstractDatabase {
                 }
             }
         }
-	}
+    }
 
     private static boolean createResultTable() {
         try {
@@ -304,7 +360,60 @@ public class PostgresDatabase extends AbstractDatabase {
         }
         LOGGER.info("Postgres database connection is closed succesfully");
     }
-    
+
+    @Override
+    public InputStream lookupResponse(String id) {
+        InputStream result = null;
+        if (null != id) {
+            if (!id.toLowerCase().contains("output")) {
+                result = super.lookupResponse(id);
+            } else {
+                if (Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
+                    result = super.lookupResponse(id);
+                } else {
+                    File responseFile = lookupResponseAsFile(id);
+                    if (responseFile != null && responseFile.exists()) {
+                        LOGGER.debug("Response file for {} is {}", id, responseFile.getPath());
+                        try {
+                            result = responseFile.getName().endsWith(SUFFIX_GZIP) ? new GZIPInputStream(new FileInputStream(responseFile))
+                                    : new FileInputStream(responseFile);
+                        } catch (FileNotFoundException ex) {
+                            LOGGER.warn("Response not found for id {}", id);
+                        } catch (IOException ex) {
+                            LOGGER.warn("Error processing response for id {}", id);
+                        }
+                    }
+                    LOGGER.warn("Response not found for id {}", id);
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public File lookupResponseAsFile(String id) {
+        File result = null;
+        InputStream responseStream = super.lookupResponse(id);
+        try {
+            String fileLocation = IOUtils.toString(responseStream);
+            result = new File(new URI(fileLocation));
+        } catch (IOException ex) {
+            LOGGER.warn("Could not get file location for response file for id " + id, ex);
+        } catch (URISyntaxException ex) {
+            LOGGER.warn("Could not get file location for response file for id " + id, ex);
+        } finally {
+            if (null != responseStream) {
+                try {
+                    responseStream.close();
+                } catch (IOException ex) {
+                    LOGGER.debug("Could not close input stream", ex);
+                }
+            }
+        }
+
+        return result;
+    }
+
     @Override
     public String generateRetrieveResultURL(String id) {
         return baseResultURL + id;
@@ -318,6 +427,10 @@ public class PostgresDatabase extends AbstractDatabase {
     @Override
     public String getConnectionURL() {
         return PostgresDatabase.connectionURL;
+    }
+
+    private File generateResponseDirectory(String id) {
+        return new File(BASE_DIRECTORY, id);
     }
 
 }
