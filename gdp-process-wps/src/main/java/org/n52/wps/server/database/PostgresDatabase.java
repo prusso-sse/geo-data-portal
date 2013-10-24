@@ -17,6 +17,10 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.logging.Level;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import org.n52.wps.ServerDocument;
 import org.n52.wps.commons.WPSConfig;
 import static org.n52.wps.server.database.AbstractDatabase.getDatabasePath;
@@ -75,20 +79,40 @@ public class PostgresDatabase extends AbstractDatabase {
 
     private static boolean createConnection() {
         Properties props = new Properties();
+        DataSource dataSource;
+        String jndiName = getDatabaseProperties("jndiName");
         String username = getDatabaseProperties("username");
         String password = getDatabaseProperties("password");
-        props.setProperty("create", "true");
-        props.setProperty("user", username);
-        props.setProperty("password", password);
-        PostgresDatabase.conn = null;
-        try {
-            PostgresDatabase.conn = DriverManager.getConnection(
-                    PostgresDatabase.connectionURL, props);
-            conn.setAutoCommit(false);
-            LOGGER.info("Connected to WPS database.");
-        } catch (SQLException e) {
-            LOGGER.error("Could not connect to or create the database.");
-            return false;
+        
+        if (jndiName != null) {
+            InitialContext context;
+            try {
+                context = new InitialContext();
+                dataSource = (DataSource) context.lookup("java:comp/env/jdbc/" + jndiName);
+                PostgresDatabase.conn = dataSource.getConnection();
+                PostgresDatabase.conn.setAutoCommit(false);
+                LOGGER.info("Connected to WPS database.");
+            } catch (NamingException e) {
+                LOGGER.error("Could not connect to or create the database.", e);
+                return false;
+            } catch (SQLException e) {
+                LOGGER.error("Could not connect to or create the database.", e);
+                return false; 
+            }
+        } else {
+            props.setProperty("create", "true");
+            props.setProperty("user", username);
+            props.setProperty("password", password);
+            PostgresDatabase.conn = null;
+            try {
+                PostgresDatabase.conn = DriverManager.getConnection(
+                        PostgresDatabase.connectionURL, props);
+                PostgresDatabase.conn.setAutoCommit(false);
+                LOGGER.info("Connected to WPS database.");
+            } catch (SQLException e) {
+                LOGGER.error("Could not connect to or create the database.", e);
+                return false;
+            }
         }
         return true;
     }
