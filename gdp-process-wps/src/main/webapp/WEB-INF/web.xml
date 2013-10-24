@@ -18,6 +18,10 @@
         <description>ServletContextListener</description>
         <listener-class>gov.usgs.cida.n52.wps.servlet.DeregisterServiceProviderServletListener</listener-class>
     </listener>
+    <listener>
+        <description>Switches the location to look for the wps_config.xml file</description>
+        <listener-class>gov.usgs.cida.n52.wps.config.ForceConfigInitializeListener</listener-class>
+    </listener>
     <servlet>
         <servlet-name>wpsServlet</servlet-name>
         <servlet-class>org.n52.wps.server.WebProcessingService</servlet-class>
