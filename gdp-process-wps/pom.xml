@@ -10,17 +10,17 @@
     <packaging>war</packaging>
     <name>GDP Process WPS</name>
         
-	<licenses>
-		<license>
-			<name>Public Domain</name>
-			<url>http://en.wikipedia.org/wiki/Public_domain_software</url>
-			<comments>
-				All work of the US Government enter into the Public Domain within
-				the United States.  Whether that work is public domain outside of
-				the United States depends on various factors.
-			</comments>
-		</license>
-	</licenses>
+    <licenses>
+        <license>
+            <name>Public Domain</name>
+            <url>http://en.wikipedia.org/wiki/Public_domain_software</url>
+            <comments>
+                All work of the US Government enter into the Public Domain within
+                the United States.  Whether that work is public domain outside of
+                the United States depends on various factors.
+            </comments>
+        </license>
+    </licenses>
 	
     <properties>
         <version.maven.failsafe.plugin>2.12.2</version.maven.failsafe.plugin>
@@ -71,8 +71,8 @@
                     </connectors>
                     <systemProperties>
                         <!-- This hack is to set catalina.base to the current jetty base
-                            directory while the plugin runs so log4j will log somewhere and
-                            not complain -->
+                        directory while the plugin runs so log4j will log somewhere and
+                        not complain -->
                         <systemProperty>
                             <name>catalina.base</name>
                             <value>${project.build.directory}</value>
@@ -107,6 +107,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies>        
+                    <dependency>
+                        <groupId>postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>9.1-901-1.jdbc4</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
