@@ -569,38 +569,36 @@ function testPreflightParams () {
 		incomingParams[key] = value;
 	}
 
-	if (incomingMethod === 'GET') {
-		if (!incomingParams['algorithm'] || !incomingParams['dataset']) {
-			window.location = landingPage + window.location.search;
-		}
-	} else if (incomingMethod === 'POST') {
-		if ((!incomingParams['algorithm'] || !incomingParams['dataset'])) {
-			var formContainer = $('<div />').attr({
-				'style' : 'display:none;'	
-			});
-			var form = $('<form />').attr({
-				'action': landingPage,
-				'method': 'POST',
-				'name': 'gdp-landing-redirect-post-form'
-			});
-			for (key in incomingParams) {
-				if (key && incomingParams.hasOwnProperty(key)) {
-					form.append($('<input />').attr({
-						'type': 'hidden',
-						'name': key,
-						'value': incomingParams[key]
-					}));
-				}
-			}
-			formContainer.append(form);
-			$('body').append(formContainer);
-			document.forms['gdp-landing-redirect-post-form'].submit();
-		}
-	} else {
-		delete window.landingPage;
-		delete window.incomingMethod;
-		return true;
-	}
+    if (!incomingParams['development'] && (!incomingParams['algorithm'] || !incomingParams['dataset'])) {
+        if (incomingMethod === 'GET') {
+            window.location = landingPage + window.location.search;
+        } else if (incomingMethod === 'POST') {
+            var formContainer = $('<div />').attr({
+                'style': 'display:none;'
+            });
+            var form = $('<form />').attr({
+                'action': landingPage,
+                'method': 'POST',
+                'name': 'gdp-landing-redirect-post-form'
+            });
+            for (key in incomingParams) {
+                if (key && incomingParams.hasOwnProperty(key)) {
+                    form.append($('<input />').attr({
+                        'type': 'hidden',
+                        'name': key,
+                        'value': incomingParams[key]
+                    }));
+                }
+            }
+            formContainer.append(form);
+            $('body').append(formContainer);
+            document.forms['gdp-landing-redirect-post-form'].submit();
+        }
+    } else {
+        delete window.landingPage;
+        delete window.incomingMethod;
+        return true;
+    }
 }
 
 $(document).ready(function () {
