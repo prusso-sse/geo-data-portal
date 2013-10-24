@@ -74,24 +74,41 @@
     HttpServelRequest instance of getRequestURL() in response using a Filter -->
     <Server hostname="@hostname@" hostport="@hostport@" webappPath="@webappPath@" includeDataInputsInResponse="true" computationTimeoutMilliSeconds="5" cacheCapabilites="false">
         <Property active="true" name="responseURLFilterEnabled">true</Property>
-        <!-- POSTGRES Connector -->
         <!-- 
-                <Database>
-                    <Property active="true" name="databaseClass">org.n52.wps.server.database.PostgresDatabase</Property>
-                    <Property active="true" name="jndiName">gdp</Property> 
-                    <Property active="true" name="saveResultsToDb">false</Property>
-                </Database>
-        -->
-        <!--        
-                <Database>
-                    Alternative connection method    
-                    <Property active="true" name="databaseName">postgres</Property>
-                    <Property active="true" name="databasePath">//localhost:5432</Property>
-                    <Property active="true" name="username">your-username</Property>
-                    <Property active="true" name="password">your-password</Property>
-                    <Property active="true" name="saveResultsToDb">false</Property>
-                </Database>
-        -->
+            POSTGRES Connector 
+            ==================
+            
+            Ensure that the postgres driver is available to the server during 
+            launch. The server will fail to start if Postgres is active but the
+            driver is missing. However, if the driver exists and the database 
+            cannot be connected to (unavailable, username/pass issue, etc), the
+            framework will fail-over to the Flatfile Database
+
+            jndiName or username/password: If jndiName exists, username
+            and password are not used.
+             
+            saveResultsToDb: Setting to false will save results output to file
+            and put the URI link to the file in the database. Setting to true 
+            stores the actual result output in the database (You probably don't 
+            want this if you have large results).
+            
+            JNDI Configuration:
+            <Database>
+                <Property active="true" name="databaseClass">org.n52.wps.server.database.PostgresDatabase</Property>
+                <Property active="true" name="jndiName">gdp</Property> 
+                <Property active="true" name="saveResultsToDb">false</Property>
+            </Database>
+
+            Direct connection configuration:
+            <Database>
+                Alternative connection method    
+                <Property active="true" name="databaseName">postgres</Property>
+                <Property active="true" name="databasePath">//localhost:5432</Property>
+                <Property active="true" name="username">username</Property>
+                <Property active="true" name="password">password</Property>
+                <Property active="true" name="saveResultsToDb">false</Property>
+            </Database>
+         -->
         </Database>
     </Server>
 </WPSConfiguration>
