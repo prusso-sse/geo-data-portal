@@ -74,6 +74,14 @@ var WPS = function () {
 
     // Public members and methods
     return {
+        init: function() {
+            // Warm up the OGC proxy by making a getting the GetCaps from the process 
+            // wps server
+            // TODO- memoize the valid response so we don't make multiple calls
+            var wpsURL = Constant.endpoint.proxy + Constant.endpoint.processwps;
+            WPS.sendWPSGetRequest(wpsURL, WPS.getCapabilitiesParams, false, function() {
+            });
+        },
         getCapabilitiesParams: {
             'Request' : 'GetCapabilities',
             'Service' : 'WPS',
