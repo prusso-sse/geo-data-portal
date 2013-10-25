@@ -166,7 +166,8 @@ function initializeSteps() {
     AOI = new AOI();
     Dataset = new Dataset();
     ScienceBase = new ScienceBase();
-
+    
+    WPS.init();
     ScienceBase.init();
     Algorithm.init();
 

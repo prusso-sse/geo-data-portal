@@ -74,6 +74,10 @@ var WPS = function () {
 
     // Public members and methods
     return {
+        init: function () {
+          var wpsURL = Constant.endpoint.proxy + Constant.endpoint.processwps;
+          WPS.sendWPSGetRequest(wpsURL, WPS.getCapabilitiesParams, false, function() {});
+        },
         getCapabilitiesParams: {
             'Request' : 'GetCapabilities',
             'Service' : 'WPS',
