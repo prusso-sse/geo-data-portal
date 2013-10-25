@@ -432,6 +432,10 @@ var Dataset = function() {
             showNotification('Your request has successfully completed.', true);
             _RETRIEVE_OUTPUT_URL = $(xml).find('ns|Output').find('ns|Reference').attr('href');
             
+            if(_userFilename.length > 0) {
+            	_RETRIEVE_OUTPUT_URL = _RETRIEVE_OUTPUT_URL + '&filename=' + _userFilename;
+            }
+            
             logger.debug('GDP: Showing submit for processing link');
             $(_SUBMIT_FOR_PROCESSING_LINK).fadeIn(Constant.ui.fadeSpeed);
             
@@ -1642,12 +1646,7 @@ var Dataset = function() {
     function bindRetrieveOutputButton() {
         $(_RETRIEVE_OUTPUT_BUTTON).click(function() {
             var urlAndData = _RETRIEVE_OUTPUT_URL.split('?');
-            
-            if(_userFilename.length > 0) {
-            	$.download(urlAndData[0], urlAndData[1] + '&filename=' + _userFilename, 'get');
-            } else {
-            	$.download(urlAndData[0], urlAndData[1], 'get');
-            }
+           	$.download(urlAndData[0], urlAndData[1], 'get');
         });
     }
 

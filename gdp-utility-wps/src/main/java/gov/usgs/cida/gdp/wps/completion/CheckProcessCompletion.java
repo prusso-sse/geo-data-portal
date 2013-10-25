@@ -65,8 +65,8 @@ public class CheckProcessCompletion {
 		return singleton;
 	}
 
-	public void addProcessToCheck(String wpsCheckPoint, String emailAddr, String callbackBaseURL, Boolean breakOnSyserr, Boolean emailOnSyserr, Integer checkProcErrLimit) {
-		timer.scheduleAtFixedRate(new EmailCheckTask(wpsCheckPoint, emailAddr, callbackBaseURL, breakOnSyserr, emailOnSyserr, checkProcErrLimit), 0l, recheckTime);
+	public void addProcessToCheck(String wpsCheckPoint, String emailAddr, String filename, String callbackBaseURL, Boolean breakOnSyserr, Boolean emailOnSyserr, Integer checkProcErrLimit) {
+		timer.scheduleAtFixedRate(new EmailCheckTask(wpsCheckPoint, emailAddr, filename, callbackBaseURL, breakOnSyserr, emailOnSyserr, checkProcErrLimit), 0l, recheckTime);
 		cleanupTimer();
 	}
 
@@ -94,6 +94,7 @@ class EmailCheckTask extends TimerTask {
 
 	private String wpsCheckPoint;
 	private String addr;
+	private String fileName;
     private String callbackBaseURL;
 	private Boolean breakOnSyserr;
 	private Boolean emailOnSyserr;
@@ -102,9 +103,10 @@ class EmailCheckTask extends TimerTask {
 	private Integer checkProcErrLimit;
 	private final String taskStarted;
 
-	public EmailCheckTask(String wpsCheckPoint, String emailAddr, String callbackBaseURL, Boolean breakOnSyserr, Boolean emailOnSyserr, Integer checkProcErrLimit) {
+	public EmailCheckTask(String wpsCheckPoint, String emailAddr, String filename, String callbackBaseURL, Boolean breakOnSyserr, Boolean emailOnSyserr, Integer checkProcErrLimit) {
 		this.wpsCheckPoint = wpsCheckPoint;
 		this.addr = emailAddr;
+		this.fileName = filename;
         this.callbackBaseURL = callbackBaseURL;
 		this.breakOnSyserr = breakOnSyserr;
 		this.emailOnSyserr = emailOnSyserr;
@@ -173,7 +175,12 @@ class EmailCheckTask extends TimerTask {
 		}
 		else if (procStat.isSuccess()) {
 			log.debug("Process (started " + taskStarted + ") complete, sending email");
-			sendCompleteEmail(procStat.getOutputReference(), XMLUtils.createPrettyXML(document));
+			
+			if((this.fileName != null) && (!this.fileName.equals(""))) {
+				sendCompleteEmail(procStat.getOutputReference() + "&filename=" + this.fileName, XMLUtils.createPrettyXML(document));
+			} else {
+				sendCompleteEmail(procStat.getOutputReference(), XMLUtils.createPrettyXML(document));
+			}
 			this.cancel();
 		}
 		else if (procStat.isFailed()) {
