@@ -345,13 +345,13 @@ var Dataset = function() {
             'email': [_userEmail]
         };
         
-        //if(_userFilename.length > 0) {
-        //	wpsInputs = {
-        //        'wps-checkpoint': [statusLocation],
-        //        'email': [_userEmail],
-        //        'filename': [_userFilename]
-        //    };
-        //}
+        if(_userFilename.length > 0) {
+        	wpsInputs = {
+                'wps-checkpoint': [statusLocation],
+                'email': [_userEmail],
+                'filename': [_userFilename]
+            };
+        }
         
         if (ScienceBase.useSB && Constant.endpoint && Constant.endpoint.redirect_url) {
             wpsInputs['callback-base-url'] = [Constant.endpoint.redirect_url + "?result="];
@@ -709,7 +709,7 @@ var Dataset = function() {
                     'SUBMIT' : function() {
                         $(this).dialog("close");
                         _userEmail = $(_EMAIL_INPUT_BOX).val();
-                        _userFilename = $(_FILENAME_INPUT_BOX).val();
+                        _userFilename = encodeURIComponent($(_FILENAME_INPUT_BOX).val());
                         $(_RETRIEVE_OUTPUT_BUTTON).fadeOut(Constant.ui.fadeSpeed);
                         $(_RETRIEVE_PROC_INFO_BUTTON).fadeOut(Constant.ui.fadeSpeed);
                         $(_SUBMIT_FOR_PROCESSING_LINK).fadeOut(Constant.ui.fadeSpeed);
