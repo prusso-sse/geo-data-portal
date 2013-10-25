@@ -59,6 +59,10 @@ public enum AppConstant {
             if (input.equals("gdp.path.workspace")) {
                 result = this.BASE_LOCATION + File.separator + "WorkSpace";
             }
+            // WPS_CONFIG_LOCATION
+            if (input.equals("gdp.path.wps_config")) {
+                result = "";
+            }
             // CACHE_LOCATION
             if (input.equals("gdp.path.cache")) {
                 result = this.BASE_LOCATION + File.separator + "Cache";
