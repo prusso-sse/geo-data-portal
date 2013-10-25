@@ -93,10 +93,14 @@
             want this if you have large results).
             
             JNDI Configuration:
+            
             <Database>
                 <Property active="true" name="databaseClass">org.n52.wps.server.database.PostgresDatabase</Property>
                 <Property active="true" name="jndiName">gdp</Property> 
                 <Property active="true" name="saveResultsToDb">false</Property>
+                <Property name="wipe.enabled" active="true">true</Property>
+                <Property name="wipe.period" active="true">PT30S</Property>
+                <Property name="wipe.threshold" active="true">PT30S</Property>
             </Database>
 
             Direct connection configuration:
@@ -107,8 +111,11 @@
                 <Property active="true" name="username">username</Property>
                 <Property active="true" name="password">password</Property>
                 <Property active="true" name="saveResultsToDb">false</Property>
+                <Property name="wipe.enabled" active="true">true</Property>
+                <Property name="wipe.period" active="true">PT1H</Property>
+                <Property name="wipe.threshold" active="true">P7D</Property>
             </Database>
-         -->
-        </Database>
+-->
+        <Database />
     </Server>
 </WPSConfiguration>
