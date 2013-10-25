@@ -471,7 +471,8 @@ public class PostgresDatabase extends AbstractDatabase {
                 }
 
                 // Clean up records in database 
-                LOGGER.info("Cleaned {} records from database", deleteRecords(oldRecords));
+                Integer recordsDeleted = deleteRecords(oldRecords);
+                LOGGER.info("Cleaned {} records from database", recordsDeleted);
                 
             }
         }
