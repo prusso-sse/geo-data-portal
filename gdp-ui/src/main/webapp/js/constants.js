@@ -122,8 +122,7 @@ var Constant = function() {
             $.extend(
                 true,
                 Constant.incoming,
-                getUrlParameters(),
-				incomingParams
+                getUrlParameters()
                 );
         },
         getConstantsFromServer : function() {
