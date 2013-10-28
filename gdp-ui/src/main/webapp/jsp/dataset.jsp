@@ -7,11 +7,15 @@
 
 <div id="submit-dialog" class="hidden">
     <div id="algorithm-configuration-summary" class="element_wrapper"></div>
-    <div class="element-wrapper">
-        <div id="submit-dialog-info-text"></div>
+    <div class="element-wrapper" style="float: left;">
+        <div id="submit-dialog-info-text" style="clear: both; margin-bottom: 10px;"></div>
 
-        <div id="submit-dialog-email-entry">
-            <label for="user-email">E-Mail: </label><input type="text" name="user-email" id="user-email" />
+        <div id="submit-dialog-email-entry" style="clear: both;">
+            <label for="user-email" style="padding-top: 10px; float: left;">E-Mail: </label><input type="text" name="user-email" id="user-email" style="float: right; margin-bottom: 10px;" />
+        </div>
+
+        <div id="submit-dialog-filename-entry" style="clear: both;">
+            <label for="user-filename" style="padding-top: 10px; float: left;">Filename (Optional): </label><input type="text" name="user-filename" id="user-filename" style="float: right; margin-bottom: 2px;" />
         </div>
     </div>
 
