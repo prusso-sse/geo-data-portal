@@ -66,13 +66,6 @@
 <script type="text/javascript" src="lib/scripts/gdp-cswclient-update.js"></script>
 <script type="text/javascript">
 
-	if ($.browser.msie && $.browser.version === "9.0") {
-		window.XMLSerializer = new Object();
-		window.XMLSerializer.prototype.serializeToString = function(oNode) {
-			return oNode.xml;
-		};
-	}
-
 	// http://stackoverflow.com/questions/37684/how-to-replace-plain-urls-with-links
 	function replaceURLWithHTMLLinks(text) {
 		var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
