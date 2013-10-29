@@ -1655,6 +1655,8 @@ var Dataset = function() {
             _algorithmList = (Constant.ui.view_algorithm_list.length > 0) ? Constant.ui.view_algorithm_list.split(',') : new Array();
             logger.debug('GDP: We are working with ' + ((_algorithmList.length === 0) ? 'all' : _algorithmList.length) + ' algorithm(s).');
             
+            _usingCache = Constant.incoming.useCache;
+            
             createAlgorithmDropdown();
             
             $(_ALGORITHM_DOC_LINK).button({
@@ -1846,7 +1848,7 @@ var Dataset = function() {
 		selectDatasetById: function (id, title) {
 			var csw_response = GDPCSWClient.getRecordById(id),
 				selectedDataset,
-				shouldUseCache = false,
+				useCache = false,
 				wmsURL,
 				// We are doing this because we don't know which format the data might be in, if we can tell, we shouldn't iterate
 				datasetSelectors = [
@@ -1884,7 +1886,7 @@ var Dataset = function() {
 					var codeListValue = $(elem).attr("codeListValue");
 
 					if (codeListValue.toLowerCase() === "completed") {
-						shouldUseCache = true;
+						useCache = true;
 					}
 				});
 			}
@@ -1892,7 +1894,7 @@ var Dataset = function() {
 			if (!selectedDataset) {
 				showErrorNotification("No dataset found for this CSW Record");
 			} else {
-				Dataset.datasetSelected(selectedDataset, wmsURL, shouldUseCache);
+				Dataset.datasetSelected(selectedDataset, wmsURL, useCache);
 				$('#dataset-url-input-box').val(selectedDataset);
 				if (parseInt(Constant.ui.view_show_csw_chosen_dataset_title, 10)) {
 					$('#dataset-selected-title').fadeOut(Constant.fadeSpeed, function() {
