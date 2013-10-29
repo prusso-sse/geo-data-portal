@@ -506,6 +506,37 @@ GDP.CSW = function (args) {
 
 			return identToRecord;
 		},
+        getStatusFromRecord = function (args) {
+            args = args || {};
+            if (!args.record) {
+				throw "undefined record passed in";
+			}
+            var record = args.record,
+                status = '',
+                statusObject,
+                rIndex,
+                codeList,
+                identificationInfoArray,
+                identificationInfoObject;
+            
+            if (record.identificationInfo) {
+                identificationInfoArray = record.identificationInfo;
+                for (rIndex = 0; rIndex < identificationInfoArray.length && status === ''; rIndex++) {
+                    identificationInfoObject = identificationInfoArray[rIndex];
+                    if (identificationInfoObject.status) {
+                        statusObject = identificationInfoObject.status[0];
+                        if (statusObject.codeList) {
+                            codeList = statusObject.codeList;
+                            if (codeList.toLowerCase().indexOf('progresscode') > -1) {
+                                status = statusObject.codeListValue;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return status;
+        },
 		createFullRecordView = function (args) {
 			args = args || {};
 			if (!args.identifier) {
@@ -647,6 +678,7 @@ GDP.CSW = function (args) {
 		getCswIdentToRecordMapFromRecordsArray : getCswIdentToRecordMapFromRecordsArray,
 		createFullRecordView : createFullRecordView,
 		getKeywordsForRecord : getKeywordsForRecord,
+        getStatusFromRecord : getStatusFromRecord,
 		url : this.url,
 		proxy : this.proxy,
 		client : this.cswClient,
