@@ -15,7 +15,11 @@
     <listener>
         <description>Allows dynamic Log4J log level changes via JMX</description>
         <listener-class>gov.usgs.cida.jmx.log4j.JMXLog4JLoggerServletContextListener</listener-class>
-    </listener>    
+    </listener>
+    <listener>
+        <description>Switches the location to look for the wps_config.xml file</description>
+        <listener-class>gov.usgs.cida.n52.wps.config.ForceConfigInitializeListener</listener-class>
+    </listener>
     <filter>
         <filter-name>ResponseURLFilter</filter-name>
         <filter-class>org.n52.wps.server.ResponseURLFilter</filter-class>
