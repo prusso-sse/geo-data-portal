@@ -4,7 +4,7 @@
 	<groupId>gov.usgs.cida.gdp</groupId>
 	<artifactId>gdp</artifactId>
 	<packaging>pom</packaging>
-	<version>24-SNAPSHOT</version>
+	<version>25-SNAPSHOT</version>
 	<name>GDP</name>
 	<modules>
 		<module>gdp-common-utilities</module>
@@ -110,12 +110,12 @@
 		<repository>
 			<id>cida-releases</id>
 			<name>CIDA Releases</name>
-			<url>https://internal.cida.usgs.gov/maven/content/repositories/cida-releases</url>
+			<url>https://internal.cida.usgs.gov/maven/content/repositories/cida-public-releases</url>
 		</repository>
 		<snapshotRepository>
 			<id>cida-snapshots</id>
 			<name>CIDA Snapshots</name>
-			<url>https://internal.cida.usgs.gov/maven/content/repositories/cida-snapshots</url>
+			<url>https://internal.cida.usgs.gov/maven/content/repositories/cida-public-snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
 	<repositories>

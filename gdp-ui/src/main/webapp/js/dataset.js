@@ -6,6 +6,7 @@ var Dataset = function() {
     var _datasetURL = '';
     var gWmsURL = '';
     var _userEmail;
+    var _userFilename;
     var _HTML_ID =  'dataset';
     
     var _ALGORITHM_DROPDOWN_CONTAINER = '#algorithm-dropdown-container';
@@ -29,6 +30,7 @@ var Dataset = function() {
     var _DATE_RANGE_FROM_INPUT_BOX = '#date-range-from-inputbox';
     var _DATE_RANGE_TO_INPUT_BOX = '#date-range-to-inputbox';
     var _EMAIL_INPUT_BOX = '#user-email';
+    var _FILENAME_INPUT_BOX = '#user-filename';
     var _EMAIL_WHEN_FINISHED_ALGORITHM = 'gov.usgs.cida.gdp.wps.algorithm.communication.EmailWhenFinishedAlgorithm';
     var _FROM_DATE_PICKER = '#from-date-picker';
     var _MISSING_INPUT_SUMMARY = '#missing-input-summary';
@@ -343,6 +345,14 @@ var Dataset = function() {
             'email': [_userEmail]
         };
         
+        if(_userFilename.length > 0) {
+        	wpsInputs = {
+                'wps-checkpoint': [statusLocation],
+                'email': [_userEmail],
+                'filename': [_userFilename]
+            };
+        }
+        
         if (ScienceBase.useSB && Constant.endpoint && Constant.endpoint.redirect_url) {
             wpsInputs['callback-base-url'] = [Constant.endpoint.redirect_url + "?result="];
         }
@@ -421,6 +431,10 @@ var Dataset = function() {
             logger.debug('GDP: STATUS: Process successfully completed.')
             showNotification('Your request has successfully completed.', true);
             _RETRIEVE_OUTPUT_URL = $(xml).find('ns|Output').find('ns|Reference').attr('href');
+            
+            if(_userFilename.length > 0) {
+            	_RETRIEVE_OUTPUT_URL = _RETRIEVE_OUTPUT_URL + '&filename=' + _userFilename;
+            }
             
             logger.debug('GDP: Showing submit for processing link');
             $(_SUBMIT_FOR_PROCESSING_LINK).fadeIn(Constant.ui.fadeSpeed);
@@ -695,6 +709,7 @@ var Dataset = function() {
                     'SUBMIT' : function() {
                         $(this).dialog("close");
                         _userEmail = $(_EMAIL_INPUT_BOX).val();
+                        _userFilename = encodeURIComponent($(_FILENAME_INPUT_BOX).val());
                         $(_RETRIEVE_OUTPUT_BUTTON).fadeOut(Constant.ui.fadeSpeed);
                         $(_RETRIEVE_PROC_INFO_BUTTON).fadeOut(Constant.ui.fadeSpeed);
                         $(_SUBMIT_FOR_PROCESSING_LINK).fadeOut(Constant.ui.fadeSpeed);
@@ -1631,7 +1646,7 @@ var Dataset = function() {
     function bindRetrieveOutputButton() {
         $(_RETRIEVE_OUTPUT_BUTTON).click(function() {
             var urlAndData = _RETRIEVE_OUTPUT_URL.split('?');
-            $.download(urlAndData[0], urlAndData[1], 'get');
+           	$.download(urlAndData[0], urlAndData[1], 'get');
         });
     }
 

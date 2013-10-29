@@ -21,6 +21,9 @@ public class ForceConfigInitializeListener implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         String configLocation = WPS_CONFIG_LOCATION.getValue();
+        if (configLocation == null || configLocation.isEmpty()) {
+            configLocation = WPSConfig.getConfigPath();
+        }
         try {
             WPSConfig.forceInitialization(configLocation);
         }
