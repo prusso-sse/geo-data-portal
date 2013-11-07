@@ -406,6 +406,7 @@ GDP.UI = function (args) {
 				var csw,
 					cswIdent,
 					cswUrl,
+                    cswRecord,
 					win,
 					url,
 					pKey,
@@ -416,6 +417,8 @@ GDP.UI = function (args) {
 					recordAlgorithms,
 					formContainer,
 					form,
+                    useCache,
+                    status,
 					incomingParams = GDP.CONFIG.incomingParams,
 					datasetDropdown = $('#form-control-select-csw'),
 					datasetDropdownValue = datasetDropdown.val(),
@@ -443,9 +446,12 @@ GDP.UI = function (args) {
 					algorithms = algorithms.join(',');
 
 					csw = encodeURIComponent(cswUrl);
-
+                    status = GDP.CONFIG.cswClient.getStatusFromRecord({
+                        'record' : GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent]
+                    });
+                    useCache = status === 'completed';
 					if (GDP.CONFIG.incomingMethod === 'GET') {
-						url = GDP.CONFIG.hosts.gdp + '?dataset=' + csw + '&algorithm=' + algorithms;
+						url = GDP.CONFIG.hosts.gdp + '?dataset=' + csw + '&algorithm=' + algorithms + '&useCache=' + useCache;
 
 						for (pKey in incomingParams) {
 							if (incomingParams.hasOwnProperty(pKey) && pKey) {
@@ -488,6 +494,12 @@ GDP.UI = function (args) {
 							'type': 'hidden',
 							'name': 'dataset',
 							'value': csw
+						}));
+                        
+                        form.append($('<input />').attr({
+							'type': 'hidden',
+							'name': 'useCache',
+							'value': useCache
 						}));
 
 						formContainer.append(form);

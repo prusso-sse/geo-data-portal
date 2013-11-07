@@ -596,8 +596,8 @@ function testPreflightParams () {
             document.forms['gdp-landing-redirect-post-form'].submit();
         }
     } else {
-        delete window.landingPage;
-        delete window.incomingMethod;
+        window.landingPage = undefined;
+        window.incomingMethod = undefined;
         return true;
     }
 }
