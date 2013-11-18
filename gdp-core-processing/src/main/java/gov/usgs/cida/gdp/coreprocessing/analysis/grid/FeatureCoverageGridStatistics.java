@@ -147,14 +147,14 @@ public class FeatureCoverageGridStatistics {
             for (Range zRange : decompose(zAxis)) {
                 String zLabel = zRange == null ? null : Double.toString(gcs.getVerticalAxis().getCoordValue(zRange.first()));
                 
-                FeatureIterator<SimpleFeature> featureIterator = featureCollection.features();
+                FeatureIterator<SimpleFeature> featureIterator = null;
                 try {
 
                     perTimestepPerAttributeStatisticsMap = create(attributeComparable);
                     perTimestepAllAttributeStatistics = new Statistics1D();
                     
                     featureIterator = featureCollection.features();
-                    
+                                        
                     while (featureIterator.hasNext()) {
 
                         SimpleFeature feature = featureIterator.next();

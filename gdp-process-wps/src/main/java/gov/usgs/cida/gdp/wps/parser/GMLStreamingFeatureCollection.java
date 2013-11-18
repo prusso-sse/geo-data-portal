@@ -1,7 +1,8 @@
 package gov.usgs.cida.gdp.wps.parser;
 
-import com.vividsolutions.jts.geom.Geometry;
 import gov.usgs.cida.gdp.wps.util.GMLUtil;
+import gov.usgs.cida.gdp.wps.util.xml.GDPFeatureParser;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,7 +12,10 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
+
 import org.apache.commons.io.FileUtils;
 import org.geotools.feature.CollectionListener;
 import org.geotools.feature.FeatureCollection;
@@ -23,7 +27,6 @@ import org.geotools.feature.type.GeometryTypeImpl;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.xml.Configuration;
-import org.geotools.xml.StreamingParser;
 import org.opengis.feature.Feature;
 import org.opengis.feature.FeatureVisitor;
 import org.opengis.feature.simple.SimpleFeature;
@@ -39,6 +42,8 @@ import org.opengis.util.ProgressListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
+
+import com.vividsolutions.jts.geom.Geometry;
 
 /**
  *
@@ -269,8 +274,9 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 
 	private final class StreamingFeatureIterator implements FeatureIterator<Feature>, Iterator<Feature> {
 
-		private StreamingParser parser;
-		private InputStream inputStream;
+		private GDPFeatureParser parser;
+		private InputStream bufferedInputStream;
+		private InputStream fileInputStream;
 		private Filter filter;
 		private SimpleFeature next;
 		private boolean open;
@@ -283,21 +289,40 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 		private StreamingFeatureIterator(Filter filter, boolean wrap) throws ParserConfigurationException, SAXException, FileNotFoundException {
 			this.filter = filter;
             this.wrap = wrap;
+            
+            LOGGER.debug("StreamingFeatureIterator() : FILENAME [" + file.getName() + "]");
+            
+            fileInputStream = new FileInputStream(file);
 
-			inputStream = new BufferedInputStream(
-					new FileInputStream(file),
+			bufferedInputStream = new BufferedInputStream(
+					fileInputStream,
 					16 << 10);
-			parser = new StreamingParser(
-					configuration,
-					inputStream,
+			
+			Configuration newConfiguration = GMLUtil.generateGMLConfiguration(file);
+			
+			parser = new GDPFeatureParser(
+					newConfiguration,
+					bufferedInputStream,
 					SimpleFeature.class);
+			
 			open = true;
 		}
 
 		@Override
 		public synchronized boolean hasNext() {
 			if (next == null) {
-				findNext();
+				try {
+					findNext();
+				} catch (XMLStreamException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SAXException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			return next != null;
 		}
@@ -314,19 +339,38 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 
 		@Override
 		public synchronized void close() {
-			if (open) {
-				next = null;
-				filter = null;
-				parser = null;
-				if (inputStream != null) {
-					try {
-						inputStream.close();
-					} catch (IOException e) {
-						// do nothing, cleaning up
-					}
-					inputStream = null;
+			next = null;
+			filter = null;
+			open = false;
+						
+			if (fileInputStream != null) {
+				try {
+					fileInputStream.close();
+				} catch (IOException e) {
+					// do nothing, cleaning up
+					e.printStackTrace();
 				}
-				open = false;
+				fileInputStream = null;
+			}
+			
+			if (bufferedInputStream != null) {
+				try {
+					bufferedInputStream.close();
+				} catch (IOException e) {
+					// do nothing, cleaning up
+					e.printStackTrace();
+				}
+				bufferedInputStream = null;
+			}
+			
+			if(parser != null) {
+				try {
+					parser.close();
+				} catch (XMLStreamException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				parser = null;
 			}
 		}
 
@@ -339,7 +383,7 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 			return GMLStreamingFeatureCollection.this;
 		}
 
-		protected void findNext() {
+		protected void findNext() throws XMLStreamException, IOException, SAXException {
 			while (next == null && open) {
 				Object parsed = parser.parse();
 				if (parsed instanceof SimpleFeature) {
