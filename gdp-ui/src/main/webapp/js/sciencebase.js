@@ -10,7 +10,7 @@ var ScienceBase = function () {
         itemId : _ITEM_ID,
         init : function() {
             this.endpoints = incomingParams;
-            if (!$.isEmptyObject(this.endpoints)) {
+            if (!$.isEmptyObject(this.endpoints) && this.endpoints.caller === 'sciencebase') {
                 this.useSB = true;
             }
             
