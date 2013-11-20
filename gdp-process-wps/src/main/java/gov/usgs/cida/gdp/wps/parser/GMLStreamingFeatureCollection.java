@@ -290,8 +290,6 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 			this.filter = filter;
             this.wrap = wrap;
             
-            LOGGER.debug("StreamingFeatureIterator() : FILENAME [" + file.getName() + "]");
-            
             fileInputStream = new FileInputStream(file);
 
 			bufferedInputStream = new BufferedInputStream(
@@ -314,14 +312,11 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 				try {
 					findNext();
 				} catch (XMLStreamException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					LOGGER.debug("StreamingFeatureIterator.hasNext() XMLStreamException: " + e.getMessage());
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					LOGGER.debug("StreamingFeatureIterator.hasNext() IOException: " + e.getMessage());
 				} catch (SAXException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					LOGGER.debug("StreamingFeatureIterator.hasNext() SAXException: " + e.getMessage());
 				}
 			}
 			return next != null;
@@ -347,8 +342,7 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 				try {
 					fileInputStream.close();
 				} catch (IOException e) {
-					// do nothing, cleaning up
-					e.printStackTrace();
+					LOGGER.debug("StreamingFeatureIterator.close() IOException: " + e.getMessage());
 				}
 				fileInputStream = null;
 			}
@@ -357,8 +351,7 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 				try {
 					bufferedInputStream.close();
 				} catch (IOException e) {
-					// do nothing, cleaning up
-					e.printStackTrace();
+					LOGGER.debug("StreamingFeatureIterator.close() IOException: " + e.getMessage());
 				}
 				bufferedInputStream = null;
 			}
@@ -367,8 +360,7 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 				try {
 					parser.close();
 				} catch (XMLStreamException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					LOGGER.debug("StreamingFeatureIterator.close() XMLStreamException: " + e.getMessage());
 				}
 				parser = null;
 			}
