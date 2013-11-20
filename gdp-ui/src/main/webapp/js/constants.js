@@ -112,20 +112,18 @@ var Constant = function() {
         tableString : '<table></table>',
         tableRowString : '<tr></tr>',
         tableDataString : '<td></td>',
-        init: function() {
+        init: function(args) {
             logger.debug("GDP:constants.js::init(): Beginning Constants initialization.");
-            
+            args = args || {};
             $().xmlns(this.namespaces);
             
             this.getConstantsFromServer();
-            
-            var incoming = incomingParams || {};
             
             $.extend(
                 true,
                 Constant.incoming,
                 getUrlParameters(),
-                incoming
+                args.incomingParams || {}
                 );
         },
         getConstantsFromServer : function() {

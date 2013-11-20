@@ -147,7 +147,9 @@ function initializeSteps() {
 		stepsCounter;
 
     Constant = new Constant(); // important that this gets initialized first
-    Constant.init();
+    Constant.init({
+        incomingParams : incomingParams
+    });
 	
 	// Short cut a special needs here
 	if (Constant.incoming.algorithm) {
