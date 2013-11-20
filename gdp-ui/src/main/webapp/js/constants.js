@@ -118,12 +118,14 @@ var Constant = function() {
             $().xmlns(this.namespaces);
             
             this.getConstantsFromServer();
-
+            
+            var incoming = incomingParams || {};
+            
             $.extend(
                 true,
                 Constant.incoming,
                 getUrlParameters(),
-                incomingParams
+                incoming
                 );
         },
         getConstantsFromServer : function() {
