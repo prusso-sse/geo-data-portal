@@ -245,12 +245,22 @@ GDP.CSW = function (args) {
 				success: function (response) {
 					var cswGetRecRespObj = cswGetRecFormat.read(response.responseXML || response.responseText),
 						scbInd;
-
-					if (callbacks.success && callbacks.success.length) {
-						for (scbInd = 0; scbInd < callbacks.success.length; scbInd++) {
-							callbacks.success[scbInd].call(scope, cswGetRecRespObj);
-						}
-					}
+                
+                    if (cswGetRecRespObj.success) {
+                        if (callbacks.success && callbacks.success.length) {
+                            for (scbInd = 0; scbInd < callbacks.success.length; scbInd++) {
+                                callbacks.success[scbInd].call(scope, cswGetRecRespObj);
+                            }
+                        }
+                    } else {
+                        GDP.CONFIG.ui.errorEncountered({
+							data : 'Unfortunately the metadata catalog is ' +
+                            'experiencing technical difficulties. For more information, ' + 
+                            'go to <a href="https://my.usgs.gov/confluence/display/GeoDataPortal/GDP+Home">'+
+                            'The Geo Data Portal Wiki</a> ',
+							recoverable : false
+						});
+                    }
 				},
 				failure: function (response) {
 					var scbInd;

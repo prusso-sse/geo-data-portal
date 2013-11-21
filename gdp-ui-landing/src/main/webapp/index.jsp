@@ -18,7 +18,7 @@
 <html lang="en">
     <head>
         <META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=UTF-8" />
-        <meta HTTP-EQUIV="X-UA-Compatible" CONTENT="IE=edge">
+        <meta HTTP-EQUIV="X-UA-Compatible" CONTENT="IE=9">
         <meta NAME="viewport" CONTENT="width=device-width, initial-scale=1.0">
         <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
         <link rel="icon" href="favicon.ico" type="image/x-icon" />
