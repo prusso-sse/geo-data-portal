@@ -246,7 +246,7 @@ GDP.CSW = function (args) {
 					var cswGetRecRespObj = cswGetRecFormat.read(response.responseXML || response.responseText),
 						scbInd;
                 
-                    if (cswGetRecRespObj.success) {
+                    if (cswGetRecRespObj.success !== false) {
                         if (callbacks.success && callbacks.success.length) {
                             for (scbInd = 0; scbInd < callbacks.success.length; scbInd++) {
                                 callbacks.success[scbInd].call(scope, cswGetRecRespObj);
