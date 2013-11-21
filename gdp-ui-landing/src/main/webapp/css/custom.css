@@ -3,9 +3,12 @@
 #ccsa-area {
 	padding-top: 5px;
 }
-
+.modal {
+    z-index: 10001 !important;
+}
 .modal-dialog {
 	width: auto !important;
+    z-index: 10001 !important;
 }
 
 #view-full-info-link:hover {
