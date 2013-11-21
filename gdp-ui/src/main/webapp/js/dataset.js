@@ -1464,7 +1464,7 @@ var Dataset = function() {
         var showCSWDatasetUrl = parseInt(Constant.ui.view_show_csw_dataset_url);
         var showDisplayDatasetsButton = parseInt(Constant.ui.view_show_display_datasets_button);
         
-        var dsUrl = $.url().param('dataset'); //TODO- We can actually probably use the parseURI script for this. 
+        var dsUrl = $.url().param('dataset') || Constant.incoming.dataset || ''; //TODO- We can actually probably use the parseURI script for this. 
         
         var CSWDialogTableRow = $('.csw-dialog-tablerow');
         var searchSubmitButton = $('#dataset_search_submit_button');
