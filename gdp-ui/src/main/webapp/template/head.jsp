@@ -6,7 +6,7 @@
 
 <head>
     <title>Geo Data Portal</title>
-	<META HTTP-EQUIV="X-UA-Compatible" content="IE-EmulateIE8" />
+	<META HTTP-EQUIV="X-UA-Compatible" content="IE=9" />
     <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
     <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
     <meta name="title" content="Geo Data Portal">
