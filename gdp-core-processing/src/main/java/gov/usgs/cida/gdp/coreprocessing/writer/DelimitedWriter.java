@@ -27,6 +27,9 @@ import ucar.nc2.ft.FeatureDatasetPoint;
 import ucar.nc2.ft.StationTimeSeriesFeatureCollection;
 import ucar.nc2.units.DateRange;
 
+/**
+ * @deprecated I don't think this is used, but will just deprecate it for now
+ */
 public class DelimitedWriter {
 	private static org.slf4j.Logger log = LoggerFactory.getLogger(DelimitedWriter.class);
 	public static boolean station(
@@ -37,8 +40,10 @@ public class DelimitedWriter {
             throws FactoryException, SchemaException,
             org.opengis.coverage.grid.InvalidRangeException,
             TransformException, IOException {
-            String outputFilePath = new File(System.getProperty("applicationWorkDir"),outputFile).getPath();
-            log.debug(new StringBuilder("Attempting to write output to ").append(outputFilePath).toString());
+        
+        boolean result = false;
+        String outputFilePath = new File(System.getProperty("applicationWorkDir"),outputFile).getPath();
+        log.debug(new StringBuilder("Attempting to write output to ").append(outputFilePath).toString());
         FeatureDatasetPoint fdp = (FeatureDatasetPoint) featureDataset;
         List<ucar.nc2.ft.FeatureCollection> fcl = fdp.getPointFeatureCollectionList();
         if (fcl != null && fcl.size() == 1) {
@@ -78,22 +83,22 @@ public class DelimitedWriter {
                     if (writer != null) {
                         try {
                             writer.close();
-                            return true;
+                            result = true;
                         } catch (IOException e) {
-                            return true;
+                            result = true;
                         }
                     }
                 }
             } else {
                 log.debug(new StringBuilder("Failed to write output to ").append(outputFilePath).toString());
-                return false;
+                result = false;
             }
         } else {
             log.debug(new StringBuilder("Failed to write output to ").append(outputFilePath).toString());
-            return false;
+            result = false;
         }
-                log.debug(new StringBuilder("Successfully wrote output to ").append(outputFilePath).toString());
-		return true;
+        log.debug(new StringBuilder("Successfully wrote output to ").append(outputFilePath).toString());
+		return result;
     }
 	
 }
