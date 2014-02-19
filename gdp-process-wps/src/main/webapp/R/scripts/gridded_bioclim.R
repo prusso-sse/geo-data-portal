@@ -146,7 +146,13 @@ dailyToMonthly<-function(daily_data, time, origin, cells)
 
 request_time_bounds<-function(ncdf4_handle, start, end)
 {
-  time_units<-strsplit(ncdf4_handle$dim$time$units, " ")[[1]]
+  if (!is.null(ncdf4_handle$dim$time$units)) {
+    time_units<-strsplit(ncdf4_handle$dim$time$units, " ")[[1]]
+    time_dim<-ncdf4_handle$dim$time
+  } else if (!is.null(ncdf4_handle$dim$day$units)) {
+    time_units<-strsplit(ncdf4_handle$dim$day$units, " ")[[1]]
+    time_dim<-ncdf4_handle$dim$day
+  } else stop(paste("No time dimension found. Time dimensions called time and day are supported."))
   time_step<-time_units[1]
   date_origin<-time_units[3]
   time_origin<-"00:00:00"
@@ -160,16 +166,20 @@ request_time_bounds<-function(ncdf4_handle, start, end)
   t_1 <- julian(strptime(paste(start,'-01-01 12:00',sep=''), '%Y-%m-%d %H:%M'), origin<-strptime(cal_origin, '%Y-%m-%d %H:%M:%S'))
   t_2 <- julian(strptime(paste(end, '-01-01 00:00', sep=''), '%Y-%m-%d %H:%M'), origin<-strptime(cal_origin, '%Y-%m-%d %H:%M:%S'))
   # Some simple time and bbox validation.
-  if (t_1<head(ncdf4_handle$dim$time$vals,1)) stop(paste("Submitted start date,",start, "is before the dataset's start date,",chron(floor(head(ncdf4_handle$dim$time$vals,1)),out.format=c(dates="year-m-day"), origin=chron_origin)))
-  if (t_2>tail(ncdf4_handle$dim$time$vals,1)) stop(paste("Submitted end date,",end, "is after the dataset's end date,",chron(floor(tail(ncdf4_handle$dim$time$vals,1)),out.format=c(dates="year-m-day"), origin=chron_origin)))
+  if (t_1<head(time_dim$vals,1)) stop(paste("Submitted start date,",start, "is before the dataset's start date,",chron(floor(head(time_dim$vals,1)),out.format=c(dates="year-m-day"), origin=chron_origin)))
+  if (t_2>tail(time_dim$vals,1)) stop(paste("Submitted end date,",end, "is after the dataset's end date,",chron(floor(tail(time_dim$vals,1)),out.format=c(dates="year-m-day"), origin=chron_origin)))
   if (t_1>t_2) stop('Start date must be before end date.')
-  t_ind1 <- min(which(abs(ncdf4_handle$dim$time$vals-t_1)==min(abs(ncdf4_handle$dim$time$vals-t_1))))
-  t_ind2 <- max(which(abs(ncdf4_handle$dim$time$vals-t_2)==min(abs(ncdf4_handle$dim$time$vals-t_2))))
-  time<-dods_data$dim$time$vals[t_ind1:(t_ind2-1)]
+  t_ind1 <- min(which(abs(time_dim$vals-t_1)==min(abs(time_dim$vals-t_1))))
+  t_ind2 <- max(which(abs(time_dim$vals-t_2)==min(abs(time_dim$vals-t_2))))
+  time<-time_dim$vals[t_ind1:(t_ind2-1)]
   return(list(t_ind1=t_ind1, t_ind2=t_ind2, time=time, origin=chron_origin))
 }
 bbox_in <- as.double(read.csv(header=F,colClasses=c("character"),text=bbox_in))
 bioclims <- as.double(read.csv(header=F,colClasses=c("character"),text=bioclims))
+if (3 %in% bioclims & !7 %in% bioclims) {
+  bioclims<-append(bioclims,7)
+  pop_seven<-TRUE
+} else {pop_seven<-FALSE}
 # Define Inputs (will come from external call)
 tryCatch(dods_data <- nc_open(OPeNDAP_URI), error = function(e) 
   {
@@ -177,6 +187,9 @@ tryCatch(dods_data <- nc_open(OPeNDAP_URI), error = function(e)
   })
 variables<-as.character(sapply(dods_data$var,function(x) x$name))
 if (!tmax_var %in% variables) stop(paste("The given tmax variable wasn't found in the OPeNDAP dataset"))
+t_unit_multiplier<-function(t) {t}
+if (grepl('k',ncatt_get(dods_data, tmax_var,'units')$value, ignore.case = TRUE)) {t_unit_multiplier <- function(t) {t-273} }
+if (grepl('f',ncatt_get(dods_data, tmax_var,'units')$value, ignore.case = TRUE)) {t_unit_multiplier <- function(t) {(t-32)*(5/9)} }
 if (!tmin_var %in% variables) stop(paste("The given tmin variable wasn't found in the OPeNDAP dataset"))
 if (!prcp_var %in% variables) stop(paste("The given prcp variable wasn't found in the OPeNDAP dataset"))
 if (tave_var!="NULL") if (!tmax_var %in% variables) stop(paste("The given tave variable wasn't found in the OPeNDAP dataset"))
@@ -213,10 +226,10 @@ for (year in as.numeric(start):(as.numeric(end)))
   time<-request_time_indices$time
   origin<-request_time_indices$origin
   # !!! Make sure this is robust for network failures. !!!
-  tmax_data <- ncvar_get(dods_data, tmax_var, c(min(x1,x2),min(y1,y2),t_ind1),c((abs(x1-x2)+1),(abs(y1-y2)+1),(t_ind2-t_ind1)))
-  tmin_data <- ncvar_get(dods_data, tmin_var, c(min(x1,x2),min(y1,y2),t_ind1),c((abs(x1-x2)+1),(abs(y1-y2)+1),(t_ind2-t_ind1)))
+  tmax_data <- t_unit_multiplier(ncvar_get(dods_data, tmax_var, c(min(x1,x2),min(y1,y2),t_ind1),c((abs(x1-x2)+1),(abs(y1-y2)+1),(t_ind2-t_ind1))))
+  tmin_data <- t_unit_multiplier(ncvar_get(dods_data, tmin_var, c(min(x1,x2),min(y1,y2),t_ind1),c((abs(x1-x2)+1),(abs(y1-y2)+1),(t_ind2-t_ind1))))
   prcp_data <- ncvar_get(dods_data, prcp_var, c(min(x1,x2),min(y1,y2),t_ind1),c((abs(x1-x2)+1),(abs(y1-y2)+1),(t_ind2-t_ind1)))
-  if (tave_var!="NULL") tave_data <- ncvar_get(dods_data, tave_var, c(min(x1,x2),min(y1,y2),t_ind1),c((abs(x1-x2)+1),(abs(y1-y2)+1),(t_ind2-t_ind1))) else tave_data <- (tmax_data+tmin_data)/2
+  if (tave_var!="NULL") tave_data <- t_unit_multiplier(ncvar_get(dods_data, tave_var, c(min(x1,x2),min(y1,y2),t_ind1),c((abs(x1-x2)+1),(abs(y1-y2)+1),(t_ind2-t_ind1)))) else tave_data <- (tmax_data+tmin_data)/2
   cells<-nrow(tmax_data)*ncol(tmax_data)
   tmax_data <- matrix(tmax_data,t_ind2-t_ind1,cells,byrow = TRUE)
   tmin_data <- matrix(tmin_data,t_ind2-t_ind1,cells,byrow = TRUE)
@@ -248,15 +261,21 @@ for (year in as.numeric(start):(as.numeric(end)))
   tmin_data<-tmin_data[mask,]
   prcp_data<-prcp_data[mask,]
   tave_data<-tave_data[mask,]
-  bioclim<-data.frame(bioclim(tmin=tmin_data, tmax=tmax_data, prec=prcp_data, tmean=tave_data, bioclims))
-  colnames(bioclim)<-paste('bioclim_',bioclims, sep='')
-  for (bclim in names(bioclim))
+  bioclim_out<-data.frame(bioclim(tmin=tmin_data, tmax=tmax_data, prec=prcp_data, tmean=tave_data, bioclims))
+  colnames(bioclim_out)<-paste('bioclim_',bioclims, sep='')
+  for (bclim in names(bioclim_out))
   {
-    data_to_write <- SpatialPixelsDataFrame(SpatialPoints(coords, proj4string = CRS(prj)), bioclim[bclim], tolerance=0.0001)
-    file_name<-paste(bclim,'_',as.character(year),'.tif',sep='')
-    fileNames[fileStep]<-file_name
-    fileStep<-fileStep+1
-    writeGDAL(data_to_write,file_name)
+    if (pop_seven==TRUE & bclim=='bioclim_7') {
+      paste('Passed BioClim 7')
+    } else
+    {
+      data_to_write <- SpatialPixelsDataFrame(SpatialPoints(coords, proj4string = CRS(prj)), bioclim_out[bclim], tolerance=0.0001)
+      file_name<-paste(bclim,'_',as.character(year),'.tif',sep='')
+      fileNames[fileStep]<-file_name
+      fileStep<-fileStep+1
+      writeGDAL(data_to_write,file_name)
+    }
+    
   }
 }
 name<-'bioclim.zip'
