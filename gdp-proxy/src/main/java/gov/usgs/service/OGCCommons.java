@@ -42,9 +42,8 @@ public class OGCCommons {
 	 * - Others may work
 	 *
 	 * WMS 1.3.0 definitely does not work, do not proxy these
-	 * @param capabiltiesRoot GetCapabilities document or root element node
+     * @param rootDocumentNode
 	 * @return Set of endpoints found
-	 * @throws XPathExpressionException
 	 */
 	public static Set<Endpoint> getOperationEndpoints(Node rootDocumentNode) {
 		Set<Endpoint> endpointSet = new HashSet<Endpoint>();
@@ -59,15 +58,19 @@ public class OGCCommons {
 				Endpoint end = new Endpoint(n.getNodeValue());
 				endpointSet.add(end);
 			}
-			return endpointSet;
 		}
 		catch (XPathExpressionException xpee) {
+            // just return an empty set here
 		}
-		finally {
-			return endpointSet;
-		}
+        return endpointSet;
 	}
 
+    /**
+     * Tests endpoint to decide whether it is an OWS service
+     * 
+     * @param owsEndpoint URL wrapper Endpoint to test
+     * @return true if valid OWS endpoint
+     */
 	public static boolean isOWSEndpoint(Endpoint owsEndpoint) {
 		if (owsEndpoint.getType() != Endpoint.EndpointType.UNKNOWN) {
 			Document doc = getCapabilitiesDocument(owsEndpoint);
@@ -100,6 +103,12 @@ public class OGCCommons {
 		return false;
 	}
 
+    /**
+     * Call get capabilities and return the XML document
+     * 
+     * @param endpoint ows endpoint to get document from
+     * @return Document with the get capabilities response
+     */
 	public static Document getCapabilitiesDocument(Endpoint endpoint) {
 		Document doc = null;
         InputStream inputStream = null;
@@ -122,7 +131,7 @@ public class OGCCommons {
 		}
 		finally {
             IOUtils.closeQuietly(inputStream);
-			return doc;
 		}
+        return doc;
 	}
 }
