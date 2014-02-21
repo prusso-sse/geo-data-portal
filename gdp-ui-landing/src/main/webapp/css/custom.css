@@ -11,6 +11,10 @@
     z-index: 10001 !important;
 }
 
+.spacer {
+    margin-top: 25px;
+}
+
 #view-full-info-link:hover {
 	cursor: pointer;
 }

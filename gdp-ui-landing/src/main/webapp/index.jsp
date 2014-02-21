@@ -127,13 +127,13 @@
             <div id="row-proceed" class="row text-center">
                 <button id="btn-proceed" class="btn btn-success">Process Data with the Geo Data Portal</button>
             </div>
-            <div id="row-proceed-placeholder" class="row text-center">
+            <div id="row-proceed-placeholder" class="row text-center spacer">
                 <button id="btn-proceed-placeholder" class="btn btn-default disabled" disabled="disabled">
                     Select a dataset and processing type to use with the Geo Data Portal
                 </button>
             </div>
 
-            <div class="row">
+            <div class="row spacer">
                 <div class="well">
                     <p>
                         The increasing availability of downscaled climate projections 
