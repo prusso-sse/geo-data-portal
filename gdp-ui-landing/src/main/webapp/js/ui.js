@@ -265,12 +265,14 @@ GDP.UI = function (args) {
 				isDatasetChosen,
 				datasetDropdown = $('#form-control-select-csw'),
 				proceedRow = $('#row-proceed'),
+                proceedRowPlaceholder = $('#row-proceed-placeholder'),
 				fullInfoLink = $('#view-full-info-link'),
 				contentContainer = $('#p-csw-information-content'),
 				titleContainer = $('#p-csw-information-title');
 
 			if (!value) {
 				proceedRow.fadeOut();
+                proceedRowPlaceholder.fadeIn();
 				titleContainer.html('');
 				contentContainer.html('');
 			} else {
@@ -303,6 +305,7 @@ GDP.UI = function (args) {
 					);
 
 				if (datasetDropdown.val() && me.isProcessingButtonSelected()) {
+                    proceedRowPlaceholder.fadeOut();
 					proceedRow.fadeIn();
 					me.bindProceedButton();
 				}

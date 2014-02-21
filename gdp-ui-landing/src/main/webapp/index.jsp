@@ -127,6 +127,11 @@
             <div id="row-proceed" class="row text-center">
                 <button id="btn-proceed" class="btn btn-success">Process Data with the Geo Data Portal</button>
             </div>
+            <div id="row-proceed-placeholder" class="row text-center">
+                <button id="btn-proceed-placeholder" class="btn btn-default disabled" disabled="disabled">
+                    Select a dataset and processing type to use with the Geo Data Portal
+                </button>
+            </div>
 
             <div class="row">
                 <div class="well">
@@ -151,7 +156,7 @@
                         interest a simple and efficient task.
                     </p>
                     <p class="text-center">
-                        <a href="<%= props.getProperty("gdp.endpoint.gdp", "/gdp/client/")%>?development=true" target="_blank">Use the advanced Geo Data Portal interface to specify a custom dataset.</a>
+                        <a href="<%= props.getProperty("gdp.endpoint.gdp", "/gdp/client/")%>?development=true" target="_blank">Geo Data Portal interface for developers and advanced users. Most users should select a dataset and processing type above.</a>
                     </p>
                 </div>
             </div>
