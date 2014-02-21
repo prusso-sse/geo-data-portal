@@ -1,5 +1,6 @@
 package gov.usgs.cida.gdp.wps.parser;
 
+import gov.usgs.cida.gdp.constants.AppConstant;
 import gov.usgs.cida.gdp.wps.binding.GeoTIFFFileBinding;
 import gov.usgs.cida.gdp.wps.util.GeoTIFFUtil;
 import gov.usgs.cida.gdp.wps.util.MIMEMultipartStream;
@@ -35,7 +36,7 @@ public class GeoTIFFParser extends AbstractParser {
 
 		try {
 
-            tempFile = File.createTempFile(getClass().getSimpleName(), ".tmp");
+            tempFile = File.createTempFile(getClass().getSimpleName(), ".tmp", new File(AppConstant.WORK_LOCATION.getValue()));
             FileUtils.copyInputStreamToFile(inputStream, tempFile);
 
 			ByteBuffer buffer = ByteBuffer.allocate(4 + MIMEMultipartStream.MAX_BOUNDARY_LENGTH);

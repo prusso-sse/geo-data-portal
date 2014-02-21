@@ -1,6 +1,7 @@
 package gov.usgs.cida.gdp.wps.algorithm;
 
 import com.google.common.base.Joiner;
+import gov.usgs.cida.gdp.constants.AppConstant;
 import gov.usgs.cida.gdp.coreprocessing.Delimiter;
 import gov.usgs.cida.gdp.coreprocessing.analysis.grid.FeatureCoverageWeightedGridStatistics;
 import gov.usgs.cida.gdp.coreprocessing.analysis.grid.Statistics1DWriter.GroupBy;
@@ -244,8 +245,8 @@ public class PRMSParameterGeneratorAlgorithm extends AbstractAnnotatedAlgorithm 
                 addError("Attribute " + featureAttributeName + " is not Numeric type, unable to properly index HRU");
             }
 
-            prmsParamFile = File.createTempFile(getClass().getSimpleName(), ".param");
-            prmsDataFile = File.createTempFile(getClass().getSimpleName(), ".data");
+            prmsParamFile = File.createTempFile(getClass().getSimpleName(), ".param", new File(AppConstant.WORK_LOCATION.getValue()));
+            prmsDataFile = File.createTempFile(getClass().getSimpleName(), ".data", new File(AppConstant.WORK_LOCATION.getValue()));
             
             prmsParamWriter = new BufferedWriter(new FileWriter(prmsParamFile));
             prmsDataWriter = new BufferedWriter(new FileWriter(prmsDataFile));
@@ -267,7 +268,7 @@ public class PRMSParameterGeneratorAlgorithm extends AbstractAnnotatedAlgorithm 
                         timeEnd);
 
                 // TODO:  all I/O instances need try/finally cleanup
-                csvFileList.add(File.createTempFile(getClass().getSimpleName(), ".temp.csv"));
+                csvFileList.add(File.createTempFile(getClass().getSimpleName(), ".temp.csv", new File(AppConstant.WORK_LOCATION.getValue())));
                 BufferedWriter csvWriter = null;
                 try {
                     csvWriter = new BufferedWriter(new FileWriter(csvFileList.get(inputIndex)));
@@ -320,7 +321,7 @@ public class PRMSParameterGeneratorAlgorithm extends AbstractAnnotatedAlgorithm 
             FileInputStream prmsParamsInputStream = null;
             FileInputStream prmsDataInputStream = null;
             try {
-                output = File.createTempFile(getClass().getName(), ".zip");
+                output = File.createTempFile(getClass().getName(), ".zip", new File(AppConstant.WORK_LOCATION.getValue()));
                 zipOutputStream = new ZipOutputStream(
                         new FileOutputStream(output));
                 prmsParamsInputStream = new FileInputStream(prmsParamFile);

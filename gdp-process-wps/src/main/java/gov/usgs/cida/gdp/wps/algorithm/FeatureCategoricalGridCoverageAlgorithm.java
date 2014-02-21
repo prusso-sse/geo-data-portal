@@ -1,5 +1,6 @@
 package gov.usgs.cida.gdp.wps.algorithm;
 
+import gov.usgs.cida.gdp.constants.AppConstant;
 import gov.usgs.cida.gdp.coreprocessing.Delimiter;
 import gov.usgs.cida.gdp.coreprocessing.analysis.grid.FeatureCategoricalGridCoverage;
 import gov.usgs.cida.gdp.wps.binding.CSVFileBinding;
@@ -110,7 +111,7 @@ public class FeatureCategoricalGridCoverageAlgorithm extends AbstractAnnotatedAl
 
         try {
 
-            output = File.createTempFile(getClass().getSimpleName(), delimiter.extension);
+            output = File.createTempFile(getClass().getSimpleName(), delimiter.extension, new File(AppConstant.WORK_LOCATION.getValue()));
             writer = new BufferedWriter(new FileWriter(output));
 
             for (String currentDatasetId : datasetId) {

@@ -1,5 +1,6 @@
 package gov.usgs.cida.gdp.wps.parser;
 
+import gov.usgs.cida.gdp.constants.AppConstant;
 import gov.usgs.cida.gdp.wps.binding.GMLStreamingFeatureCollectionBinding;
 import java.io.File;
 import java.io.IOException;
@@ -16,7 +17,7 @@ public class GMLStreamingParser extends AbstractParser {
     @Override
     public GMLStreamingFeatureCollectionBinding parse(InputStream input, String mimeType, String schema) {
         try {
-            File tempFile = File.createTempFile(getClass().getSimpleName(), ".xml");
+            File tempFile = File.createTempFile(getClass().getSimpleName(), ".xml", new File(AppConstant.WORK_LOCATION.getValue()));
             FileUtils.copyInputStreamToFile(input, tempFile);
 			return new GMLStreamingFeatureCollectionBinding(new GMLStreamingFeatureCollection(tempFile));
 		} catch (IOException e) {

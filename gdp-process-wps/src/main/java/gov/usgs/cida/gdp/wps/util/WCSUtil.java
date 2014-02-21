@@ -1,5 +1,6 @@
 package gov.usgs.cida.gdp.wps.util;
 
+import gov.usgs.cida.gdp.constants.AppConstant;
 import gov.usgs.cida.gdp.dataaccess.CoverageMetaData;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -309,7 +310,7 @@ public class WCSUtil {
                     if (GeoTIFFUtil.isAllowedMimeType(contentType)) {
                         String contentTransferEncoding = headerMap.get("Content-Transfer-Encoding");
                         if (contentTransferEncoding != null) {
-                            tiffFile = File.createTempFile("gdp", ".tiff");
+                            tiffFile = File.createTempFile("gdp", ".tiff", new File(AppConstant.WORK_LOCATION.getValue()));
                             OutputStream tiffOutputStream = new BufferedOutputStream(new FileOutputStream(tiffFile));
                             mimeMultipartStream.readBodyData(tiffOutputStream, contentTransferEncoding);
                             tiffOutputStream.close();

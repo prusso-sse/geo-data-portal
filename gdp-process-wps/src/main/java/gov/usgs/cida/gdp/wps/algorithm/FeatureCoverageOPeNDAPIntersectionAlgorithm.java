@@ -1,5 +1,6 @@
 package gov.usgs.cida.gdp.wps.algorithm;
 
+import gov.usgs.cida.gdp.constants.AppConstant;
 import gov.usgs.cida.gdp.wps.binding.GMLStreamingFeatureCollectionBinding;
 import gov.usgs.cida.gdp.wps.binding.NetCDFFileBinding;
 import java.io.File;
@@ -104,7 +105,7 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
         GridDataset gridDataSet = null;
         try { 
             gridDataSet = GDPAlgorithmUtil.generateGridDataSet(datasetURI);
-            output = File.createTempFile(getClass().getSimpleName(), ".nc");
+            output = File.createTempFile(getClass().getSimpleName(), ".nc", new File(AppConstant.WORK_LOCATION.getValue()));
             NetCDFGridWriter.makeFile(
                     output.getAbsolutePath(),
                     gridDataSet,
