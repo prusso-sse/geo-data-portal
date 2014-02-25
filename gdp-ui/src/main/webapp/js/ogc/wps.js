@@ -108,7 +108,7 @@ var WPS = function () {
                 data : createWpsExecuteXML(wpsAlgorithm, stringInputs, xmlInputs, outputs, async, rawOutput, mimeType),
                 processData : false,
                 dataType : dataType || 'xml',
-                contentType : mimeType || 'text/xml',
+                contentType : 'text/xml',
                 success : function (data, textStatus, XMLHttpRequest) {
                     callback(data);
                 }
