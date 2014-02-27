@@ -778,22 +778,22 @@ O:          for (int i = 0; i < schemas.length; i++) {
     * lifetime.
     */
     public void cleanup() {
-     for (int i = 0; i < schemas.length; i++) {
+        for (int i = 0; i < schemas.length; i++) {
             if (schemas[i] != null) {
-             XSDSchema schema = schemas[i];
-            
-             EList<XSDElementDeclaration> declarations = schema.getElementDeclarations();
-            
-             for(int j = 0; j < declarations.size(); j++) {
-             XSDElementDeclaration declaration = declarations.get(j);
-            
-             EList<XSDElementDeclaration> substitutionGroups = declaration.getSubstitutionGroup();
-             substitutionGroups.clear();
-             }
-             declarations.clear();
-            
-             schema = null;
-             schemas[i] = null;
+                XSDSchema schema = schemas[i];
+
+                EList<XSDElementDeclaration> declarations = schema.getElementDeclarations();
+
+                for (int j = 0; j < declarations.size(); j++) {
+                    XSDElementDeclaration declaration = declarations.get(j);
+
+                    EList<XSDElementDeclaration> substitutionGroups = declaration.getSubstitutionGroup();
+                    substitutionGroups.clear();
+                }
+                declarations.clear();
+
+                schema = null;
+                schemas[i] = null;
             }
         }
     }
