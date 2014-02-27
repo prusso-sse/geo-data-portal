@@ -1,4 +1,4 @@
-package gov.usgs.cida.gdp.wps.util.xml;
+package org.geotools.xml;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,36 +11,43 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.geotools.xml.Configuration;
 import org.geotools.xml.impl.ElementHandler;
 import org.geotools.xml.impl.NodeImpl;
+import org.geotools.xml.impl.ParserHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Fix to the parser from GeoTools as their parsers are memory leakers
- *
- * @author Philip Russo, USGS - CIDA
- */
-public class GDPFeatureParser {
+* XML pull parser capable of streaming.
+* <p>
+* Similar in nature to {@link StreamingParser} but based on XPP pull parsing rather than SAX.
+*
+* @author Justin Deoliveira, OpenGeo
+* 
+* Fix to the parser from GeoTools as their parsers are memory leakers
+* Moved to override geotools version rather than fork completely
+*
+* @author Philip Russo, USGS - CIDA
+*/
+public class PullParser {
 
     PullParserHandler handler;
     XMLStreamReader pp;
 
     Attributes atts = new Attributes();
 
-    public GDPFeatureParser(Configuration config, InputStream input, QName element) {
+    public PullParser(Configuration config, InputStream input, QName element) {
         this(config, input, new ElementPullParserHandler(element, config));
     }
 
-    public GDPFeatureParser(Configuration config, InputStream input, Class type) {
+    public PullParser(Configuration config, InputStream input, Class type) {
         this(config, input, new TypePullParserHandler(type, config));
     }
 
-    public GDPFeatureParser(Configuration config, InputStream input, Object... handlerSpecs) {
+    public PullParser(Configuration config, InputStream input, Object... handlerSpecs) {
         this(config, input, new OrPullParserHandler(config, handlerSpecs));
     }
 
-    public GDPFeatureParser(Configuration config, InputStream input, PullParserHandler handler) {
+    public PullParser(Configuration config, InputStream input, PullParserHandler handler) {
         this.handler = handler;
         pp = createPullParser(input);
     }
@@ -213,9 +220,9 @@ public class GDPFeatureParser {
         }
     }
 
-    static abstract class PullParserHandler extends GDPParserHandler {
+    static abstract class PullParserHandler extends ParserHandler {
 
-        GDPFeatureParser parser;
+        PullParser parser;
         Object object;
 
         public PullParserHandler(Configuration config) {
@@ -241,6 +248,7 @@ public class GDPFeatureParser {
         }
 
         protected abstract boolean stop(ElementHandler handler);
+        
 
     }
 

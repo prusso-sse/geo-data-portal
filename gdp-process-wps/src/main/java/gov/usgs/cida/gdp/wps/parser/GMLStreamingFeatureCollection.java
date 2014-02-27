@@ -1,7 +1,7 @@
 package gov.usgs.cida.gdp.wps.parser;
 
 import gov.usgs.cida.gdp.wps.util.GMLUtil;
-import gov.usgs.cida.gdp.wps.util.xml.GDPFeatureParser;
+import org.geotools.xml.PullParser;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -274,7 +274,7 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 
 	private final class StreamingFeatureIterator implements FeatureIterator<Feature>, Iterator<Feature> {
 
-		private GDPFeatureParser parser;
+		private PullParser parser;
 		private InputStream bufferedInputStream;
 		private InputStream fileInputStream;
 		private Filter filter;
@@ -298,7 +298,7 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 			
 			Configuration newConfiguration = GMLUtil.generateGMLConfiguration(file);
 			
-			parser = new GDPFeatureParser(
+			parser = new PullParser(
 					newConfiguration,
 					bufferedInputStream,
 					SimpleFeature.class);
