@@ -1,4 +1,20 @@
-package gov.usgs.cida.gdp.wps.util.xml;
+/*
+ *    GeoTools - The Open Source Java GIS Toolkit
+ *    http://geotools.org
+ *
+ *    (C) 2002-2008, Open Source Geospatial Foundation (OSGeo)
+ *
+ *    This library is free software; you can redistribute it and/or
+ *    modify it under the terms of the GNU Lesser General Public
+ *    License as published by the Free Software Foundation;
+ *    version 2.1 of the License.
+ *
+ *    This library is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *    Lesser General Public License for more details.
+ */
+package org.geotools.xml.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,8 +28,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.namespace.QName;
-
 import org.eclipse.emf.common.util.EList;
+
 import org.eclipse.emf.ecore.resource.URIHandler;
 import org.eclipse.xsd.XSDElementDeclaration;
 import org.eclipse.xsd.XSDFactory;
@@ -30,16 +46,6 @@ import org.geotools.xml.ParserDelegate;
 import org.geotools.xml.ParserDelegate2;
 import org.geotools.xml.SchemaIndex;
 import org.geotools.xml.Schemas;
-import org.geotools.xml.impl.BindingFactoryImpl;
-import org.geotools.xml.impl.BindingLoader;
-import org.geotools.xml.impl.BindingWalker;
-import org.geotools.xml.impl.BindingWalkerFactoryImpl;
-import org.geotools.xml.impl.DocumentHandler;
-import org.geotools.xml.impl.ElementHandler;
-import org.geotools.xml.impl.Handler;
-import org.geotools.xml.impl.NamespaceSupportWrapper;
-import org.geotools.xml.impl.SchemaIndexImpl;
-import org.geotools.xml.impl.ValidatorHandler;
 import org.geotools.xs.XS;
 import org.picocontainer.ComponentAdapter;
 import org.picocontainer.MutablePicoContainer;
@@ -65,7 +71,7 @@ import org.xml.sax.helpers.NamespaceSupport;
  *
  * @source $URL$
  */
-public class GDPParserHandler extends DefaultHandler {
+public class ParserHandler extends DefaultHandler {
     /** execution stack **/
     protected Stack handlers;
 
@@ -79,7 +85,7 @@ public class GDPParserHandler extends DefaultHandler {
     SchemaIndex index;
 
     /** handler factory **/
-    GDPHandlerFactory handlerFactory;
+    HandlerFactory handlerFactory;
 
     /** binding loader */
     BindingLoader bindingLoader;
@@ -125,7 +131,7 @@ public class GDPParserHandler extends DefaultHandler {
     /** uri handlers for handling uri references during parsing */
     List<URIHandler> uriHandlers = new ArrayList<URIHandler>();
 
-    public GDPParserHandler(Configuration config) {
+    public ParserHandler(Configuration config) {
         this.config = config;
         namespaces = new NamespaceSupport();
         validating = false;
@@ -192,7 +198,7 @@ public class GDPParserHandler extends DefaultHandler {
         return validator;
     }
 
-    public GDPHandlerFactory getHandlerFactory() {
+    public HandlerFactory getHandlerFactory() {
         return handlerFactory;
     }
 
@@ -520,10 +526,10 @@ O:          for (int i = 0; i < schemas.length; i++) {
 
         if (handler == null) {
             //perform a lookup in the context for an element factory that create a child handler
-            List handlerFactories = context.getComponentInstancesOfType(GDPHandlerFactory.class);
+            List handlerFactories = context.getComponentInstancesOfType(HandlerFactory.class);
 
             for (Iterator hf = handlerFactories.iterator(); (handler == null) && hf.hasNext();) {
-                GDPHandlerFactory handlerFactory = (GDPHandlerFactory) hf.next();
+                HandlerFactory handlerFactory = (HandlerFactory) hf.next();
                 handler = handlerFactory.createElementHandler(qualifiedName, parent, this);
             }
         }
@@ -544,9 +550,9 @@ O:          for (int i = 0; i < schemas.length; i++) {
 
                 if (canHandle) {
                     //found one
-                    handler = new GDPDelegatingHandler( delegate, qualifiedName, parent );
+                    handler = new DelegatingHandler( delegate, qualifiedName, parent );
 
-                    GDPDelegatingHandler dh = (GDPDelegatingHandler) handler;
+                    DelegatingHandler dh = (DelegatingHandler) handler;
                     dh.startDocument();
 
                     //inject the current namespace context
@@ -694,9 +700,9 @@ O:          for (int i = 0; i < schemas.length; i++) {
         endElementInternal(handler);
 
         //if the upper most delegating handler, then end the document
-        if ( handler instanceof GDPDelegatingHandler && 
-                !handlers.isEmpty() && !(handlers.peek() instanceof GDPDelegatingHandler) ) {
-            GDPDelegatingHandler dh = (GDPDelegatingHandler) handler;
+        if ( handler instanceof DelegatingHandler && 
+                !handlers.isEmpty() && !(handlers.peek() instanceof DelegatingHandler) ) {
+            DelegatingHandler dh = (DelegatingHandler) handler;
             dh.endDocument();
             
             //grabbed the parsed value
@@ -767,27 +773,27 @@ O:          for (int i = 0; i < schemas.length; i++) {
     }
     
     /**
-     * This cleanup method removes the memory leak caused by not clearing out
-     * all of the XSDElementDeclaration objects created during this classes
-     * lifetime.
-     */
+    * This cleanup method removes the memory leak caused by not clearing out
+    * all of the XSDElementDeclaration objects created during this classes
+    * lifetime.
+    */
     public void cleanup() {
-    	for (int i = 0; i < schemas.length; i++) {
+        for (int i = 0; i < schemas.length; i++) {
             if (schemas[i] != null) {
-            	XSDSchema schema = schemas[i];
-            	
-            	EList<XSDElementDeclaration> declarations = schema.getElementDeclarations();
-            	
-            	for(int j = 0; j < declarations.size(); j++) {
-            		XSDElementDeclaration declaration = declarations.get(j);
-            		
-            		EList<XSDElementDeclaration> substitutionGroups = declaration.getSubstitutionGroup();
-            		substitutionGroups.clear();            		
-            	}
-            	declarations.clear();
-            	
-            	schema = null;
-            	schemas[i] = null;
+                XSDSchema schema = schemas[i];
+
+                EList<XSDElementDeclaration> declarations = schema.getElementDeclarations();
+
+                for (int j = 0; j < declarations.size(); j++) {
+                    XSDElementDeclaration declaration = declarations.get(j);
+
+                    EList<XSDElementDeclaration> substitutionGroups = declaration.getSubstitutionGroup();
+                    substitutionGroups.clear();
+                }
+                declarations.clear();
+
+                schema = null;
+                schemas[i] = null;
             }
         }
     }
@@ -796,7 +802,7 @@ O:          for (int i = 0; i < schemas.length; i++) {
         //configure the bindings
         Map bindings = config.setupBindings();
         
-        handlerFactory = new GDPHandlerFactoryImpl();
+        handlerFactory = new HandlerFactoryImpl();
         bindingLoader = new BindingLoader(bindings);
         bindingWalker = new BindingWalker(bindingLoader);
     }
