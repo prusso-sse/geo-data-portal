@@ -4,7 +4,7 @@
 	<parent>
 		<artifactId>gdp</artifactId>
 		<groupId>gov.usgs.cida.gdp</groupId>
-		<version>27-SNAPSHOT</version>
+		<version>27</version>
 	</parent>
 	<packaging>war</packaging>
 	<artifactId>gdp-csw-client</artifactId>
