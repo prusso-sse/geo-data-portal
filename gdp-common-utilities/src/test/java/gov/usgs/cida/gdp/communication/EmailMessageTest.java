@@ -3,10 +3,17 @@ package gov.usgs.cida.gdp.communication;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -192,5 +199,33 @@ public class EmailMessageTest {
         String result = instance.getBccToString();
         assertFalse("".equals(result));
         assertEquals("test@test.com", result);
+    }
+    
+    @Test
+    public void testAddReplyTo() {
+        EmailMessage instance = new EmailMessage();
+	String address1 = "test1@test.com";
+	String address2 = "test2@test.com";
+	InternetAddress internetAddress1 = makeInternetAddress(address1);
+        instance.addReplyTo(internetAddress1);
+        InternetAddress[] result = instance.getReplyTo();
+        assertNotNull(result);
+        assertEquals(1, result.length);
+	assertEquals(address1, result[0].getAddress());
+	InternetAddress internetAddress2 = makeInternetAddress(address2);
+        instance.addReplyTo(internetAddress2);
+        result = instance.getReplyTo();
+        assertNotNull(result);
+        assertEquals(2, result.length);
+	assertEquals(address2, result[1].getAddress());
+    }
+
+    private InternetAddress makeInternetAddress(String address) {
+	try {
+	    return new InternetAddress(address);
+	} catch (AddressException ex) {
+	    Logger.getLogger(EmailMessageTest.class.getName()).log(Level.SEVERE, null, ex);
+	}
+	return null;
     }
 }
