@@ -10,12 +10,13 @@ import java.io.InputStream;
 import java.io.Writer;
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
-import javax.servlet.http.*;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Base64OutputStream;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
@@ -31,6 +32,7 @@ import org.apache.http.util.EntityUtils;
 import org.slf4j.LoggerFactory;
 
 public class UploadHandlerServlet extends HttpServlet {
+
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(UploadHandlerServlet.class);
     private static final long serialVersionUID = 1L;
 
@@ -48,9 +50,10 @@ public class UploadHandlerServlet extends HttpServlet {
             sendErrorResponse(response, "Upload exceeds max file size of " + maxFileSize + " bytes");
             return;
         }
+        final String qqfileParameter = "qqfile";
 
         // qqfile is parameter passed by our javascript uploader
-        String filename = request.getParameter("qqfile");
+        String filename = request.getParameter(qqfileParameter);
         String utilityWpsUrl = request.getParameter("utilitywps");
         String wfsEndpoint = request.getParameter("wfs-url");
         String tempDir = System.getProperty("java.io.tmpdir");
@@ -69,23 +72,22 @@ public class UploadHandlerServlet extends HttpServlet {
                 while (iter.hasNext()) {
                     FileItemStream item = iter.next();
                     String name = item.getFieldName();
-                    if ("qqfile".equals(name)) {
+                    if (qqfileParameter.equals(name)) {
                         saveFileFromRequest(item.openStream(), destinationFile);
                         break;
                     }
                 }
-            } catch (FileUploadException ex) {
+            } catch (Exception ex) {
+                LOG.error("Error parsing request from multi part form", ex);
                 sendErrorResponse(response, "Unable to upload file");
                 return;
-            } catch (IOException ex) {
-				sendErrorResponse(response, "Unable to upload file");
-                return;			}
+            }
         } else {
             // Handle octet streams (from standards browsers)
             try {
                 saveFileFromRequest(request.getInputStream(), destinationFile);
             } catch (IOException ex) {
-				LOG.error(ex.getMessage());
+                LOG.error("Error saving file from request", ex);
             }
         }
         try {
@@ -93,6 +95,7 @@ public class UploadHandlerServlet extends HttpServlet {
                 throw new IOException();
             }
         } catch (IOException ex) {
+            LOG.error("Unable to verify shapefile " + destinationFile, ex);
             sendErrorResponse(response, "Unable to verify shapefile. Upload failed");
             return;
         }
@@ -105,11 +108,11 @@ public class UploadHandlerServlet extends HttpServlet {
                     + "<wpsResponse><![CDATA[" + wpsResponse + "]]></wpsResponse>";
 
         } catch (IOException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error("Error posting to WPS", ex);
             sendErrorResponse(response, "Unable to upload file");
             return;
         } catch (MessagingException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error("Error posting to WPS", ex);
             sendErrorResponse(response, "Unable to upload file");
             return;
         } finally {
@@ -133,7 +136,7 @@ public class UploadHandlerServlet extends HttpServlet {
             writer.write(text);
             writer.close();
         } catch (IOException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error("Error writing response", ex);
         }
     }
 
