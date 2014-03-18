@@ -3,14 +3,12 @@ package gov.usgs.cida.gdp.communication;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -20,19 +18,19 @@ import org.junit.Test;
  * @author isuftin
  */
 public class EmailMessageTest {
-
+    
     private static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(EmailMessageTest.class);
-
+    
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         log.debug("Started testing class.");
     }
-
+    
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
         log.debug("Ended testing class.");
     }
-
+    
     @Test
     public void testEmailMessageBeanDefault() {
         EmailMessage instance = new EmailMessage();
@@ -181,7 +179,7 @@ public class EmailMessageTest {
         EmailMessage instance = new EmailMessage();
         instance.setBcc(bcc);
     }
-
+    
     @Test
     public void testGetBCCToStringWithEmptyBCC() {
         EmailMessage instance = new EmailMessage();
@@ -189,7 +187,7 @@ public class EmailMessageTest {
         String result = instance.getBccToString();
         assertEquals("", result);
     }
-
+    
     @Test
     public void testGetBCCToString() {
         EmailMessage instance = new EmailMessage();
@@ -202,30 +200,60 @@ public class EmailMessageTest {
     }
     
     @Test
-    public void testAddReplyTo() {
+    public void testHappyAddReplyTo() {
         EmailMessage instance = new EmailMessage();
-	String address1 = "test1@test.com";
-	String address2 = "test2@test.com";
-	InternetAddress internetAddress1 = makeInternetAddress(address1);
+        String address1 = "test1@test.com";
+        String address2 = "test2@test.com";
+        InternetAddress internetAddress1 = makeInternetAddress(address1);
         instance.addReplyTo(internetAddress1);
         InternetAddress[] result = instance.getReplyTo();
-        assertNotNull(result);
         assertEquals(1, result.length);
-	assertEquals(address1, result[0].getAddress());
-	InternetAddress internetAddress2 = makeInternetAddress(address2);
-        instance.addReplyTo(internetAddress2);
-        result = instance.getReplyTo();
-        assertNotNull(result);
-        assertEquals(2, result.length);
-	assertEquals(address2, result[1].getAddress());
+        assertEquals(address1, result[0].getAddress());
     }
-
+    
+    @Test
+    public void testMultipleAddReplyTo() {
+        EmailMessage instance = new EmailMessage();
+        String address1 = "test1@test.com";
+        String address2 = "test2@test.com";
+        InternetAddress internetAddress1 = makeInternetAddress(address1);
+        InternetAddress internetAddress2 = makeInternetAddress(address2);
+        instance.addReplyTo(internetAddress1);
+        instance.addReplyTo(internetAddress2);
+        InternetAddress[] result = instance.getReplyTo();
+        assertEquals(2, result.length);
+    }
+    
+    @Test
+    public void testNullAddReplyTo() {
+        EmailMessage instance = new EmailMessage();
+        instance.addReplyTo(null);
+        InternetAddress[] result = instance.getReplyTo();
+        assertNull(result);
+    }
+    
+    @Test
+    public void testNullEntityAddReplyTo() {
+        EmailMessage instance = new EmailMessage();
+        instance.addReplyTo(new InternetAddress[] {null});
+        InternetAddress[] result = instance.getReplyTo();
+        assertNull(result);
+    }
+    
+    @Test
+    public void testEmptyAddReplyTo() {
+        EmailMessage instance = new EmailMessage();
+        instance.addReplyTo(new InternetAddress[] {});
+        InternetAddress[] result = instance.getReplyTo();
+        assertNull(result);
+    }
+    
     private InternetAddress makeInternetAddress(String address) {
-	try {
-	    return new InternetAddress(address);
-	} catch (AddressException ex) {
-	    Logger.getLogger(EmailMessageTest.class.getName()).log(Level.SEVERE, null, ex);
-	}
-	return null;
+        try {
+            return new InternetAddress(address);
+        } catch (AddressException ex) {
+            log.debug("Invalid internet address used in testing.", ex);
+        }
+        return null;
     }
 }

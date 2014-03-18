@@ -24,123 +24,127 @@ public class EmailMessage {
     private String content;
 
     public EmailMessage() {
-	this.from = "";
-	this.to = "";
-	this.cc = new Vector<String>();
-	this.bcc = new Vector<String>();
-	this.subject = "";
-	this.content = "";
+        this.from = "";
+        this.to = "";
+        this.cc = new Vector<String>();
+        this.bcc = new Vector<String>();
+        this.subject = "";
+        this.content = "";
     }
 
     public EmailMessage(String from, String to, List<String> cc, String subject, String content) {
-	this.from = from;
-	this.to = to;
-	this.cc = cc;
-	this.subject = subject;
-	this.content = content;
+        this.from = from;
+        this.to = to;
+        this.cc = cc;
+        this.subject = subject;
+        this.content = content;
     }
 
     public EmailMessage(String from, String to, List<String> cc, List<String> bcc, String subject, String content) {
-	this.from = from;
-	this.to = to;
-	this.cc = cc;
-	this.bcc = bcc;
-	this.subject = subject;
-	this.content = content;
+        this.from = from;
+        this.to = to;
+        this.cc = cc;
+        this.bcc = bcc;
+        this.subject = subject;
+        this.content = content;
     }
 
     public String getFrom() {
-	return this.from;
+        return this.from;
     }
 
     public void setFrom(String from) {
-	this.from = from;
+        this.from = from;
     }
 
     public String getTo() {
-	return this.to;
+        return this.to;
     }
 
     public void setTo(String to) {
-	this.to = to;
+        this.to = to;
     }
 
     public List<String> getCc() {
-	if (this.cc == null) {
-	    setCc(new ArrayList<String>());
-	}
-	return this.cc;
+        if (this.cc == null) {
+            setCc(new ArrayList<String>());
+        }
+        return this.cc;
     }
 
     public void setCc(List<String> cc) {
-	this.cc = cc;
+        this.cc = cc;
     }
 
     public String getSubject() {
-	return this.subject;
+        return this.subject;
     }
 
     public void setSubject(String subject) {
-	this.subject = subject;
+        this.subject = subject;
     }
 
     public String getContent() {
-	return this.content;
+        return this.content;
     }
 
     public void setContent(String content) {
-	this.content = content;
+        this.content = content;
     }
 
     public List<String> getBcc() {
-	if (this.bcc == null) {
-	    setBcc(new ArrayList<String>());
-	}
-	return this.bcc;
+        if (this.bcc == null) {
+            setBcc(new ArrayList<String>());
+        }
+        return this.bcc;
     }
 
     public String getBccToString() {
-	if (getBcc().isEmpty()) {
-	    return "";
-	}
-	StringBuilder result = new StringBuilder();
-	for (String emailAddress : getBcc()) {
-	    result.append(emailAddress).append(",");
-	}
-	// Return the string without the trailing comma
-	return result.toString().substring(0, result.toString().length() - 1);
+        if (getBcc().isEmpty()) {
+            return "";
+        }
+        StringBuilder result = new StringBuilder();
+        for (String emailAddress : getBcc()) {
+            result.append(emailAddress).append(",");
+        }
+        // Return the string without the trailing comma
+        return result.toString().substring(0, result.toString().length() - 1);
     }
 
     public String getCcToString() {
-	if (getCc().isEmpty()) {
-	    return "";
-	}
-	StringBuilder result = new StringBuilder();
-	for (String emailAddress : getCc()) {
-	    result.append(emailAddress).append(",");
-	}
-	// Return the string without the trailing comma
-	return result.toString().substring(0, result.toString().length() - 1);
+        if (getCc().isEmpty()) {
+            return "";
+        }
+        StringBuilder result = new StringBuilder();
+        for (String emailAddress : getCc()) {
+            result.append(emailAddress).append(",");
+        }
+        // Return the string without the trailing comma
+        return result.toString().substring(0, result.toString().length() - 1);
     }
 
     public void setBcc(List<String> bcc) {
-	this.bcc = bcc;
+        this.bcc = bcc;
     }
 
     public void send() throws AddressException, MessagingException {
-	EmailHandler.sendMessage(this);
+        EmailHandler.sendMessage(this);
     }
 
     public InternetAddress[] getReplyTo() {
-	return replyTo.toArray(new InternetAddress[] {});
+        return replyTo != null ? replyTo.toArray(new InternetAddress[]{}) : null;
     }
 
     public void addReplyTo(InternetAddress... internetAddresses) {
-	if (replyTo == null) {
-	    replyTo = new ArrayList<InternetAddress>();
-	}
-	for (InternetAddress internetAddress : internetAddresses) {
-	    replyTo.add(internetAddress);
-	}
+        if (internetAddresses != null && internetAddresses.length > 0) {
+            for (InternetAddress internetAddress : internetAddresses) {
+                if (internetAddress != null ) {
+                    if (replyTo == null) {
+                        replyTo = new ArrayList<InternetAddress>();
+                    }
+                    replyTo.add(internetAddress);
+                }
+            }
+        }
     }
 }
