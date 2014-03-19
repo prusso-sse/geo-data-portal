@@ -17,6 +17,8 @@ import org.n52.wps.algorithm.annotation.LiteralDataInput;
 import org.n52.wps.server.AbstractAnnotatedAlgorithm;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ucar.ma2.InvalidRangeException;
 import ucar.nc2.dt.GridDataset;
 
@@ -29,6 +31,8 @@ import ucar.nc2.dt.GridDataset;
     title = "OPeNDAP Subset",
     abstrakt="This service returns the subset of data that intersects a set of vector polygon features and time range, if specified. A NetCDF file will be returned.")
 public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotatedAlgorithm {
+    
+    private static final Logger log = LoggerFactory.getLogger(FeatureCoverageOPeNDAPIntersectionAlgorithm.class);
 
     private FeatureCollection featureCollection;
     private URI datasetURI;
@@ -116,14 +120,19 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
                     requireFullCoverage,
                     "Grid sub-setted by USGS/CIDA Geo Data Portal");
         } catch (InvalidRangeException e) {
+            log.error("Error subsetting gridded data: ", e);
             addError("Error subsetting gridded data: " + e.getMessage());
         } catch (IOException e) {
+            log.error("IO Error :", e);
             addError("IO Error :" + e.getMessage());
         } catch (FactoryException e) {
+            log.error("Error initializing CRS factory: ", e);
             addError("Error initializing CRS factory: " + e.getMessage());
         } catch (TransformException e) {
+            log.error("Error attempting CRS transform: ", e);
             addError("Error attempting CRS transform: " + e.getMessage());
         } catch (Exception e) {
+            log.error("General Error: ", e);
             addError("General Error: " + e.getMessage());
         } finally {
             if (gridDataSet != null) try { gridDataSet.close(); } catch (IOException e) { }

@@ -2,8 +2,8 @@ package gov.usgs.cida.gdp.dataaccess.helper;
 
 import gov.usgs.cida.gdp.dataaccess.bean.DataTypeCollection;
 import gov.usgs.cida.gdp.dataaccess.bean.DataTypeCollection.DataTypeBean;
-import gov.usgs.cida.gdp.dataaccess.bean.Time;
 import gov.usgs.cida.gdp.dataaccess.bean.Response;
+import gov.usgs.cida.gdp.dataaccess.bean.Time;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -95,19 +95,17 @@ public class OpendapServerHelper {
 				return getDatesFromTimeVariable(variable,  attributeTable);
 			}
 			catch (Exception e) {
-				e.getMessage();
-				// not time unit
+                log.warn("Not a time unit", e);
 			}
 		}
 		catch (opendap.dap.parsers.ParseException ex) { // NetCDF-Java 4.3.x
-//        catch (opendap.dap.parser.ParseException ex) { // NetCDF-Java 4.2.x
-			log.error("Parser exception caught" + ex);
+			log.warn("Parser exception caught", ex);
 		}
 		catch (DAP2Exception ex) {
-			log.error("OPeNDAP exception caught" + ex);
+			log.warn("OPeNDAP exception caught", ex);
 		}
 		catch (Exception ex) {
-			log.error("General exception caught" + ex);
+			log.warn("General exception caught", ex);
 		}
 		return Collections.EMPTY_LIST;  // Could not get time, fall through
 	}
@@ -164,7 +162,7 @@ public class OpendapServerHelper {
 			dateList.add(unit.makeStandardDateString(last));
 			return dateList;
 		} catch (Exception e) {
-			// Unit is not a date unit
+			log.warn("Unit is not a date unit", e);
 		}
 
 		try {
@@ -173,7 +171,7 @@ public class OpendapServerHelper {
 			dateList.add(unit.makeCalendarDate(last).toString());
 			return dateList;
 		} catch (IllegalArgumentException iae) {
-			// Unit is not a calendar date unit
+            log.warn("Unit is not a calendar date unit", iae);
 		}
 
 		return dateList;
@@ -186,7 +184,7 @@ public class OpendapServerHelper {
 			try {
 				Calendar.get(calendarType.getValueAt(0));
 			} catch (NoSuchAttributeException ex) {
-				// Default calendar will be returned
+				log.warn("No calendar attribute, default calendar will be returned", ex);
 			}
 		}
 		return calendar;
@@ -257,11 +255,10 @@ public class OpendapServerHelper {
 			}
 		}
 		catch (opendap.dap.parsers.ParseException ex) { // NetCDF-Java 4.3.x
-//        catch (opendap.dap.parser.ParseException ex) { // NetCDF-Java 4.2.x
-			// do something with exceptions
+            log.warn("Parse exception", ex);
 		}
 		catch (DAP2Exception ex) {
-			// do something with exceptions
+            log.warn("DAP2 exception", ex);
 		}
 		dtbListWithTimes.addAll(dtbListNoTimes);
 		DataTypeBean[] dtbArr = new DataTypeBean[dtbListWithTimes.size()];
@@ -312,7 +309,6 @@ public class OpendapServerHelper {
 		while (dimensions.hasMoreElements()) {
 			DArrayDimension nextDim = dimensions.nextElement();
 			String name = nextDim.getEncodedName();  // or getClearName(), NetCDF-Java 4.3.x
-//            String name = nextDim.getName();  // NetCDF-Java 4.2.x
 			try {
 				AttributeTable attributeTable = das.getAttributeTable(name);
 				if (null != attributeTable) {
@@ -322,13 +318,13 @@ public class OpendapServerHelper {
 						try {
 							unit = new DateUnit(units.getValueAt(0));
 						} catch (Exception e) {
-							// Unit is not a date unit
+							log.warn("Unit is not a date unit", e);
 						}
 
 						try {
 							unit = CalendarDateUnit.withCalendar(getCalendarFromAttributeTable(attributeTable), units.getValueAt(0));
 						} catch (IllegalArgumentException iae) {
-							// Unit is not a calendar date unit
+							log.warn("Unit is not a calendar date unit", iae);
 						}
 
 						if (null != unit) {
@@ -344,7 +340,7 @@ public class OpendapServerHelper {
 					}
 				}
 			} catch (NoSuchAttributeException nse) {
-				// dimension not a date, keep trying
+				log.warn("dimension not a date, keep trying", nse);
 			}
 		}
 		return timeVarName;
