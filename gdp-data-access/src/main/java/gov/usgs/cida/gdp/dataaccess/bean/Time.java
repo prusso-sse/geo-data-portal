@@ -15,6 +15,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import org.apache.commons.io.IOUtils;
@@ -41,17 +42,15 @@ public class Time extends Response {
             this.starttime = new TimeBreakdown();
             this.endtime = new TimeBreakdown();
         } else {
-            this.time[0] = dateRange[0];
-            this.time[1] = dateRange[1];
+            this.time = Arrays.copyOf(dateRange, dateRange.length);
             this.starttime = new TimeBreakdown(dateRange[0]);
             this.endtime = new TimeBreakdown(dateRange[1]);
         }
     }
 
     public void setTime(String[] time) {
-        if (time.length > 0) {
-            this.time[0] = time[0];
-            this.time[1] = time[1];
+        if (time != null) {
+            this.time = Arrays.copyOf(time, time.length);
         }
     }
 
