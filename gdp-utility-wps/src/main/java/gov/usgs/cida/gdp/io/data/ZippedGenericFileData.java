@@ -1,6 +1,5 @@
 package gov.usgs.cida.gdp.io.data;
 
-import org.n52.wps.io.data.GenericFileData;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -10,14 +9,14 @@ import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.apache.commons.io.IOUtils;
+import org.n52.wps.io.data.GenericFileData;
 import org.n52.wps.io.data.GenericFileDataConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class extends the GenericFileData class so we can unzip files with arbitrary
- * directory depths.  
- * 
+ * This class extends the GenericFileData class so we can unzip files with arbitrary directory depths.
+ *
  * @author isuftin
  */
 public class ZippedGenericFileData extends GenericFileData {
@@ -35,13 +34,13 @@ public class ZippedGenericFileData extends GenericFileData {
             try {
                 fileName = unzipData(this.dataStream, this.fileExtension, workspaceDir);
             } catch (IOException e) {
-                LOGGER.error("Could not unzip the archive to " + workspaceDir);
+                LOGGER.error("Could not unzip the archive to " + workspaceDir, e);
             }
         } else {
             try {
                 fileName = justWriteData(this.dataStream, this.fileExtension, workspaceDir);
             } catch (IOException e) {
-                LOGGER.error("Could not write the input to " + workspaceDir);
+                LOGGER.error("Could not write the input to " + workspaceDir, e);
             }
         }
         return fileName;
@@ -51,7 +50,7 @@ public class ZippedGenericFileData extends GenericFileData {
         int bufferLength = 2048;
         byte buffer[] = new byte[bufferLength];
         String fileName = null;
-        String baseFileName = Long.valueOf(System.currentTimeMillis()).toString();
+        String baseFileName = Long.toString(System.currentTimeMillis());
 
         fileName = baseFileName + "." + extension;
         File currentFile = new File(writeDirectory, fileName);
@@ -70,18 +69,16 @@ public class ZippedGenericFileData extends GenericFileData {
             }
         } finally {
             if (bos != null) {
-               IOUtils.closeQuietly(bos); 
+                IOUtils.closeQuietly(bos);
             }
         }
-        System.gc();
-
         return fileName;
     }
 
     private String unzipData(InputStream is, String extension, File writeDirectory) throws IOException {
         int bufferLength = 2048;
         byte buffer[] = new byte[bufferLength];
-        String baseFileName = Long.valueOf(System.currentTimeMillis()).toString();
+        String baseFileName = Long.toString(System.currentTimeMillis());
 
         ZipInputStream zipInputStream = new ZipInputStream(
                 new BufferedInputStream(is));
@@ -92,15 +89,15 @@ public class ZippedGenericFileData extends GenericFileData {
         while ((entry = zipInputStream.getNextEntry()) != null) {
             String currentExtension = entry.getName();
             // We want to skip past directories and metadata files (MACOSX ZIPPING FIX)
-            if (!currentExtension.endsWith(File.separator) 
+            if (!currentExtension.endsWith(File.separator)
                     && !currentExtension.startsWith(".")
-                    && !currentExtension.contains(File.separator + ".")) {  
+                    && !currentExtension.contains(File.separator + ".")) {
                 int beginIndex = currentExtension.lastIndexOf(".") + 1;
                 currentExtension = currentExtension.substring(beginIndex);
-             
+
                 String fileName = (baseFileName + "." + currentExtension).replace(" ", "_");
                 File currentFile = new File(writeDirectory, fileName);
-            
+
                 currentFile.createNewFile();
                 FileOutputStream fos = new FileOutputStream(currentFile);
                 BufferedOutputStream bos = null;
@@ -119,7 +116,6 @@ public class ZippedGenericFileData extends GenericFileData {
                     returnFile = currentFile.getAbsolutePath();
                 }
             }
-            System.gc();
         }
         zipInputStream.close();
         return returnFile;

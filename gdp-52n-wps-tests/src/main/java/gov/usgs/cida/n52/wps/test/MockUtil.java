@@ -15,6 +15,8 @@ import org.n52.wps.io.GeneratorFactory;
 import org.n52.wps.io.IGenerator;
 import org.n52.wps.io.IParser;
 import org.n52.wps.io.ParserFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -22,18 +24,18 @@ import org.n52.wps.io.ParserFactory;
  */
 public class MockUtil {
 
+    private static final Logger log = LoggerFactory.getLogger(MockUtil.class);
+
     public final static String SUPPORTED_SCHEMA = "supportedSchema";
     public final static String SUPPORTED_FORMAT = "supportedFormat";
     public final static String SUPPORTED_ENCODING = "supportedEncoding";
 
-
     private static WPSConfig MOCK_CONFIG;
+
     public synchronized static WPSConfig getMockConfig() throws XmlException, IOException {
         if (MOCK_CONFIG == null) {
             InputStream configInputStream = null;
             try {
-//                configInputStream = MockUtil.class.getResourceAsStream(
-//                        "/org/n52/test/mock/wps_config.xml");
                 configInputStream = new BufferedInputStream(new FileInputStream(
                         "src/main/webapp/config/wps_config.xml"));
                 WPSConfig.forceInitialization(configInputStream);
@@ -76,8 +78,8 @@ public class MockUtil {
         ArrayList<String> propertyList = new ArrayList<String>();
         try {
             WPSConfig mockConfig = MockUtil.getMockConfig();
-            PropertyDocument.Property properties[] =
-                    mockConfig.getPropertiesForParserClass(clazzName);
+            PropertyDocument.Property properties[]
+                    = mockConfig.getPropertiesForParserClass(clazzName);
             for (Property property : properties) {
                 if (propertyName.equals(property.getName())) {
                     propertyList.add(property.getStringValue());
@@ -85,6 +87,7 @@ public class MockUtil {
             }
             propertyList.trimToSize();
         } catch (Exception e) {
+            log.error("parse error", e);
             System.err.println("ERROR parsing property " + propertyName + " for Parser class " + clazzName);
         }
         return propertyList;
@@ -95,14 +98,15 @@ public class MockUtil {
         ArrayList<String> propertyList = new ArrayList<String>();
         try {
             WPSConfig mockConfig = MockUtil.getMockConfig();
-            PropertyDocument.Property properties[] =
-                    mockConfig.getPropertiesForGeneratorClass(clazzName);
+            PropertyDocument.Property properties[]
+                    = mockConfig.getPropertiesForGeneratorClass(clazzName);
             for (Property property : properties) {
                 if (propertyName.equals(property.getName())) {
                     propertyList.add(property.getStringValue());
                 }
             }
         } catch (Exception e) {
+            log.error("parse error", e);
             System.err.println("ERROR parsing property " + propertyName + " for Generator class " + clazzName);
         }
         propertyList.trimToSize();
