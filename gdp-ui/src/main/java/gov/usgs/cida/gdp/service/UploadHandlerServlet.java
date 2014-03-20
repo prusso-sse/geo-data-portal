@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 public class UploadHandlerServlet extends HttpServlet {
 
+    private static final String QQ_FILE_PARAMETER = "qqfile";
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(UploadHandlerServlet.class);
     private static final long serialVersionUID = 1L;
 
@@ -50,10 +51,9 @@ public class UploadHandlerServlet extends HttpServlet {
             sendErrorResponse(response, "Upload exceeds max file size of " + maxFileSize + " bytes");
             return;
         }
-        final String qqfileParameter = "qqfile";
 
         // qqfile is parameter passed by our javascript uploader
-        String filename = request.getParameter(qqfileParameter);
+        String filename = request.getParameter(QQ_FILE_PARAMETER);
         String utilityWpsUrl = request.getParameter("utilitywps");
         String wfsEndpoint = request.getParameter("wfs-url");
         String tempDir = System.getProperty("java.io.tmpdir");
@@ -72,7 +72,7 @@ public class UploadHandlerServlet extends HttpServlet {
                 while (iter.hasNext()) {
                     FileItemStream item = iter.next();
                     String name = item.getFieldName();
-                    if (qqfileParameter.equals(name)) {
+                    if (QQ_FILE_PARAMETER.equals(name)) {
                         saveFileFromRequest(item.openStream(), destinationFile);
                         break;
                     }

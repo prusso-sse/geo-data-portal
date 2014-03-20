@@ -87,8 +87,7 @@ public class MockUtil {
             }
             propertyList.trimToSize();
         } catch (Exception e) {
-            log.error("parse error", e);
-            System.err.println("ERROR parsing property " + propertyName + " for Parser class " + clazzName);
+            log.error("ERROR parsing property " + propertyName + " for Parser class " + clazzName, e);
         }
         return propertyList;
     }
@@ -106,8 +105,7 @@ public class MockUtil {
                 }
             }
         } catch (Exception e) {
-            log.error("parse error", e);
-            System.err.println("ERROR parsing property " + propertyName + " for Generator class " + clazzName);
+            log.error("ERROR parsing property " + propertyName + " for Generator class " + clazzName, e);
         }
         propertyList.trimToSize();
         return propertyList;

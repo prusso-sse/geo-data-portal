@@ -416,7 +416,7 @@ public class PRMSParameterGeneratorAlgorithm extends AbstractAnnotatedAlgorithm 
     }
 
     private static String[] mon = {
-        "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec",};
+        "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"};
 
     public static void csv2param(BufferedReader csvReader, BufferedWriter paramWriter, String variableName) throws IOException {
 

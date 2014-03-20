@@ -29,7 +29,7 @@ import org.xml.sax.SAXException;
  */
 public class OGCCommons {
 
-    protected static Logger ogclog = LoggerFactory.getLogger(OGCCommons.class);
+    protected static Logger log = LoggerFactory.getLogger(OGCCommons.class);
 
     /**
      * This extracts the Operational endpoints from a getCapabilities document Tested to support: - WPS 1.0.0 - CSW 2.0.2 - WCS 2.0.0 - WCS
@@ -54,7 +54,7 @@ public class OGCCommons {
                 endpointSet.add(end);
             }
         } catch (XPathExpressionException xpee) {
-            ogclog.warn("XPath exception attempting to get Operation endpoint, returning an empty set here", xpee);
+            log.warn("XPath exception attempting to get Operation endpoint, returning an empty set here", xpee);
         }
         return endpointSet;
     }
@@ -88,12 +88,12 @@ public class OGCCommons {
             Pattern pattern = Pattern.compile("(?:\\w+:)?(?:\\w{3}_)?Capabilities");
             Matcher matcher = pattern.matcher(nodeName);
             if (matcher.matches()) {
-                ogclog.debug("Response contained capabilities element, adding to cache and proxying");
+                log.debug("Response contained capabilities element, adding to cache and proxying");
                 return true;
             }
 
         }
-        ogclog.debug("Does not look like an OWS endpoint");
+        log.debug("Does not look like an OWS endpoint");
         return false;
     }
 
@@ -108,17 +108,17 @@ public class OGCCommons {
         InputStream inputStream = null;
         try {
             URL getCapsUrl = endpoint.generateGetCapabilitiesURL();
-            ogclog.debug("Sending getCapabilities to: " + getCapsUrl.toString());
+            log.debug("Sending getCapabilities to: " + getCapsUrl.toString());
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
             inputStream = getCapsUrl.openStream();
             doc = db.parse(inputStream);
         } catch (SAXException se) {
-            ogclog.debug("SAX threw an exception", se);
+            log.debug("SAX threw an exception", se);
         } catch (IOException ioe) {
-            ogclog.debug("IOException in isOWSEndpoint", ioe);
+            log.debug("IOException in isOWSEndpoint", ioe);
         } catch (ParserConfigurationException pce) {
-            ogclog.debug("Error with XML Document Parsing", pce);
+            log.debug("Error with XML Document Parsing", pce);
         } finally {
             IOUtils.closeQuietly(inputStream);
         }
