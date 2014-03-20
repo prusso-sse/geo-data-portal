@@ -15,11 +15,11 @@ import org.slf4j.LoggerFactory;
 /**
  * @author isuftin
  */
-@Algorithm(version="1.0.0")
+@Algorithm(version = "1.0.0")
 public class CalculateWCSCoverageInfo extends AbstractAnnotatedAlgorithm {
-    
+
     private final static Logger LOGGER = LoggerFactory.getLogger(CalculateWCSCoverageInfo.class);
-    
+
     private final static String PARAM_CRS = "crs";
     private final static String PARAM_LOWER_CORNER = "lower-corner";
     private final static String PARAM_UPPER_CORNER = "upper-corner";
@@ -28,7 +28,7 @@ public class CalculateWCSCoverageInfo extends AbstractAnnotatedAlgorithm {
     private final static String PARAM_WFS_URL = "wfs-url";
     private final static String PARAM_DATASTORE = "datastore";
     private final static String PARAM_RESULT = "result";
-    
+
     private String crs;
     private String lowerCorner;
     private String upperCorner;
@@ -37,48 +37,47 @@ public class CalculateWCSCoverageInfo extends AbstractAnnotatedAlgorithm {
     private String wfsURL;
     private String datastore;
     private String result;
-    
-    
-    @LiteralDataInput(identifier=PARAM_CRS)
+
+    @LiteralDataInput(identifier = PARAM_CRS)
     public void setCRS(String crs) {
         this.crs = crs;
     }
-    
-    @LiteralDataInput(identifier=PARAM_LOWER_CORNER)
+
+    @LiteralDataInput(identifier = PARAM_LOWER_CORNER)
     public void setLowerCorner(String lowerCorner) {
         this.lowerCorner = lowerCorner;
     }
-    
-    @LiteralDataInput(identifier=PARAM_UPPER_CORNER)
+
+    @LiteralDataInput(identifier = PARAM_UPPER_CORNER)
     public void setUpperCorner(String upperCorner) {
         this.upperCorner = upperCorner;
     }
-    
-    @LiteralDataInput(identifier=PARAM_GRID_OFFSETS)
-    public void setGridOffsets (String gridOffsets) {
+
+    @LiteralDataInput(identifier = PARAM_GRID_OFFSETS)
+    public void setGridOffsets(String gridOffsets) {
         this.gridOffsets = gridOffsets;
     }
-    
-    @LiteralDataInput(identifier=PARAM_DATA_TYPE)
+
+    @LiteralDataInput(identifier = PARAM_DATA_TYPE)
     public void setDataType(String dataType) {
         this.dataType = dataType;
     }
-    
-    @LiteralDataInput(identifier=PARAM_WFS_URL)
+
+    @LiteralDataInput(identifier = PARAM_WFS_URL)
     public void setWfsURL(String wfsURL) {
         this.wfsURL = wfsURL;
     }
-    
-    @LiteralDataInput(identifier=PARAM_DATASTORE)
+
+    @LiteralDataInput(identifier = PARAM_DATASTORE)
     public void setDatastore(String datastore) {
         this.datastore = datastore;
     }
-    
-    @LiteralDataOutput(identifier=PARAM_RESULT)
+
+    @LiteralDataOutput(identifier = PARAM_RESULT)
     public String getResult() {
         return result;
     }
-    
+
     @Execute
     public void process() {
         Preconditions.checkArgument(StringUtils.isNotBlank(crs), "Invalid " + PARAM_CRS);
@@ -90,7 +89,7 @@ public class CalculateWCSCoverageInfo extends AbstractAnnotatedAlgorithm {
         Preconditions.checkArgument(StringUtils.isNotBlank(datastore), "Invalid " + PARAM_DATASTORE);
 
         try {
-        	WCSCoverageInfo wcsCoverageInfoBean = WCSCoverageInfoHelper.calculateWCSCoverageInfo(
+            WCSCoverageInfo wcsCoverageInfoBean = WCSCoverageInfoHelper.calculateWCSCoverageInfo(
                     wfsURL,
                     datastore,
                     lowerCorner,
@@ -100,7 +99,7 @@ public class CalculateWCSCoverageInfo extends AbstractAnnotatedAlgorithm {
                     dataType);
             result = wcsCoverageInfoBean.toXML();
         } catch (Exception e) {
-        	LOGGER.error(e.getMessage());
+            LOGGER.error("Exception calculating WCS coverage info", e);
             addError(e.getMessage());
         }
     }

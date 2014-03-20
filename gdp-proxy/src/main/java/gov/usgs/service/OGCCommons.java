@@ -29,109 +29,99 @@ import org.xml.sax.SAXException;
  */
 public class OGCCommons {
 
-	protected static Logger ogclog = LoggerFactory.getLogger(OGCCommons.class);
+    protected static Logger log = LoggerFactory.getLogger(OGCCommons.class);
 
-	/**
-	 * This extracts the Operational endpoints from a getCapabilities document
-	 * Tested to support:
-	 * - WPS 1.0.0
-	 * - CSW 2.0.2
-	 * - WCS 2.0.0
-	 * - WCS 1.1
-	 * - WFS 2.0.0
-	 * - Others may work
-	 *
-	 * WMS 1.3.0 definitely does not work, do not proxy these
+    /**
+     * This extracts the Operational endpoints from a getCapabilities document Tested to support: - WPS 1.0.0 - CSW 2.0.2 - WCS 2.0.0 - WCS
+     * 1.1 - WFS 2.0.0 - Others may work
+     *
+     * WMS 1.3.0 definitely does not work, do not proxy these
+     *
      * @param rootDocumentNode
-	 * @return Set of endpoints found
-	 */
-	public static Set<Endpoint> getOperationEndpoints(Node rootDocumentNode) {
-		Set<Endpoint> endpointSet = new HashSet<Endpoint>();
-		try {
-			XPathFactory factory = XPathFactory.newInstance();
-			XPath xpath = factory.newXPath();
-			String bigLongXpath = "//*[local-name() = 'OperationsMetadata']/*[local-name() = 'Operation']/*[local-name() = 'DCP']/*[local-name() = 'HTTP']/*/@href";
-			XPathExpression expression = xpath.compile(bigLongXpath);
-			NodeList operationEndpoints = (NodeList) expression.evaluate(rootDocumentNode, XPathConstants.NODESET);
-			for (int i = 0; i < operationEndpoints.getLength(); i++) {
-				Node n = operationEndpoints.item(i);
-				Endpoint end = new Endpoint(n.getNodeValue());
-				endpointSet.add(end);
-			}
-		}
-		catch (XPathExpressionException xpee) {
-            // just return an empty set here
-		}
+     * @return Set of endpoints found
+     */
+    public static Set<Endpoint> getOperationEndpoints(Node rootDocumentNode) {
+        Set<Endpoint> endpointSet = new HashSet<Endpoint>();
+        try {
+            XPathFactory factory = XPathFactory.newInstance();
+            XPath xpath = factory.newXPath();
+            String bigLongXpath = "//*[local-name() = 'OperationsMetadata']/*[local-name() = 'Operation']/*[local-name() = 'DCP']/*[local-name() = 'HTTP']/*/@href";
+            XPathExpression expression = xpath.compile(bigLongXpath);
+            NodeList operationEndpoints = (NodeList) expression.evaluate(rootDocumentNode, XPathConstants.NODESET);
+            for (int i = 0; i < operationEndpoints.getLength(); i++) {
+                Node n = operationEndpoints.item(i);
+                Endpoint end = new Endpoint(n.getNodeValue());
+                endpointSet.add(end);
+            }
+        } catch (XPathExpressionException xpee) {
+            log.warn("XPath exception attempting to get Operation endpoint, returning an empty set here", xpee);
+        }
         return endpointSet;
-	}
+    }
 
     /**
      * Tests endpoint to decide whether it is an OWS service
-     * 
+     *
      * @param owsEndpoint URL wrapper Endpoint to test
      * @return true if valid OWS endpoint
      */
-	public static boolean isOWSEndpoint(Endpoint owsEndpoint) {
-		if (owsEndpoint.getType() != Endpoint.EndpointType.UNKNOWN) {
-			Document doc = getCapabilitiesDocument(owsEndpoint);
+    public static boolean isOWSEndpoint(Endpoint owsEndpoint) {
+        if (owsEndpoint.getType() != Endpoint.EndpointType.UNKNOWN) {
+            Document doc = getCapabilitiesDocument(owsEndpoint);
 
-			if (doc == null) {
-				return false;
-			}
-			Node node = doc.getFirstChild();
-			while (node != null && node.getNodeType() == Document.COMMENT_NODE) {
-				 node = node.getNextSibling();
-			}
-                        if (node == null) {
-                            return false;
-                        }
-                        
-			String nodeName = node.getNodeName();
-			if (nodeName == null) {
-				return false;
-			}
-			
-			Pattern pattern = Pattern.compile("(?:\\w+:)?(?:\\w{3}_)?Capabilities");
-			Matcher matcher = pattern.matcher(nodeName);
-			if (matcher.matches()) {
-				ogclog.debug("Response contained capabilities element, adding to cache and proxying");
-				return true;
-			}
+            if (doc == null) {
+                return false;
+            }
+            Node node = doc.getFirstChild();
+            while (node != null && node.getNodeType() == Document.COMMENT_NODE) {
+                node = node.getNextSibling();
+            }
+            if (node == null) {
+                return false;
+            }
 
-		}
-		ogclog.debug("Does not look like an OWS endpoint");
-		return false;
-	}
+            String nodeName = node.getNodeName();
+            if (nodeName == null) {
+                return false;
+            }
+
+            Pattern pattern = Pattern.compile("(?:\\w+:)?(?:\\w{3}_)?Capabilities");
+            Matcher matcher = pattern.matcher(nodeName);
+            if (matcher.matches()) {
+                log.debug("Response contained capabilities element, adding to cache and proxying");
+                return true;
+            }
+
+        }
+        log.debug("Does not look like an OWS endpoint");
+        return false;
+    }
 
     /**
      * Call get capabilities and return the XML document
-     * 
+     *
      * @param endpoint ows endpoint to get document from
      * @return Document with the get capabilities response
      */
-	public static Document getCapabilitiesDocument(Endpoint endpoint) {
-		Document doc = null;
+    public static Document getCapabilitiesDocument(Endpoint endpoint) {
+        Document doc = null;
         InputStream inputStream = null;
-		try {
-			URL getCapsUrl = endpoint.generateGetCapabilitiesURL();
-			ogclog.debug("Sending getCapabilities to: " + getCapsUrl.toString());
-			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-			DocumentBuilder db = dbf.newDocumentBuilder();
+        try {
+            URL getCapsUrl = endpoint.generateGetCapabilitiesURL();
+            log.debug("Sending getCapabilities to: " + getCapsUrl.toString());
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            DocumentBuilder db = dbf.newDocumentBuilder();
             inputStream = getCapsUrl.openStream();
-			doc = db.parse(inputStream);
-		}
-		catch (SAXException se) {
-			ogclog.debug("SAX threw an exception", se);
-		}
-		catch (IOException ioe) {
-			ogclog.debug("IOException in isOWSEndpoint", ioe);
-		}
-		catch (ParserConfigurationException pce) {
-			ogclog.debug("Error with XML Document Parsing", pce);
-		}
-		finally {
+            doc = db.parse(inputStream);
+        } catch (SAXException se) {
+            log.debug("SAX threw an exception", se);
+        } catch (IOException ioe) {
+            log.debug("IOException in isOWSEndpoint", ioe);
+        } catch (ParserConfigurationException pce) {
+            log.debug("Error with XML Document Parsing", pce);
+        } finally {
             IOUtils.closeQuietly(inputStream);
-		}
+        }
         return doc;
-	}
+    }
 }

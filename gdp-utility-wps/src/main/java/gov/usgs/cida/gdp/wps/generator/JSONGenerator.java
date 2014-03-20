@@ -24,7 +24,7 @@ public class JSONGenerator extends AbstractGenerator {
 		try {
 			json = (String)idata.getPayload();
 		} catch (Exception ex) {
-			throw new IOException("The data passed from the algorithm to the generator is not a String");
+			throw new IOException("The data passed from the algorithm to the generator is not a String", ex);
 		}
 		return new ByteArrayInputStream(json.getBytes("UTF-8"));
 	}

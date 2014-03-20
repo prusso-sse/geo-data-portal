@@ -7,7 +7,6 @@ import gov.usgs.cida.gdp.coreprocessing.analysis.grid.Statistics1DWriter.GroupBy
 import gov.usgs.cida.gdp.coreprocessing.analysis.grid.Statistics1DWriter.Statistic;
 import gov.usgs.cida.gdp.wps.binding.CSVFileBinding;
 import gov.usgs.cida.gdp.wps.binding.GMLStreamingFeatureCollectionBinding;
-import static org.n52.wps.algorithm.annotation.LiteralDataInput.ENUM_COUNT;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -24,6 +23,7 @@ import org.n52.wps.algorithm.annotation.ComplexDataInput;
 import org.n52.wps.algorithm.annotation.ComplexDataOutput;
 import org.n52.wps.algorithm.annotation.Execute;
 import org.n52.wps.algorithm.annotation.LiteralDataInput;
+import static org.n52.wps.algorithm.annotation.LiteralDataInput.ENUM_COUNT;
 import org.n52.wps.server.AbstractAnnotatedAlgorithm;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
@@ -227,6 +227,5 @@ public class FeatureWeightedGridStatisticsAlgorithm extends AbstractAnnotatedAlg
 //            if (featureDataset != null) try { featureDataset.close(); } catch (IOException e) { }
             IOUtils.closeQuietly(writer);
         }
-    }
-	
+    }	
 }
