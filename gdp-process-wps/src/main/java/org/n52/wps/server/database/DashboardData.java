@@ -1,36 +1,49 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.n52.wps.server.database;
 
 /**
- *
  * @author abramhall
  */
 public class DashboardData {
 
-    private String requestId = null;
-    private String responseId = null;
-    private String outputId = null;
+    private String baseRequestId = null;
+    private String requestXML = null;
+    private String responseXML = null;
+    private String outputXML = null;
 
-    public DashboardData(String requestId, String responseId, String outputId) {
-        this.requestId = requestId;
-        this.responseId = responseId;
-        this.outputId = outputId;
+    public DashboardData(String baseRequestId) {
+        this.baseRequestId = baseRequestId;
     }
 
-    public String getRequestId() {
-        return requestId;
+    public String getBaseRequestId() {
+        return baseRequestId;
     }
 
-    public String getResponseId() {
-        return responseId;
+    public String getRequestXML() {
+        return requestXML;
     }
 
-    public String getOutputId() {
-        return outputId;
+    public String getResponseXML() {
+        return responseXML;
+    }
+
+    public String getOutputXML() {
+        return outputXML;
+    }
+
+    public void setBaseRequestId(String baseRequestId) {
+        this.baseRequestId = baseRequestId;
+    }
+
+    public void setRequestXML(String requestXML) {
+        this.requestXML = requestXML;
+    }
+
+    public void setResponseXML(String responseXML) {
+        this.responseXML = responseXML;
+    }
+
+    public void setOutputXML(String outputXML) {
+        this.outputXML = outputXML;
     }
 
 }

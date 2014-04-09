@@ -1,33 +1,30 @@
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+
 <%@ page contentType="text/html;charset=UTF-8"  %>
 <% response.setHeader("Pragma", "no-cache");%>
 <% response.setHeader("Cache-Control", "no-store");%>
 <% response.setDateHeader("Expires", -1);%> 
 
-<%@ page import="java.util.List"%>
-<%@ page import="org.n52.wps.server.database.*" %>
+<jsp:useBean id="dashboard" class="org.n52.wps.server.database.PostgresDashboard" />
 
-<%! 
-    protected PostgresDashboard dashboard = new PostgresDashboard();
-    List<DashboardData> dataset = dashboard.getDashboardData();
-%>
-<%--
---%>
 <!DOCTYPE html>
 <html>
     <body>
         <table border="1">
             <tr>
+                <td>Request ID</td>
                 <td>Request</td>
                 <td>Response</td>
                 <td>Output</td>
             </tr>
-            <%for (DashboardData data : dataset) { %>
+            <c:forEach items="${dashboard.dashboardData}" var="data">
             <tr>
-                <td><%= dashboard.parseResponse(data.getRequestId()) %></td>
-                <td><%= dashboard.parseResponse(data.getResponseId()) %></td>
-                <td><%= dashboard.parseResponse(data.getOutputId()) %></td>
+                <td>${data.baseRequestId}</td>
+                <td>${data.requestXML}</td>
+                <td>${data.responseXML}</td>
+                <td>${data.outputXML}</td>
             </tr>
-            <% } %>
+            </c:forEach>
         </ul>
     </body>
 </html>
