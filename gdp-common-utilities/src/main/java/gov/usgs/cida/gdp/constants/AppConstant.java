@@ -61,7 +61,11 @@ public enum AppConstant {
             }
             // WPS_CONFIG_LOCATION
             if (input.equals("gdp.path.wps_config")) {
-                result = "";
+                result = this.BASE_LOCATION + File.separator + "Config" + File.separator + "wps_config.xml";
+            }
+            // UTILITY_WPS_CONFIG_LOCATION
+            if (input.equals("gdp.path.utility_wps_config")) {
+                result = this.BASE_LOCATION + File.separator + "Config" + File.separator + "utility_wps_config.xml";
             }
             // CACHE_LOCATION
             if (input.equals("gdp.path.cache")) {
