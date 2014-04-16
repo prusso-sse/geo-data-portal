@@ -11,7 +11,6 @@
 <html>
     <body>
     <script type="text/javascript">
-        <!--
         function toggleData(id) {
             var showLink = document.getElementById("showLink" + id);
             var hideLink = document.getElementById("hideLink" + id);
@@ -26,7 +25,6 @@
                 dataDiv.style.display = "none";
             }
         }
-        -->
     </script>
     <table border="1" cellpadding="1" width="100%">
             <tr>
@@ -54,7 +52,7 @@
                 <td>${data.outputXML}</td>
             </tr>
             <tr id="dataDiv${theCount.index}" style="display:none">
-                <td colspan="6"><xmp>${data.requestXML}</xmp></td>
+                <td colspan="6"><pre>${dashboard.formatXMLForWebDisplay(data.requestXML)}</pre></td>
             </tr>
             </c:forEach>
         </ul>

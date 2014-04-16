@@ -25,6 +25,7 @@ public class PostgresDashboard {
 
     private static final String OWS_NAMESPACE_URI = "http://www.opengis.net/ows/1.1";
     private static final String WPS_NAMESPACE_URI = "http://www.opengis.net/wps/1.0.0";
+    private static final String CREATION_TIME_XPATH = "//@creationTime";
 
     private static final long MILLIS_PER_DAY = 1000 * 60 * 60 * 24;
     private static final long MILLIS_PER_HOUR = 1000 * 60 * 60;
@@ -39,94 +40,79 @@ public class PostgresDashboard {
         return dataset;
     }
 
-    public String getIdentifier(DashboardData data) {
-        XPathXMLParser parser = getParser(data.getRequestXML());
-        if (null == parser) {
-            return "";
-        }
-
+    public String getIdentifier(DashboardData data) throws XPathExpressionException {
+        XPathXMLParser parser = new XPathXMLParser(data.getRequestXML());
         String wpsPrefix = parser.getContext().getPrefix(WPS_NAMESPACE_URI);
         String owsPrefix = parser.getContext().getPrefix(OWS_NAMESPACE_URI);
-
         StringBuilder xpath = new StringBuilder();
         xpath.append("/").append(wpsPrefix).append(":Execute/").append(owsPrefix).append(":Identifier");
-
         return parser.getString(xpath.toString());
     }
 
-    public String getStatus(DashboardData data) {
-        XPathXMLParser parser = getParser(data.getResponseXML());
-        if (null == parser) {
-            return "";
-        }
-
+    public String getStatus(DashboardData data) throws XPathExpressionException {
+        XPathXMLParser parser = new XPathXMLParser(data.getResponseXML());
         String wpsPrefix = parser.getContext().getPrefix(WPS_NAMESPACE_URI);
         StringBuilder xpath = new StringBuilder();
         xpath.append("/").append(wpsPrefix).append(":ExecuteResponse/").append(wpsPrefix).append(":Status//*");
-
         Node node = parser.getNode(xpath.toString());
-
         return node.getLocalName();
     }
 
-    public String getStartTime(DashboardData data) {
-        XPathXMLParser parser = getParser(data.getResponseXML());
-        if (null == parser) {
-            return "";
-        }
-
-        String startTime = parser.getString("//@creationTime");
+    public String getStartTime(DashboardData data) throws XPathExpressionException {
+        XPathXMLParser parser = new XPathXMLParser(data.getResponseXML());
+        String startTime = parser.getString(CREATION_TIME_XPATH);
         return DatatypeConverter.parseDateTime(startTime).getTime().toString();
     }
 
-    public String getElapsedTime(DashboardData data) {
-        XPathXMLParser parser = getParser(data.getResponseXML());
-        if (null == parser) {
-            return "";
-        }
-
-        long elapsed = 0;
-        String startTime = parser.getString("//@creationTime");
+    public String getElapsedTime(DashboardData data) throws XPathExpressionException {
+        XPathXMLParser parser = new XPathXMLParser(data.getResponseXML());
+        String startTime = parser.getString(CREATION_TIME_XPATH);
         final long startTimeInMillis = DatatypeConverter.parseDateTime(startTime).getTimeInMillis();
+        long elapsed = 0;
         if (data.getOutputXML() == null) {
             elapsed = System.currentTimeMillis() - startTimeInMillis;
         } else {
             elapsed = Timestamp.valueOf(data.getCompletedTimestamp()).getTime() - startTimeInMillis;
         }
-
-        StringBuilder elapsedTime = new StringBuilder();
-        long days = elapsed / MILLIS_PER_DAY;
-        if (days > 0) {
-            elapsed = elapsed - days * MILLIS_PER_DAY;
-            elapsedTime.append(days).append("d ");
-        }
-        long hours = elapsed / MILLIS_PER_HOUR;
-        if (hours > 0) {
-            elapsed = elapsed - hours * MILLIS_PER_HOUR;
-            elapsedTime.append(hours).append("h ");
-        }
-        long minutes = elapsed / MILLIS_PER_MIN;
-        if (minutes > 0) {
-            elapsed = elapsed - minutes * MILLIS_PER_MIN;
-            elapsedTime.append(minutes).append("m ");
-        }
-        long seconds = elapsed / 1000;
-        elapsedTime.append(seconds).append("s");
-
-        return elapsedTime.toString();
+        return convertMilliTimeToHumanReadable(elapsed);
     }
 
-    private XPathXMLParser getParser(String xml) {
-        try {
-            return new XPathXMLParser(xml);
-        } catch (XPathExpressionException ex) {
-            LOGGER.error("Failed to parse XML data", ex);
-            return null;
+    public String formatXMLForWebDisplay(String xml) {
+        String formattedXML = xml.replaceAll(">\\s+<", "><");
+        formattedXML = formattedXML.replaceAll("><", ">" + System.lineSeparator() + "<");
+        formattedXML = formattedXML.replaceAll(">", "&gt;");
+        formattedXML = formattedXML.replaceAll("<", "&lt;");
+        return formattedXML;
+    }
+
+    /**
+     * @param time in milliseconds
+     * @return human readable string of time elapsed in terms of hours, minutes, and seconds (fractional seconds truncated)
+     */
+    private String convertMilliTimeToHumanReadable(long time) {
+        StringBuilder returnString = new StringBuilder();
+        long days = time / MILLIS_PER_DAY;
+        if (days > 0) {
+            time = time - days * MILLIS_PER_DAY;
+            returnString.append(days).append("d ");
         }
+        long hours = time / MILLIS_PER_HOUR;
+        if (hours > 0) {
+            time = time - hours * MILLIS_PER_HOUR;
+            returnString.append(hours).append("h ");
+        }
+        long minutes = time / MILLIS_PER_MIN;
+        if (minutes > 0) {
+            time = time - minutes * MILLIS_PER_MIN;
+            returnString.append(minutes).append("m ");
+        }
+        long seconds = time / 1000;
+        returnString.append(seconds).append("s");
+        return returnString.toString();
     }
 
     private DashboardData buildDashboardData(String baseRequestId) {
-        LOGGER.info("build dashboard data for {}", baseRequestId);
+        LOGGER.debug("build dashboard data for {}", baseRequestId);
         DashboardData data = new DashboardData();
         PreparedStatement pst = null;
         ResultSet rs = null;
@@ -137,16 +123,16 @@ public class PostgresDashboard {
             while (rs.next()) {
                 String requestId = rs.getString(1);
                 String requestDate = rs.getString(2);
-                String response = naivelyFormatXML(rs.getString(3));
+                String response = rs.getString(3);
                 if (requestId.endsWith("OUTPUT")) {
-                    LOGGER.info("setting outputXML {}", response);
+                    LOGGER.debug("setting outputXML {}", response);
                     data.setOutputXML(response);
                     data.setCompletedTimestamp(requestDate);
                 } else if (requestId.startsWith("REQ_")) {
-                    LOGGER.info("setting requestXML {}", response);
+                    LOGGER.debug("setting requestXML {}", response);
                     data.setRequestXML(response);
                 } else {
-                    LOGGER.info("setting responseXML {}", response);
+                    LOGGER.debug("setting responseXML {}", response);
                     data.setResponseXML(response);
                 }
             }
@@ -157,12 +143,6 @@ public class PostgresDashboard {
             closeResultSet(rs);
         }
         return data;
-    }
-
-    private String naivelyFormatXML(String xml) {
-        xml = xml.replaceAll("> *<", "><");
-        xml = xml.replaceAll("><", ">" + System.lineSeparator() + "<");
-        return xml;
     }
 
     private List<String> getRequestIds() {

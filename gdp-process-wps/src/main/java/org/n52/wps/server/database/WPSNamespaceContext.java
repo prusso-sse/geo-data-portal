@@ -31,11 +31,11 @@ public class WPSNamespaceContext implements NamespaceContext {
         }
 
         if (!attributesOnly) {
-            NodeList chields = node.getChildNodes();
-            for (int i = 0; i < chields.getLength(); i++) {
-                Node chield = chields.item(i);
-                if (chield.getNodeType() == Node.ELEMENT_NODE) {
-                    examineNode(chield, false);
+            NodeList childNodes = node.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                Node child = childNodes.item(i);
+                if (child.getNodeType() == Node.ELEMENT_NODE) {
+                    examineNode(child, false);
                 }
             }
         }
@@ -43,11 +43,7 @@ public class WPSNamespaceContext implements NamespaceContext {
 
     private void storeAttribute(Attr attribute) {
         if (attribute.getNamespaceURI() != null && attribute.getNamespaceURI().equals(XMLConstants.XMLNS_ATTRIBUTE_NS_URI)) {
-//                if (attribute.getNodeName().equals(XMLConstants.XMLNS_ATTRIBUTE)) {
-//                    putInCache(DEFAULT_NS, attribute.getNodeValue());
-//                } else {
             putInCache(attribute.getLocalName(), attribute.getNodeValue());
-//                }
         }
     }
 
@@ -68,7 +64,7 @@ public class WPSNamespaceContext implements NamespaceContext {
 
     @Override
     public Iterator getPrefixes(String namespaceURI) {
-        throw new UnsupportedOperationException("This implementation only allows a one to one prefix to namespace ration.");
+        throw new UnsupportedOperationException("This implementation only allows a one to one prefix to namespace ratio.");
     }
 
 }

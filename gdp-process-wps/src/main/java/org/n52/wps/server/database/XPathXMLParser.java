@@ -28,15 +28,17 @@ public class XPathXMLParser {
     private final Document document;
 
     public XPathXMLParser(String xml) throws XPathExpressionException {
+        if (null == xml) {
+            throw new IllegalArgumentException("Parameter xml may not be null");
+        }
         this.xml = removeUT8BOM(xml);
 
         InputSource input = new InputSource(new StringReader(xml));
         XPathFactory xpathFactory = XPathFactory.newInstance();
         XPath xpath = xpathFactory.newXPath();
 
-        this.document = (Document) xpath.evaluate("/", input, XPathConstants.NODE);
-
-        this.context = new WPSNamespaceContext(document);
+        document = (Document) xpath.evaluate("/", input, XPathConstants.NODE);
+        context = new WPSNamespaceContext(document);
     }
 
     public Document getDocument() {
@@ -76,7 +78,7 @@ public class XPathXMLParser {
     }
 
     private String removeUT8BOM(String string) {
-        if (string.startsWith(UTF8_BOM)) {
+        if (null != string && string.startsWith(UTF8_BOM)) {
             string = string.substring(1);
         }
         return string;
