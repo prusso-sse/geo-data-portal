@@ -7,8 +7,6 @@
 
 <jsp:useBean id="dashboard" class="org.n52.wps.server.database.PostgresDashboard" />
 
-
-
 <!DOCTYPE html>
 <html>
     <body>
