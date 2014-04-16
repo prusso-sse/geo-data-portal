@@ -7,22 +7,56 @@
 
 <jsp:useBean id="dashboard" class="org.n52.wps.server.database.PostgresDashboard" />
 
+
+
 <!DOCTYPE html>
 <html>
     <body>
-        <table border="1">
+    <script type="text/javascript">
+        <!--
+        function toggleData(id) {
+            var showLink = document.getElementById("showLink" + id);
+            var hideLink = document.getElementById("hideLink" + id);
+            var dataDiv = document.getElementById("data" + id);
+            if(showLink.style.display === "") {
+                showLink.style.display = "none";
+                hideLink.style.display = "";
+                dataDiv.style.display = "";
+            } else {
+                showLink.style.display = "";
+                hideLink.style.display = "none";
+                dataDiv.style.display = "none";
+            }
+        }
+        -->
+    </script>
+    <table border="1" cellpadding="1" width="100%">
             <tr>
-                <td>Request ID</td>
-                <td>Request</td>
-                <td>Response</td>
-                <td>Output</td>
+                <th>Details</th>
+                <th>Identifier</th>
+                <th>Status</th>
+                <th>Start Time</th>
+                <th>Elapsed Time</th>
+                <th>Output</th>
             </tr>
-            <c:forEach items="${dashboard.dashboardData}" var="data">
+            <c:forEach items="${dashboard.dashboardData}" var="data" varStatus="theCount">
             <tr>
-                <td>${data.baseRequestId}</td>
-                <td>${data.requestXML}</td>
-                <td>${data.responseXML}</td>
+                <td>
+                    <div id="showLinkDiv${theCount.index}">
+                        <a href="#" onClick="javascript:toggleData('Div${theCount.index}');">Show</a>
+                    </div>
+                    <div id="hideLinkDiv${theCount.index}" style="display:none;">
+                        <a href="#" onClick="javascript:toggleData('Div${theCount.index}');">Hide</a>
+                    </div>
+                </td>
+                <td>${dashboard.getIdentifier(data)}</td>
+                <td>${dashboard.getStatus(data)}</td>
+                <td>${dashboard.getStartTime(data)}</td>
+                <td>${dashboard.getElapsedTime(data)}</td>
                 <td>${data.outputXML}</td>
+            </tr>
+            <tr id="dataDiv${theCount.index}" style="display:none">
+                <td colspan="6"><xmp>${data.requestXML}</xmp></td>
             </tr>
             </c:forEach>
         </ul>
