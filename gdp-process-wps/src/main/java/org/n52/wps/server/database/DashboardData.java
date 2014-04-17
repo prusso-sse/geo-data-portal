@@ -5,45 +5,41 @@ package org.n52.wps.server.database;
  */
 public class DashboardData {
 
-    private String baseRequestId = null;
     private String requestXML = null;
     private String responseXML = null;
     private String outputXML = null;
-
-    public DashboardData(String baseRequestId) {
-        this.baseRequestId = baseRequestId;
-    }
-
-    public String getBaseRequestId() {
-        return baseRequestId;
-    }
+    private String completedTimestamp = null;
 
     public String getRequestXML() {
         return requestXML;
-    }
-
-    public String getResponseXML() {
-        return responseXML;
-    }
-
-    public String getOutputXML() {
-        return outputXML;
-    }
-
-    public void setBaseRequestId(String baseRequestId) {
-        this.baseRequestId = baseRequestId;
     }
 
     public void setRequestXML(String requestXML) {
         this.requestXML = requestXML;
     }
 
+    public String getResponseXML() {
+        return responseXML;
+    }
+
     public void setResponseXML(String responseXML) {
         this.responseXML = responseXML;
     }
 
+    public String getOutputXML() {
+        return outputXML;
+    }
+
     public void setOutputXML(String outputXML) {
         this.outputXML = outputXML;
+    }
+
+    public String getCompletedTimestamp() {
+        return completedTimestamp;
+    }
+
+    public void setCompletedTimestamp(String completedTimestamp) {
+        this.completedTimestamp = completedTimestamp;
     }
 
 }
