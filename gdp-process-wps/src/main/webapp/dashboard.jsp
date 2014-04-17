@@ -12,9 +12,9 @@
     <body>
     <script type="text/javascript">
         function toggleData(id) {
-            var showLink = document.getElementById("showLink" + id);
-            var hideLink = document.getElementById("hideLink" + id);
-            var dataDiv = document.getElementById("data" + id);
+            var showLink = document.getElementById("showLinkDiv" + id);
+            var hideLink = document.getElementById("hideLinkDiv" + id);
+            var dataDiv = document.getElementById("dataDiv" + id);
             if(showLink.style.display === "") {
                 showLink.style.display = "none";
                 hideLink.style.display = "";
@@ -39,16 +39,16 @@
             <tr>
                 <td>
                     <div id="showLinkDiv${theCount.index}">
-                        <a href="#" onClick="javascript:toggleData('Div${theCount.index}');">Show</a>
+                        <a href="#" onClick="javascript:toggleData(${theCount.index});">Show</a>
                     </div>
                     <div id="hideLinkDiv${theCount.index}" style="display:none;">
-                        <a href="#" onClick="javascript:toggleData('Div${theCount.index}');">Hide</a>
+                        <a href="#" onClick="javascript:toggleData(${theCount.index});">Hide</a>
                     </div>
                 </td>
-                <td>${dashboard.getIdentifier(data)}</td>
-                <td>${dashboard.getStatus(data)}</td>
-                <td>${dashboard.getStartTime(data)}</td>
-                <td>${dashboard.getElapsedTime(data)}</td>
+                <td><c:catch>${dashboard.getIdentifier(data)}</c:catch></td>
+                <td><c:catch>${dashboard.getStatus(data)}</c:catch></td>
+                <td><c:catch>${dashboard.getStartTime(data)}</c:catch></td>
+                <td><c:catch>${dashboard.getElapsedTime(data)}</c:catch></td>
                 <td>${data.outputXML}</td>
             </tr>
             <tr id="dataDiv${theCount.index}" style="display:none">
