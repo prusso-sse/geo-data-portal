@@ -223,6 +223,7 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>9.3-1101-jdbc4</version>
+            <scope>runtime</scope>
         </dependency>
         <!-- Testing dependency -->
         <dependency>
