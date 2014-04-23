@@ -6,6 +6,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <link rel="stylesheet" type="text/css" href="css/dashboard.css" />
         <script src="http://code.jquery.com/jquery-latest.min.js"></script>
         <script src="js/dashboard.js"></script>
     </head>

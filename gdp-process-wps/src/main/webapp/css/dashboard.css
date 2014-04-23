@@ -1,0 +1,25 @@
+table {
+    margin: 0;
+    padding: 1px;
+    border-collapse: collapse;
+}
+
+td {
+    border: solid lightgray;
+}
+
+tr.even {
+    background-color: white;
+}
+
+tr.odd {
+    background-color: lightcyan;
+}
+
+tr.reportHeader {
+    font-weight: bold;
+}
+
+td.indented {
+    padding-left: 20px;
+}

@@ -1,4 +1,4 @@
-package org.n52.wps.server.database;
+package gov.usgs.cida.gdp.wps.service.report;
 
 import java.util.ArrayList;
 import java.util.List;

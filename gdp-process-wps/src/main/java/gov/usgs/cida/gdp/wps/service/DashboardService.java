@@ -1,5 +1,6 @@
-package org.n52.wps.server;
+package gov.usgs.cida.gdp.wps.service;
 
+import gov.usgs.cida.gdp.wps.service.report.Report;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.StringReader;
@@ -25,18 +26,16 @@ import net.opengis.wps.v_1_0_0.Execute;
 import net.opengis.wps.v_1_0_0.ExecuteResponse;
 import net.opengis.wps.v_1_0_0.InputType;
 import net.opengis.wps.v_1_0_0.StatusType;
-import org.n52.wps.server.database.DashboardData;
 import org.n52.wps.server.database.PostgresDatabase;
-import org.n52.wps.server.database.Report;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author abramhall
  */
-public class Dashboard extends HttpServlet {
+public class DashboardService extends HttpServlet {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Dashboard.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DashboardService.class);
     private static final PostgresDatabase db = PostgresDatabase.getInstance();
     private static final String ALL_REQUESTS_QUERY = "select request_id from results where response_type = 'ExecuteRequest' order by request_date;";
     private static final String DATA_QUERY = "select request_id, request_date, response from results where request_id like ?;";
@@ -51,19 +50,13 @@ public class Dashboard extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        System.out.println("do post");
         String action = req.getParameter("action");
         StringBuilder out = new StringBuilder();
         if ("loadProcesses".equalsIgnoreCase(action)) {
-            String startAt = req.getParameter("startAt");
-            System.out.println("load processes, param startAt = " + startAt);
             String json = new Gson().toJson(getDashboardData());
             out.append(json);
         } else if ("report".equalsIgnoreCase(action)) {
-            System.out.println("in post, report action");
-
             Report report = new Report();
-
             for (String requestId : getRequestIds()) {
                 PreparedStatement pst = null;
                 ResultSet rs = null;
@@ -99,7 +92,6 @@ public class Dashboard extends HttpServlet {
                 report.addAlgorithm(identifier).addDataSet(dataSetURI);
             }
             final String toJson = new Gson().toJson(report);
-            System.out.println(toJson);
             out.append(toJson);
         }
         resp.getWriter().write(out.toString());
@@ -136,7 +128,6 @@ public class Dashboard extends HttpServlet {
     }
 
     private DashboardData buildDashboardData(String baseRequestId) {
-        LOGGER.debug("build dashboard data for {}", baseRequestId);
         DashboardData data = new DashboardData();
         Long startTime = null;
         long endTime = System.currentTimeMillis();
@@ -152,6 +143,7 @@ public class Dashboard extends HttpServlet {
                 String xml = rs.getString(3);
                 if (requestId.endsWith("OUTPUT")) {
                     endTime = Timestamp.valueOf(requestDate).getTime();
+                    data.setOutput(xml);
                 } else if (requestId.startsWith("REQ_")) {
                     final String identifier = getIdentifier(xml);
                     data.setIdentifier(identifier);
@@ -237,13 +229,5 @@ public class Dashboard extends HttpServlet {
                 LOGGER.warn("failed to close statement", ex);
             }
         }
-    }
-
-    private String formatXMLForWebDisplay(String xml) {
-        String formattedXML = xml.replaceAll(">\\s+<", "><");
-        formattedXML = formattedXML.replaceAll("><", ">" + System.lineSeparator() + "<");
-        formattedXML = formattedXML.replaceAll(">", "&gt;");
-        formattedXML = formattedXML.replaceAll("<", "&lt;");
-        return formattedXML;
     }
 }

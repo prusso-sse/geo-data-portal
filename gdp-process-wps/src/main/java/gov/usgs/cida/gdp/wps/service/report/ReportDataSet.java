@@ -1,4 +1,4 @@
-package org.n52.wps.server.database;
+package gov.usgs.cida.gdp.wps.service.report;
 
 /**
  * @author abramhall

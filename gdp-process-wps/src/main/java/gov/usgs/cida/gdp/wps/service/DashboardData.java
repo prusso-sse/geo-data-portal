@@ -1,4 +1,4 @@
-package org.n52.wps.server.database;
+package gov.usgs.cida.gdp.wps.service;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -17,6 +17,7 @@ public class DashboardData {
     private String status = null;
     private String creationTime = null;
     private String elapsedTime = null;
+    private String output = null;
 
     public String getIdentifier() {
         return identifier;
@@ -50,6 +51,14 @@ public class DashboardData {
 
     public void setElapsedTime(long elapsedTime) {
         this.elapsedTime = convertMilliTimeToHumanReadable(elapsedTime);
+    }
+
+    public String getOutput() {
+        return output;
+    }
+
+    public void setOutput(String output) {
+        this.output = output;
     }
 
     /**
