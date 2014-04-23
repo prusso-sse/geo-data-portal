@@ -23,6 +23,10 @@
         <description>Switches the location to look for the wps_config.xml file</description>
         <listener-class>gov.usgs.cida.n52.wps.config.ForceConfigInitializeListener</listener-class>
     </listener>
+    <listener>
+        <description>Cancels queued WPS requests on shutdown</description>
+        <listener-class>org.n52.wps.server.handler.PostgresWPSJobListener</listener-class>
+    </listener>
     <servlet>
         <servlet-name>wpsServlet</servlet-name>
         <servlet-class>org.n52.wps.server.WebProcessingService</servlet-class>
@@ -40,6 +44,15 @@
     <servlet-mapping>
         <servlet-name>resultServlet</servlet-name>
         <url-pattern>/RetrieveResultServlet</url-pattern>
+    </servlet-mapping>
+    <servlet>
+        <servlet-name>dashboardServlet</servlet-name>
+        <servlet-class>org.n52.wps.server.Dashboard</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>dashboardServlet</servlet-name>
+        <url-pattern>/dashboard/*</url-pattern>
     </servlet-mapping>
     <welcome-file-list>
         <welcome-file>/index.html</welcome-file>

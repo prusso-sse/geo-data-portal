@@ -203,6 +203,11 @@
         </dependency>
         <!-- LOGGING END-->
         <dependency>
+            <groupId>org.jvnet.ogc</groupId>
+            <artifactId>wps-v_1_0_0-schema</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
             <scope>provided</scope>
@@ -218,6 +223,11 @@
         <dependency>
             <groupId>net.java.dev.stax-utils</groupId>
             <artifactId>stax-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.2.4</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
