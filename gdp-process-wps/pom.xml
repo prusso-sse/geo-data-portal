@@ -25,11 +25,20 @@
     <properties>
         <version.maven.failsafe.plugin>2.12.2</version.maven.failsafe.plugin>
         <version.maven.jetty.plugin>6.1.26</version.maven.jetty.plugin>
+        <version.jquery>2.1.0</version.jquery>
         <!--<version.maven.jetty.plugin>7.0.0.pre5</version.maven.jetty.plugin>-->
     </properties>
     
     <build>
         <finalName>gdp-process-wps</finalName>
+        
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -110,6 +119,15 @@
                         <version>9.1-901-1.jdbc4</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -234,6 +252,11 @@
             <artifactId>postgresql</artifactId>
             <version>9.3-1101-jdbc4</version>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>jquery</artifactId>
+            <version>${version.jquery}-2</version>
         </dependency>
         <!-- Testing dependency -->
         <dependency>

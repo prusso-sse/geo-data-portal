@@ -7,8 +7,9 @@
 <html>
     <head>
         <link rel="stylesheet" type="text/css" href="css/dashboard.css" />
-        <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+        <jsp:include page="scripts.jsp" />
         <script src="js/dashboard.js"></script>
+        <title>GDP Web Processing Service Dashboard</title>
     </head>
     <body>
         <input id="loadProcessesButton" type="button" value="Load Processes" />
