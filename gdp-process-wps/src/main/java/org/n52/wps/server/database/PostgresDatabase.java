@@ -15,7 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -67,7 +66,6 @@ public class PostgresDatabase extends AbstractDatabase {
     private static String connectionURL;
     private static Path BASE_DIRECTORY;
     private static PostgresDatabase instance;
-    private static Connection myConnection;
     private static ConnectionHandler connectionHandler;
 
     protected static Timer wipeTimer;
@@ -86,9 +84,8 @@ public class PostgresDatabase extends AbstractDatabase {
             PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
             initializeBaseDirectory(propertyUtil);
             initializeDatabaseWiper(propertyUtil);
-            myConnection = initializeConnection();
+            initializeConnectionHandler();
             initializeResultsTable();
-            initializePreparedStatements(myConnection);
         } catch (ClassNotFoundException cnfe) {
             LOGGER.error("Database class could not be loaded.", cnfe);
             throw new UnsupportedDatabaseException("The database class could not be loaded.", cnfe);
@@ -96,31 +93,6 @@ public class PostgresDatabase extends AbstractDatabase {
             LOGGER.error("Error creating PostgresDatabase", ex);
             throw new RuntimeException("Error creating PostgresDatabase", ex);
         }
-    }
-
-    private void initializePreparedStatements(Connection connection) throws SQLException {
-        closePreparedStatements();
-        insertSQL = connection.prepareStatement(insertionString);
-        selectSQL = connection.prepareStatement(selectionString);
-        updateSQL = connection.prepareStatement(updateString);
-    }
-
-    private Connection initializeConnection() throws SQLException, NamingException {
-        String jndiName = getDatabaseProperties("jndiName");
-        if (null != jndiName) {
-            connectionHandler = new JNDIConnectionHandler(jndiName);
-        } else {
-            connectionURL = "jdbc:postgresql:" + getDatabasePath() + "/" + getDatabaseName();
-            LOGGER.debug("Database connection URL is: " + connectionURL);
-            String username = getDatabaseProperties("username");
-            String password = getDatabaseProperties("password");
-            Properties props = new Properties();
-            props.setProperty("create", "true");
-            props.setProperty("user", username);
-            props.setProperty("password", password);
-            connectionHandler = new DefaultConnectionHandler(connectionURL, props);
-        }
-        return connectionHandler.getConnection();
     }
 
     private void initializeBaseDirectory(PropertyUtil propertyUtil) throws IOException {
@@ -145,22 +117,30 @@ public class PostgresDatabase extends AbstractDatabase {
         }
     }
 
+    private void initializeConnectionHandler() throws SQLException, NamingException {
+        String jndiName = getDatabaseProperties("jndiName");
+        if (null != jndiName) {
+            connectionHandler = new JNDIConnectionHandler(jndiName);
+        } else {
+            connectionURL = "jdbc:postgresql:" + getDatabasePath() + "/" + getDatabaseName();
+            LOGGER.debug("Database connection URL is: " + connectionURL);
+            String username = getDatabaseProperties("username");
+            String password = getDatabaseProperties("password");
+            Properties props = new Properties();
+            props.setProperty("create", "true");
+            props.setProperty("user", username);
+            props.setProperty("password", password);
+            connectionHandler = new DefaultConnectionHandler(connectionURL, props);
+        }
+    }
+
     private void initializeResultsTable() throws SQLException {
-        DatabaseMetaData meta = myConnection.getMetaData();
-        try (ResultSet rs = meta.getTables(null, null, "results", new String[]{"TABLE"})) {
+        try (Connection connection = getConnection(); ResultSet rs = connection.getMetaData().getTables(null, null, "results", new String[]{"TABLE"})) {
             if (!rs.next()) {
                 LOGGER.info("Table RESULTS does not yet exist.");
-                Statement st = myConnection.createStatement();
+                Statement st = connection.createStatement();
                 st.executeUpdate(CREATE_RESULTS_TABLE_PSQL);
-                myConnection.commit();
-            }
-        }
-        meta = myConnection.getMetaData();
-        try (ResultSet rs = meta.getTables(null, null, "RESULTS", new String[]{"TABLE"})) {
-            if (rs.next()) {
-                LOGGER.info("Succesfully created table RESULTS.");
-            } else {
-                LOGGER.error("Could not create table RESULTS.");
+                connection.commit();
             }
         }
     }
@@ -192,17 +172,17 @@ public class PostgresDatabase extends AbstractDatabase {
     }
 
     @Override
-    public synchronized void insertRequest(String id, InputStream inputStream, boolean xml) {
+    public void insertRequest(String id, InputStream inputStream, boolean xml) {
         insertResultEntity(inputStream, "REQ_" + id, "ExecuteRequest", xml ? "text/xml" : "text/plain");
     }
 
     @Override
-    public synchronized String insertResponse(String id, InputStream inputStream) {
+    public String insertResponse(String id, InputStream inputStream) {
         return insertResultEntity(inputStream, id, "ExecuteResponse", "text/xml");
     }
 
     @Override
-    protected synchronized String insertResultEntity(InputStream stream, String id, String type, String mimeType) {
+    protected String insertResultEntity(InputStream stream, String id, String type, String mimeType) {
         BufferedInputStream dataStream = new BufferedInputStream(stream, DATA_BUFFER_SIZE);
         boolean isOutput = null != id && id.toLowerCase().contains("output");
 
@@ -214,14 +194,13 @@ public class PostgresDatabase extends AbstractDatabase {
             }
         }
 
-        try {
-            insertSQL.setString(INSERT_COLUMN_REQUEST_ID, id);
-            insertSQL.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
-            insertSQL.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
-            insertSQL.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
-            insertSQL.setAsciiStream(INSERT_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
-            insertSQL.executeUpdate();
-            myConnection.commit();
+        try (Connection connection = getConnection(); PreparedStatement myInsertSQL = connection.prepareStatement(insertionString)) {
+            myInsertSQL.setString(INSERT_COLUMN_REQUEST_ID, id);
+            myInsertSQL.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
+            myInsertSQL.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
+            myInsertSQL.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
+            myInsertSQL.setAsciiStream(INSERT_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
+            myInsertSQL.executeUpdate();
             LOGGER.debug("inserted request {} into database", id);
         } catch (SQLException ex) {
             LOGGER.error("Failed to insert result data into the database", ex);
@@ -231,13 +210,13 @@ public class PostgresDatabase extends AbstractDatabase {
     }
 
     @Override
-    public synchronized void updateResponse(String id, InputStream stream) {
+    public void updateResponse(String id, InputStream stream) {
         BufferedInputStream dataStream = new BufferedInputStream(stream, DATA_BUFFER_SIZE);
-        try {
-            updateSQL.setString(UPDATE_COLUMN_REQUEST_ID, id);
-            updateSQL.setAsciiStream(UPDATE_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
-            updateSQL.executeUpdate();
-            myConnection.commit();
+
+        try (Connection connection = getConnection(); PreparedStatement myUpdateSQL = connection.prepareStatement(updateString)) {
+            myUpdateSQL.setString(UPDATE_COLUMN_REQUEST_ID, id);
+            myUpdateSQL.setAsciiStream(UPDATE_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
+            myUpdateSQL.executeUpdate();
         } catch (SQLException ex) {
             LOGGER.error("Could not update response in database", ex);
         }
@@ -280,69 +259,12 @@ public class PostgresDatabase extends AbstractDatabase {
             try {
                 String outputFileLocation = IOUtils.toString(lookupResponse(id));
                 return new File(new URI(outputFileLocation));
-            } catch (URISyntaxException ex) {
-                LOGGER.warn("Could not get file location for response file for id " + id, ex);
-            } catch (IOException ex) {
+            } catch (URISyntaxException | IOException ex) {
                 LOGGER.warn("Could not get file location for response file for id " + id, ex);
             }
         }
         LOGGER.warn("requested response as file for a response stored in the database, returning null");
         return null;
-    }
-
-    @Override
-    public void shutdown() {
-        boolean isClosedPreparedStatements = false;
-        boolean isClosedConnection = false;
-
-        try {
-            if (myConnection != null) {
-                isClosedPreparedStatements = closePreparedStatements();
-                Properties props = new Properties();
-                props.setProperty("shutdown", "true");
-                myConnection = DriverManager.getConnection(PostgresDatabase.connectionURL, props);
-                myConnection.close();
-                myConnection = null;
-                isClosedConnection = true;
-                instance = null;
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Error occured while closing Postgres database connection: "
-                    + "closed prepared statements?" + isClosedPreparedStatements
-                    + ";closed connection?" + isClosedConnection, e);
-            return;
-        } finally {
-            if (myConnection != null) {
-                try {
-                    myConnection.close();
-                } catch (SQLException e) {
-                    LOGGER.warn("Postgres database connection was not closed successfully during shutdown", e);
-                }
-                myConnection = null;
-            }
-        }
-        LOGGER.info("Postgres database connection is closed succesfully");
-    }
-
-    private boolean closePreparedStatements() {
-        try {
-            if (PostgresDatabase.insertSQL != null) {
-                PostgresDatabase.insertSQL.close();
-                PostgresDatabase.insertSQL = null;
-            }
-            if (PostgresDatabase.selectSQL != null) {
-                PostgresDatabase.selectSQL.close();
-                PostgresDatabase.selectSQL = null;
-            }
-            if (PostgresDatabase.updateSQL != null) {
-                PostgresDatabase.updateSQL.close();
-                PostgresDatabase.updateSQL = null;
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Prepared statements could not be closed.", e);
-            return false;
-        }
-        return true;
     }
 
     /**
@@ -378,7 +300,6 @@ public class PostgresDatabase extends AbstractDatabase {
         @Override
         public Connection getConnection() throws SQLException {
             Connection conn = dataSource.getConnection();
-            conn.setAutoCommit(false);
             return conn;
         }
     }
@@ -396,7 +317,6 @@ public class PostgresDatabase extends AbstractDatabase {
         @Override
         public Connection getConnection() throws SQLException {
             Connection conn = DriverManager.getConnection(dbConnectionURL, dbProps);
-            conn.setAutoCommit(false);
             return conn;
         }
     }
@@ -439,17 +359,16 @@ public class PostgresDatabase extends AbstractDatabase {
 
         private void deleteRecords(List<String> recordIds) throws SQLException {
             Integer deletedRecordsCount = 0;
-            try (PreparedStatement deleteStatement = myConnection.prepareStatement(DELETE_STATEMENT)) {
-                deleteStatement.setArray(1, myConnection.createArrayOf("varchar", recordIds.toArray()));
+            try (Connection connection = getConnection(); PreparedStatement deleteStatement = connection.prepareStatement(DELETE_STATEMENT)) {
+                deleteStatement.setArray(1, connection.createArrayOf("varchar", recordIds.toArray()));
                 deletedRecordsCount = deleteStatement.executeUpdate();
-                myConnection.commit();
             }
             LOGGER.info("Cleaned {} records from database", deletedRecordsCount);
         }
 
         private List<String> findOldRecords() throws SQLException {
             List<String> matchingRecords = new ArrayList<>();
-            try (PreparedStatement lookupStatement = myConnection.prepareStatement(LOOKUP_STATEMENT)) {
+            try (Connection connection = getConnection(); PreparedStatement lookupStatement = connection.prepareStatement(LOOKUP_STATEMENT)) {
                 long ageMillis = System.currentTimeMillis() - thresholdMillis;
                 lookupStatement.setLong(1, ageMillis);
                 try (ResultSet rs = lookupStatement.executeQuery()) {
