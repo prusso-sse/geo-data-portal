@@ -1,11 +1,12 @@
 package gov.usgs.cida.gdp.coreprocessing.analysis.grid;
 
-import gov.usgs.cida.gdp.coreprocessing.Delimiter;
+import static com.google.common.base.Preconditions.checkNotNull;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.prep.PreparedGeometry;
 import com.vividsolutions.jts.geom.prep.PreparedGeometryFactory;
+import gov.usgs.cida.gdp.coreprocessing.Delimiter;
 import gov.usgs.cida.gdp.coreprocessing.analysis.grid.GridUtility.IndexToCoordinateBuilder;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -30,19 +31,21 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ucar.ma2.InvalidRangeException;
 import ucar.ma2.Range;
 import ucar.nc2.dt.GridCoordSystem;
 import ucar.nc2.dt.GridDataset;
 import ucar.nc2.dt.GridDatatype;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  *
  * @author tkunicki
  */
 public class FeatureCategoricalGridCoverage {
+
+    private static final Logger log = LoggerFactory.getLogger(FeatureCategoricalGridCoverage.class);
 
     public static void execute(
             FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection,
@@ -51,13 +54,12 @@ public class FeatureCategoricalGridCoverage {
             String variableName,
             BufferedWriter writer,
             Delimiter delimiter)
-            throws IOException, InvalidRangeException, FactoryException, TransformException, SchemaException
-    {
-        GridDatatype gridDatatype = 
-                checkNotNull(
-                    gridDataset.findGridDatatype(
-                        checkNotNull(variableName, "variableName argument may not be null")),
-                    "Variable named %s not found in girdded dataset %s", variableName);
+            throws IOException, InvalidRangeException, FactoryException, TransformException, SchemaException {
+        GridDatatype gridDatatype
+                = checkNotNull(
+                        gridDataset.findGridDatatype(
+                                checkNotNull(variableName, "variableName argument may not be null")),
+                        "Variable named %s not found in girdded dataset %s", variableName);
         execute(featureCollection, attributeName, gridDatatype, writer, delimiter, true);
     }
 
@@ -68,8 +70,7 @@ public class FeatureCategoricalGridCoverage {
             BufferedWriter writer,
             Delimiter delimiter,
             boolean requireFullCoverage)
-            throws IOException, InvalidRangeException, FactoryException, TransformException, SchemaException
-    {
+            throws IOException, InvalidRangeException, FactoryException, TransformException, SchemaException {
 
         GridCoordSystem gcs = gridDataType.getCoordinateSystem();
         GridType gt = GridType.findGridType(gcs);
@@ -81,18 +82,18 @@ public class FeatureCategoricalGridCoverage {
         // if required coverage criterea is not fufilled an exception will be thrown.
         Range[] featureCollectionRanges = GridUtility.getXYRangesFromBoundingBox(featureCollection.getBounds(), gcs, requireFullCoverage);
         gridDataType = gridDataType.makeSubset(null, null, null, null, featureCollectionRanges[1], featureCollectionRanges[0]);
-        
-        CoordinateReferenceSystem gridCRS = CRSUtility.getCRSFromGridCoordSystem(gcs);        
-		CoordinateReferenceSystem featureCRS =
-				featureCollection.getSchema().getCoordinateReferenceSystem();
 
-		MathTransform gridToFeatureTransform = CRS.findMathTransform(
-				gridCRS,
-				featureCRS,
-				true);
-        
-        AttributeDescriptor attributeDescriptor =
-                featureCollection.getSchema().getDescriptor(attributeName);
+        CoordinateReferenceSystem gridCRS = CRSUtility.getCRSFromGridCoordSystem(gcs);
+        CoordinateReferenceSystem featureCRS
+                = featureCollection.getSchema().getCoordinateReferenceSystem();
+
+        MathTransform gridToFeatureTransform = CRS.findMathTransform(
+                gridCRS,
+                featureCRS,
+                true);
+
+        AttributeDescriptor attributeDescriptor
+                = featureCollection.getSchema().getDescriptor(attributeName);
         if (attributeDescriptor == null) {
             throw new IllegalArgumentException(
                     "Attribute " + attributeName + " not found in FeatureCollection.");
@@ -101,10 +102,10 @@ public class FeatureCategoricalGridCoverage {
         boolean attributeComparable = Comparable.class.isAssignableFrom(
                 attributeDescriptor.getType().getBinding());
 
-        Map<Object, Map<Integer, Integer>> attributeToCategoricalCoverageMap = attributeComparable ?
-                // rely on Comparable to sort
-                new TreeMap<Object, Map<Integer, Integer>>() :
-                // use order from FeatureCollection.iterator();
+        Map<Object, Map<Integer, Integer>> attributeToCategoricalCoverageMap = attributeComparable
+                ? // rely on Comparable to sort
+                new TreeMap<Object, Map<Integer, Integer>>()
+                : // use order from FeatureCollection.iterator();
                 new LinkedHashMap<Object, Map<Integer, Integer>>();
         SortedSet<Integer> categorySet = new TreeSet<Integer>();
 
@@ -118,8 +119,8 @@ public class FeatureCategoricalGridCoverage {
 
                 if (attribute != null) {
 
-                    Map<Integer, Integer> categoricalCoverageMap =
-                            attributeToCategoricalCoverageMap.get(attribute);
+                    Map<Integer, Integer> categoricalCoverageMap
+                            = attributeToCategoricalCoverageMap.get(attribute);
                     if (categoricalCoverageMap == null) {
                         categoricalCoverageMap = new TreeMap<Integer, Integer>();
                         attributeToCategoricalCoverageMap.put(attribute, categoricalCoverageMap);
@@ -127,7 +128,7 @@ public class FeatureCategoricalGridCoverage {
 
                     BoundingBox featureBoundingBox = feature.getBounds();
 
-                    Geometry featureGeometry = (Geometry)feature.getDefaultGeometry();
+                    Geometry featureGeometry = (Geometry) feature.getDefaultGeometry();
 
                     try {
                         Range[] featureRanges = GridUtility.getXYRangesFromBoundingBox(
@@ -145,7 +146,7 @@ public class FeatureCategoricalGridCoverage {
 
                         categorySet.addAll(categoricalCoverageMap.keySet());
                     } catch (InvalidRangeException e) {
-                        /* this may happen if the feature doesn't intersect the grid */
+                        log.warn("The feature doesn't intersect the grid", e);
                     }
                 }
             }
@@ -160,7 +161,7 @@ public class FeatureCategoricalGridCoverage {
             headerRow.add("Category");
         }
         delimitedWriter.writeRow(null, headerRow);
-        
+
         headerRow.clear();
         headerRow.addAll(categorySet);
         headerRow.add("Sample Count");
@@ -182,7 +183,7 @@ public class FeatureCategoricalGridCoverage {
             // calculate and store fraction for each categorical type
             for (Integer category : categorySet) {
                 Integer count = categoricalCoverageMap.get(category);
-                float fraction = count == null ?  0 : (float) count / (float) total;
+                float fraction = count == null ? 0 : (float) count / (float) total;
                 rowValues.add(fraction);
             }
             rowValues.add(total);
@@ -196,17 +197,17 @@ public class FeatureCategoricalGridCoverage {
 
         private final GeometryFactory geometryFactory = new GeometryFactory();
         private final PreparedGeometry preparedGeometry;
-		private final MathTransform gridToFeatureTransform;
+        private final MathTransform gridToFeatureTransform;
         private final Map<Integer, Integer> categoryMap;
 
         private IndexToCoordinateBuilder coordinateBuilder;
 
         protected FeatureGridCellVisitor(
                 PreparedGeometry preparedGeometry,
-				MathTransform gridToFeatureTransform,
+                MathTransform gridToFeatureTransform,
                 Map<Integer, Integer> categoryMap) {
             this.preparedGeometry = preparedGeometry;
-			this.gridToFeatureTransform = gridToFeatureTransform;
+            this.gridToFeatureTransform = gridToFeatureTransform;
             this.categoryMap = categoryMap;
         }
 
@@ -217,18 +218,20 @@ public class FeatureCategoricalGridCoverage {
 
         @Override
         public void processGridCell(int xCellIndex, int yCellIndex, double value) {
-            Coordinate coordinate =
-                    coordinateBuilder.getCoordinate(xCellIndex, yCellIndex);
-			try {
-				JTS.transform(coordinate, coordinate, gridToFeatureTransform);
-			} catch (TransformException e) { }
+            Coordinate coordinate
+                    = coordinateBuilder.getCoordinate(xCellIndex, yCellIndex);
+            try {
+                JTS.transform(coordinate, coordinate, gridToFeatureTransform);
+            } catch (TransformException e) {
+                log.warn("Exception transforming grid to feature", e);
+            }
             if (preparedGeometry.contains(geometryFactory.createPoint(coordinate))) {
                 Integer key = (int) value;
                 Integer count = categoryMap.get(key);
-                count =  count == null ? 1 : count + 1;
+                count = count == null ? 1 : count + 1;
                 categoryMap.put(key, count);
             }
-            
+
         }
 
     }
@@ -253,8 +256,7 @@ public class FeatureCategoricalGridCoverage {
         public void writeRow(
                 String rowLabel,
                 Collection<? extends Object> rowValues)
-                throws IOException
-        {
+                throws IOException {
             lineSB.setLength(0);
             if (rowLabel != null) {
                 lineSB.append(rowLabel);

@@ -1,8 +1,7 @@
 package gov.usgs.cida.gdp.wps.parser;
 
+import com.vividsolutions.jts.geom.Geometry;
 import gov.usgs.cida.gdp.wps.util.GMLUtil;
-import org.geotools.xml.PullParser;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,10 +11,8 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
-
 import org.apache.commons.io.FileUtils;
 import org.geotools.feature.CollectionListener;
 import org.geotools.feature.FeatureCollection;
@@ -27,6 +24,7 @@ import org.geotools.feature.type.GeometryTypeImpl;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.xml.Configuration;
+import org.geotools.xml.PullParser;
 import org.opengis.feature.Feature;
 import org.opengis.feature.FeatureVisitor;
 import org.opengis.feature.simple.SimpleFeature;
@@ -42,8 +40,6 @@ import org.opengis.util.ProgressListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
-
-import com.vividsolutions.jts.geom.Geometry;
 
 /**
  *
@@ -105,6 +101,7 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 		try {
 			return GMLUtil.determineCollectionEnvelope(file);
 		} catch (IOException ex) {
+            LOGGER.debug("Error determining collecting from envelope, returning null", ex);
 			return null;
 		}
 	}
@@ -312,11 +309,11 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 				try {
 					findNext();
 				} catch (XMLStreamException e) {
-					LOGGER.debug("StreamingFeatureIterator.hasNext() XMLStreamException: " + e.getMessage());
+					LOGGER.debug("StreamingFeatureIterator.hasNext() XMLStreamException: " + e);
 				} catch (IOException e) {
-					LOGGER.debug("StreamingFeatureIterator.hasNext() IOException: " + e.getMessage());
+					LOGGER.debug("StreamingFeatureIterator.hasNext() IOException: " + e);
 				} catch (SAXException e) {
-					LOGGER.debug("StreamingFeatureIterator.hasNext() SAXException: " + e.getMessage());
+					LOGGER.debug("StreamingFeatureIterator.hasNext() SAXException: " + e);
 				}
 			}
 			return next != null;
@@ -342,7 +339,7 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 				try {
 					fileInputStream.close();
 				} catch (IOException e) {
-					LOGGER.debug("StreamingFeatureIterator.close() IOException: " + e.getMessage());
+					LOGGER.debug("StreamingFeatureIterator.close() IOException: " + e);
 				}
 				fileInputStream = null;
 			}
@@ -351,7 +348,7 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 				try {
 					bufferedInputStream.close();
 				} catch (IOException e) {
-					LOGGER.debug("StreamingFeatureIterator.close() IOException: " + e.getMessage());
+					LOGGER.debug("StreamingFeatureIterator.close() IOException: " + e);
 				}
 				bufferedInputStream = null;
 			}
@@ -360,7 +357,7 @@ public class GMLStreamingFeatureCollection implements FeatureCollection {
 				try {
 					parser.close();
 				} catch (XMLStreamException e) {
-					LOGGER.debug("StreamingFeatureIterator.close() XMLStreamException: " + e.getMessage());
+					LOGGER.debug("StreamingFeatureIterator.close() XMLStreamException: " + e);
 				}
 				parser = null;
 			}

@@ -1,6 +1,6 @@
 package gov.usgs.cida.n52.wps.config;
 
-import static gov.usgs.cida.gdp.constants.AppConstant.*;
+import static gov.usgs.cida.gdp.constants.AppConstant.WPS_CONFIG_LOCATION;
 import java.io.IOException;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  * @author Jordan Walker <jiwalker@usgs.gov>
  */
 public class ForceConfigInitializeListener implements ServletContextListener {
-    
+
     private final static Logger LOGGER = LoggerFactory.getLogger(ForceConfigInitializeListener.class);
 
     @Override
@@ -26,11 +26,9 @@ public class ForceConfigInitializeListener implements ServletContextListener {
         }
         try {
             WPSConfig.forceInitialization(configLocation);
-        }
-        catch (XmlException ex) {
+        } catch (XmlException ex) {
             LOGGER.error("Could not initialize configuration", ex);
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             LOGGER.error("Input/Output exception initializing configuration", ex);
         }
     }

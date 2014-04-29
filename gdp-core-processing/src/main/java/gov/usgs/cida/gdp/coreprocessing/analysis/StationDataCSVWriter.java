@@ -32,6 +32,8 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ucar.nc2.VariableSimpleIF;
 import ucar.nc2.ft.PointFeature;
 import ucar.nc2.ft.PointFeatureIterator;
@@ -46,6 +48,8 @@ import ucar.unidata.geoloc.Station;
  * @author tkunicki
  */
 public class StationDataCSVWriter {
+
+    private final static Logger log = LoggerFactory.getLogger(StationDataCSVWriter.class);
 
     public final static String DATE_FORMAT = "yyyy-MM-dd";
 
@@ -67,7 +71,9 @@ public class StationDataCSVWriter {
         Preconditions.checkNotNull(dateRange, "dateRange may not be null");
         Preconditions.checkNotNull(writer, "writer may not be null");
 
-        if (delimitter == null || delimitter.length() == 0) { delimitter = ","; }
+        if (delimitter == null || delimitter.length() == 0) {
+            delimitter = ",";
+        }
 
         TimeZone timeZone = TimeZone.getTimeZone("UTC");
 
@@ -80,10 +86,10 @@ public class StationDataCSVWriter {
         LatLonRect featureCollectionLLR = GeoToolsNetCDFUtility.getLatLonRectFromEnvelope(
                 featureCollection.getBounds(),
                 DefaultGeographicCRS.WGS84);
-		LatLonRect stationLLR = stationTimeSeriesFeatureCollection.getBoundingBox();
-		if (stationLLR.containedIn(featureCollectionLLR)) {
-			throw new RuntimeException("feature bounds (" + featureCollectionLLR + ") not contained in station time series dataset (" + stationLLR + ")");
-		}
+        LatLonRect stationLLR = stationTimeSeriesFeatureCollection.getBoundingBox();
+        if (stationLLR.containedIn(featureCollectionLLR)) {
+            throw new RuntimeException("feature bounds (" + featureCollectionLLR + ") not contained in station time series dataset (" + stationLLR + ")");
+        }
 
         featureCollection = new ReprojectFeatureResults(
                 featureCollection,
@@ -97,15 +103,15 @@ public class StationDataCSVWriter {
             FeatureIterator<SimpleFeature> featureIterator = featureCollection.features();
             try {
                 while (featureIterator.hasNext() && !stationContained) {
-                    stationContained = ((Geometry)featureIterator.next().getDefaultGeometry()).contains(stationGeometry);
+                    stationContained = ((Geometry) featureIterator.next().getDefaultGeometry()).contains(stationGeometry);
                 }
             } finally {
                 featureCollection.close(featureIterator);
             }
             if (stationContained) {
                 StationTimeSeriesFeature stationTimeSeriesFeature = stationTimeSeriesFeatureCollection.getStationFeature(station).subset(dateRange);
-                PointFeatureCache pointFeatureCache =
-                        new PointFeatureCache(stationTimeSeriesFeature, variableList);
+                PointFeatureCache pointFeatureCache
+                        = new PointFeatureCache(stationTimeSeriesFeature, variableList);
                 if (pointFeatureCache.getFeatureCount() > 0) {
                     pointFeatureCacheList.add(pointFeatureCache);
                 } else {
@@ -146,7 +152,7 @@ public class StationDataCSVWriter {
                         String name = variable.getShortName();
                         String units = variable.getUnitsString();
                         lineBuffer.append(delimitter).append(name);
-                        if( units !=null && units.length() > 0) {
+                        if (units != null && units.length() > 0) {
                             lineBuffer.append(" (").append(units).append(")");
                         }
                     }
@@ -158,7 +164,7 @@ public class StationDataCSVWriter {
                         String name = variable.getShortName();
                         String units = variable.getUnitsString();
                         lineBuffer.append(delimitter).append(name);
-                        if( units !=null && units.length() > 0) {
+                        if (units != null && units.length() > 0) {
                             lineBuffer.append(" (").append(units).append(")");
                         }
                     }
@@ -182,10 +188,10 @@ public class StationDataCSVWriter {
                     }
                     for (int variableIndex = 0; variableIndex < variableCount; ++variableIndex) {
                         for (int stationIndex = 0; stationIndex < stationCount; ++stationIndex) {
-                            float variableValue = rowData[stationIndex] != null ?
-                                rowData[stationIndex][variableIndex] :
-                                Float.NaN;
-                                lineBuffer.append(delimitter).append(variableValue);
+                            float variableValue = rowData[stationIndex] != null
+                                    ? rowData[stationIndex][variableIndex]
+                                    : Float.NaN;
+                            lineBuffer.append(delimitter).append(variableValue);
                         }
                     }
                     writer.write(lineBuffer.toString());
@@ -202,10 +208,10 @@ public class StationDataCSVWriter {
                     }
                     for (int stationIndex = 0; stationIndex < stationCount; ++stationIndex) {
                         for (int variableIndex = 0; variableIndex < variableCount; ++variableIndex) {
-                            float variableValue = rowData[stationIndex] != null ?
-                                rowData[stationIndex][variableIndex] :
-                                Float.NaN;
-                                lineBuffer.append(delimitter).append(variableValue);
+                            float variableValue = rowData[stationIndex] != null
+                                    ? rowData[stationIndex][variableIndex]
+                                    : Float.NaN;
+                            lineBuffer.append(delimitter).append(variableValue);
                         }
                     }
                     writer.write(lineBuffer.toString());
@@ -214,7 +220,7 @@ public class StationDataCSVWriter {
                 }
             }
         } finally {
-            if( pointFeatureCacheList != null) {
+            if (pointFeatureCacheList != null) {
                 for (PointFeatureCache cache : pointFeatureCacheList) {
                     if (cache != null) {
                         cache.finish();
@@ -253,8 +259,7 @@ public class StationDataCSVWriter {
                 try {
                     pointFeatureIterator = stationTimeSeriesFeature.getPointFeatureIterator(-1);
                 } catch (IOException e) {
-                    // cdmremote protocol implementation will throw exception if request
-                    // results in empty set...  Ignore for now...
+                    log.warn("cdmremote protocol implementation will throw exception if request results in empty set. Ignore for now.", e);
                 }
 
                 if (pointFeatureIterator != null) {
@@ -266,7 +271,7 @@ public class StationDataCSVWriter {
                         cacheOutputStream = new DataOutputStream(
                                 new BufferedOutputStream(
                                         new FileOutputStream(cacheFile), BUFFER_SIZE));
-                        while(pointFeatureIterator.hasNext()) {
+                        while (pointFeatureIterator.hasNext()) {
                             PointFeature pf = pointFeatureIterator.next();
                             cacheOutputStream.writeLong(pf.getNominalTimeAsDate().getTime());
                             for (VariableSimpleIF variable : variables) {
@@ -277,20 +282,28 @@ public class StationDataCSVWriter {
                         }
                     } finally {
                         if (cacheOutputStream != null) {
-                            try { cacheOutputStream.close(); } catch (IOException e) { }
+                            try {
+                                cacheOutputStream.close();
+                            } catch (IOException e) {
+                                log.warn("Failed to close cacheOutputStream", e);
+                            }
                         }
                     }
 
                     try {
                         if (featureCount > 0) {
                             cacheInputStream = new DataInputStream(
-                                new BufferedInputStream(
-                                        new FileInputStream(cacheFile), BUFFER_SIZE));
+                                    new BufferedInputStream(
+                                            new FileInputStream(cacheFile), BUFFER_SIZE));
                             nextTimeMillis = cacheInputStream.readLong();
                         }
                     } catch (IOException e) {
                         if (cacheInputStream != null) {
-                            try { cacheInputStream.close(); } catch (IOException ee) { }
+                            try {
+                                cacheInputStream.close();
+                            } catch (IOException ee) {
+                                log.warn("Failed to close cacheInputStream", ee);
+                            }
                         }
                         throw e;
                     }
@@ -321,28 +334,35 @@ public class StationDataCSVWriter {
         public float[] getFeatureForDate(Date date) throws IOException {
             float[] variableData = null;
             if (nextTimeMillis > 0) {
-                 long requesteTimedMillis = date.getTime();
-                 long delta = nextTimeMillis - requesteTimedMillis;
-                 if(delta < 0) { delta = -delta; }
-                 if (delta < MILLIS_PER_DAY) {
-                     variableData = new float[variableCount];
-                     try {
-                         for (int variableIndex = 0; variableIndex < variableCount; ++variableIndex) {
+                long requesteTimedMillis = date.getTime();
+                long delta = nextTimeMillis - requesteTimedMillis;
+                if (delta < 0) {
+                    delta = -delta;
+                }
+                if (delta < MILLIS_PER_DAY) {
+                    variableData = new float[variableCount];
+                    try {
+                        for (int variableIndex = 0; variableIndex < variableCount; ++variableIndex) {
                             variableData[variableIndex] = cacheInputStream.readFloat();
-                         }
-                         nextTimeMillis = cacheInputStream.readLong();
-                     } catch (EOFException e) {
-                         variableData = null;
-                         nextTimeMillis = -1;
-                     }
-                 }
+                        }
+                        nextTimeMillis = cacheInputStream.readLong();
+                    } catch (EOFException e) {
+                        log.warn("expected data points per variable, found EOF", e);
+                        variableData = null;
+                        nextTimeMillis = -1;
+                    }
+                }
             }
             return variableData;
         }
 
         public void finish() {
             if (cacheInputStream != null) {
-                try {  cacheInputStream.close(); } catch (IOException e) { }
+                try {
+                    cacheInputStream.close();
+                } catch (IOException e) {
+                    log.warn("failed to close cacheInputStream", e);
+                }
                 cacheInputStream = null;
             }
             if (cacheFile != null) {
@@ -352,5 +372,5 @@ public class StationDataCSVWriter {
             nextTimeMillis = -1;
         }
     }
-    
+
 }

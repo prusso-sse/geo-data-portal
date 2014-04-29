@@ -33,17 +33,23 @@
 
 package ucar.nc2.util.net;
 
-import net.jcip.annotations.NotThreadSafe;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.auth.CredentialsProvider;
-import org.apache.commons.httpclient.params.*;
-import org.apache.commons.httpclient.protocol.Protocol;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
+import net.jcip.annotations.NotThreadSafe;
+import org.apache.commons.httpclient.Cookie;
+import org.apache.commons.httpclient.Credentials;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpState;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.auth.CredentialsProvider;
+import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
+import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.apache.commons.httpclient.protocol.Protocol;
 
 @NotThreadSafe
 public class HTTPSession
@@ -638,13 +644,14 @@ defineCredentialsProvider(HTTPAuthScheme scheme, String url, CredentialsProvider
 {
     // Add/remove entry to AuthStore
     try {
-        if(provider == null) {//remove
-            HTTPAuthStore.remove(new HTTPAuthStore.Entry(scheme,url,provider));
+        final HTTPAuthStore.Entry entry = new HTTPAuthStore.Entry(scheme,url,provider);
+        if(provider == null) { //remove
+            HTTPAuthStore.remove(entry);
         } else { // add
-            HTTPAuthStore.insert(new HTTPAuthStore.Entry(scheme,url,provider));
+            HTTPAuthStore.insert(entry);
         }
     } catch (HTTPException he) {
-        log.error("HTTPSession.setCredentialsProvider failed");
+        log.error("HTTPSession.setCredentialsProvider failed", he);
     }
 }
 

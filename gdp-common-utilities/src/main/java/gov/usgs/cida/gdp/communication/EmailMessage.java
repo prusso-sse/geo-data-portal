@@ -1,6 +1,8 @@
 package gov.usgs.cida.gdp.communication;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -17,7 +19,7 @@ public class EmailMessage {
     private String to;
     private List<String> cc;
     private List<String> bcc;
-    private InternetAddress[] replyTo;
+    private List<InternetAddress> replyTo;
     private String subject;
     private String content;
 
@@ -109,7 +111,7 @@ public class EmailMessage {
         return result.toString().substring(0, result.toString().length() - 1);
     }
 
-	public String getCcToString() {
+    public String getCcToString() {
         if (getCc().isEmpty()) {
             return "";
         }
@@ -124,16 +126,25 @@ public class EmailMessage {
     public void setBcc(List<String> bcc) {
         this.bcc = bcc;
     }
-    
+
     public void send() throws AddressException, MessagingException {
         EmailHandler.sendMessage(this);
     }
 
     public InternetAddress[] getReplyTo() {
-        return this.replyTo;
+        return replyTo != null ? replyTo.toArray(new InternetAddress[]{}) : null;
     }
-    
-    public void setReplyTo(InternetAddress[] replyTo) {
-        this.replyTo = replyTo;
+
+    public void addReplyTo(InternetAddress... internetAddresses) {
+        if (internetAddresses != null && internetAddresses.length > 0) {
+            for (InternetAddress internetAddress : internetAddresses) {
+                if (internetAddress != null ) {
+                    if (replyTo == null) {
+                        replyTo = new ArrayList<InternetAddress>();
+                    }
+                    replyTo.add(internetAddress);
+                }
+            }
+        }
     }
 }

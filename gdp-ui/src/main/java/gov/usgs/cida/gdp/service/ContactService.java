@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -49,11 +48,11 @@ public class ContactService extends HttpServlet {
             // set the from and reply to address if there is one.
             try {
                 msg.setFrom(email);
-                msg.setReplyTo(new InternetAddress[]{new InternetAddress(email)});
+                msg.addReplyTo(new InternetAddress(email));
             } catch (AddressException ex) {
                 try {
                     log.error(email + " could not be parsed as a valid reply-to email address. Setting reply-to to " + DEFAULT_GDP_ADDRESS, ex);
-                    msg.setReplyTo(new InternetAddress[]{new InternetAddress(DEFAULT_GDP_ADDRESS)});
+                    msg.addReplyTo(new InternetAddress(DEFAULT_GDP_ADDRESS));
                 } catch (AddressException ex1) {
                     log.error("Could not properly set e-mail reply-to field.", ex1);
                 }
