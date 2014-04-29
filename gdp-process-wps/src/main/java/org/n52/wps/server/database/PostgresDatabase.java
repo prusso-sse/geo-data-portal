@@ -140,7 +140,6 @@ public class PostgresDatabase extends AbstractDatabase {
                 LOGGER.info("Table RESULTS does not yet exist.");
                 Statement st = connection.createStatement();
                 st.executeUpdate(CREATE_RESULTS_TABLE_PSQL);
-                connection.commit();
             }
         }
     }
