@@ -234,7 +234,7 @@ public class PostgresDatabase extends AbstractDatabase {
                 if (null == rs || !rs.next()) {
                     LOGGER.warn("No response found for request id " + id);
                 } else {
-                    result = rs.getAsciiStream(SELECT_COLUMN_RESPONSE);
+                    result = rs.getAsciiStream(1);
                 }
             }
         } catch (SQLException ex) {
@@ -259,6 +259,24 @@ public class PostgresDatabase extends AbstractDatabase {
             }
         }
         return result;
+    }
+
+    @Override
+    public String getMimeTypeForStoreResponse(String id) {
+        String mimeType = null;
+        try (Connection connection = getConnection(); PreparedStatement mySelectSQL = connection.prepareStatement(selectionString)) {
+            mySelectSQL.setString(SELECT_COLUMN_RESPONSE, id);
+            try (ResultSet rs = mySelectSQL.executeQuery()) {
+                if (null == rs || !rs.next()) {
+                    LOGGER.warn("No response found for request id " + id);
+                } else {
+                    mimeType = rs.getString(2);
+                }
+            }
+        } catch (SQLException ex) {
+            LOGGER.error("Could look up response in database", ex);
+        }
+        return mimeType;
     }
 
     @Override
