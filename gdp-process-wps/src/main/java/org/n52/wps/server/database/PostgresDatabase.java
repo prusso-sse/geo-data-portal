@@ -57,6 +57,7 @@ public class PostgresDatabase extends AbstractDatabase {
     private static final long DEFAULT_DATABASE_WIPE_PERIOD = 1000 * 60 * 60;
     private static final long DEFAULT_DATABASE_WIPE_THRESHOLD = 1000 * 60 * 60 * 24 * 7;
     private static final int DATA_BUFFER_SIZE = 8192;
+    private static final String FILE_URI_PREFIX = "file://";
     private static final String SUFFIX_GZIP = "gz";
     private static final String DEFAULT_BASE_DIRECTORY
             = Joiner.on(File.separator).join(System.getProperty("java.io.tmpdir", "."), "Database", "Results");
@@ -303,15 +304,12 @@ public class PostgresDatabase extends AbstractDatabase {
      * @throws IOException
      */
     private BufferedInputStream writeDataToDiskWithGZIP(String filename, InputStream stream) throws Exception {
-        Files.createDirectories(BASE_DIRECTORY);
-        Path filePath = Paths.get(BASE_DIRECTORY.toString(), Joiner.on(".").join(filename, SUFFIX_GZIP));
-        filePath = Files.createFile(filePath);
+        Path filePath = Files.createFile(BASE_DIRECTORY.resolve(Joiner.on(".").join(filename, SUFFIX_GZIP)));
         OutputStream outputStream = new GZIPOutputStream(Files.newOutputStream(filePath));
         IOUtils.copy(stream, outputStream);
         IOUtils.closeQuietly(outputStream);
-        byte[] filePathByteArray = filePath.toUri().toString().getBytes();
+        byte[] filePathByteArray = filePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "").getBytes();
         return new BufferedInputStream(new ByteArrayInputStream(filePathByteArray));
-
     }
 
     private interface ConnectionHandler {
