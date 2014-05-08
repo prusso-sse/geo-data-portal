@@ -225,38 +225,37 @@ public class PostgresDatabase extends AbstractDatabase {
     @Override
     public InputStream lookupResponse(String id) {
         InputStream result = null;
-        if (null == id) {
-            LOGGER.warn("tried to look up response for null id, returned null");
-        }
-        try (Connection connection = getConnection(); PreparedStatement mySelectSQL = connection.prepareStatement(selectionString)) {
-            mySelectSQL.setString(SELECT_COLUMN_RESPONSE, id);
-            try (ResultSet rs = mySelectSQL.executeQuery()) {
-                if (null == rs || !rs.next()) {
-                    LOGGER.warn("No response found for request id " + id);
-                } else {
-                    result = rs.getAsciiStream(1);
-                }
-            }
-        } catch (SQLException ex) {
-            LOGGER.error("Could look up response in database", ex);
-        }
-
-        if (null != result) {
-            if (id.toLowerCase().contains("output") && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
-                LOGGER.debug("ID {} is output and saved to disk instead of database");
-                try {
-                    String outputFileLocation = IOUtils.toString(result);
-                    if (Files.exists(Paths.get(outputFileLocation))) {
-                        try (FileInputStream fis = new FileInputStream(outputFileLocation)) {
-                            result = outputFileLocation.endsWith(SUFFIX_GZIP) ? new GZIPInputStream(fis) : fis;
-                        }
+        if (null != id) {
+            try (Connection connection = getConnection(); PreparedStatement mySelectSQL = connection.prepareStatement(selectionString)) {
+                mySelectSQL.setString(SELECT_COLUMN_RESPONSE, id);
+                try (ResultSet rs = mySelectSQL.executeQuery()) {
+                    if (null == rs || !rs.next()) {
+                        LOGGER.warn("No response found for request id " + id);
+                    } else {
+                        result = rs.getAsciiStream(1);
                     }
-                } catch (FileNotFoundException ex) {
-                    LOGGER.warn("Response not found on disk for id " + id, ex);
-                } catch (IOException ex) {
-                    LOGGER.warn("Error processing response for id " + id, ex);
+                }
+            } catch (SQLException ex) {
+                LOGGER.error("Could look up response in database", ex);
+            }
+
+            if (null != result) {
+                if (id.toLowerCase().contains("output") && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
+                    LOGGER.debug("ID {} is output and saved to disk instead of database");
+                    try {
+                        String outputFileLocation = IOUtils.toString(result);
+                        if (Files.exists(Paths.get(outputFileLocation))) {
+                            result = new GZIPInputStream(new FileInputStream(outputFileLocation));
+                        }
+                    } catch (FileNotFoundException ex) {
+                        LOGGER.warn("Response not found on disk for id " + id, ex);
+                    } catch (IOException ex) {
+                        LOGGER.warn("Error processing response for id " + id, ex);
+                    }
                 }
             }
+        } else {
+            LOGGER.warn("tried to look up response for null id, returned null");
         }
         return result;
     }
