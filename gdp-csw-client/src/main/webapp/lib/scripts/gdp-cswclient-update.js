@@ -35,7 +35,7 @@ CSWClient = function(cswhost, host) {
     try {
         this.defaultschema = this.defaults_xml.selectSingleNode("/defaults/outputschema/text()").nodeValue;
     } catch (ex) {
-        this.defaultschema = this.defaults_xml.evaluate("/defaults/maxrecords/text()", this.defaults_xml).iterateNext().data;
+        this.defaultschema = this.defaults_xml.evaluate("/defaults/outputschema/text()", this.defaults_xml).iterateNext().data;
     }
     
     this.capabilitiesMap = {};
