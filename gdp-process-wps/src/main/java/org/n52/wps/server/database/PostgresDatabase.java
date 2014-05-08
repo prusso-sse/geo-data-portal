@@ -236,16 +236,18 @@ public class PostgresDatabase extends AbstractDatabase {
                     }
                 }
             } catch (SQLException ex) {
-                LOGGER.error("Could look up response in database", ex);
+                LOGGER.error("Could not look up response in database", ex);
             }
 
             if (null != result) {
                 if (id.toLowerCase().contains("output") && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
-                    LOGGER.debug("ID {} is output and saved to disk instead of database");
                     try {
                         String outputFileLocation = IOUtils.toString(result);
+                        LOGGER.info("ID {} is output and saved to disk instead of database. Path = " + outputFileLocation);
                         if (Files.exists(Paths.get(outputFileLocation))) {
                             result = new GZIPInputStream(new FileInputStream(outputFileLocation));
+                        } else {
+                            LOGGER.warn("Response not found on disk for id " + id + " at " + outputFileLocation);
                         }
                     } catch (FileNotFoundException ex) {
                         LOGGER.warn("Response not found on disk for id " + id, ex);
@@ -253,6 +255,8 @@ public class PostgresDatabase extends AbstractDatabase {
                         LOGGER.warn("Error processing response for id " + id, ex);
                     }
                 }
+            } else {
+                LOGGER.warn("response found but returned null");
             }
         } else {
             LOGGER.warn("tried to look up response for null id, returned null");
@@ -307,6 +311,7 @@ public class PostgresDatabase extends AbstractDatabase {
         IOUtils.closeQuietly(outputStream);
         byte[] filePathByteArray = filePath.toUri().toString().getBytes();
         return new BufferedInputStream(new ByteArrayInputStream(filePathByteArray));
+
     }
 
     private interface ConnectionHandler {
