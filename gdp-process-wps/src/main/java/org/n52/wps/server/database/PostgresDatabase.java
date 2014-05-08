@@ -8,12 +8,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -188,7 +188,7 @@ public class PostgresDatabase extends AbstractDatabase {
 
         if (isOutput && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
             try {
-                dataStream = writeDataToDisk(id, stream);
+                dataStream = writeDataToDiskWithGZIP(id, stream);
             } catch (Exception ex) {
                 LOGGER.error("Failed to write output data to disk", ex);
             }
@@ -225,38 +225,37 @@ public class PostgresDatabase extends AbstractDatabase {
     @Override
     public InputStream lookupResponse(String id) {
         InputStream result = null;
-        if (null == id) {
-            LOGGER.warn("tried to look up response for null id, returned null");
-        }
-        try (Connection connection = getConnection(); PreparedStatement mySelectSQL = connection.prepareStatement(selectionString)) {
-            mySelectSQL.setString(SELECT_COLUMN_RESPONSE, id);
-            try (ResultSet rs = mySelectSQL.executeQuery()) {
-                if (null == rs || !rs.next()) {
-                    LOGGER.warn("No response found for request id " + id);
-                } else {
-                    result = rs.getAsciiStream(1);
-                }
-            }
-        } catch (SQLException ex) {
-            LOGGER.error("Could look up response in database", ex);
-        }
-        
-        if (null != result) {
-            if (id.toLowerCase().contains("output") && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
-                LOGGER.debug("ID {} is output and saved to disk instead of database");
-                try {
-                    String outputFileLocation = IOUtils.toString(result);
-                    if (Files.exists(Paths.get(outputFileLocation))) {
-                        try (FileInputStream fis = new FileInputStream(outputFileLocation)) {
-                            result = outputFileLocation.endsWith(SUFFIX_GZIP) ? new GZIPInputStream(fis) : fis;
-                        }
+        if (null != id) {
+            try (Connection connection = getConnection(); PreparedStatement mySelectSQL = connection.prepareStatement(selectionString)) {
+                mySelectSQL.setString(SELECT_COLUMN_RESPONSE, id);
+                try (ResultSet rs = mySelectSQL.executeQuery()) {
+                    if (null == rs || !rs.next()) {
+                        LOGGER.warn("No response found for request id " + id);
+                    } else {
+                        result = rs.getAsciiStream(1);
                     }
-                } catch (FileNotFoundException ex) {
-                    LOGGER.warn("Response not found on disk for id " + id, ex);
-                } catch (IOException ex) {
-                    LOGGER.warn("Error processing response for id " + id, ex);
+                }
+            } catch (SQLException ex) {
+                LOGGER.error("Could look up response in database", ex);
+            }
+
+            if (null != result) {
+                if (id.toLowerCase().contains("output") && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
+                    LOGGER.debug("ID {} is output and saved to disk instead of database");
+                    try {
+                        String outputFileLocation = IOUtils.toString(result);
+                        if (Files.exists(Paths.get(outputFileLocation))) {
+                            result = new GZIPInputStream(new FileInputStream(outputFileLocation));
+                        }
+                    } catch (FileNotFoundException ex) {
+                        LOGGER.warn("Response not found on disk for id " + id, ex);
+                    } catch (IOException ex) {
+                        LOGGER.warn("Error processing response for id " + id, ex);
+                    }
                 }
             }
+        } else {
+            LOGGER.warn("tried to look up response for null id, returned null");
         }
         return result;
     }
@@ -274,7 +273,7 @@ public class PostgresDatabase extends AbstractDatabase {
                 }
             }
         } catch (SQLException ex) {
-            LOGGER.error("Could look up response in database", ex);
+            LOGGER.error("Could not look up response in database", ex);
         }
         return mimeType;
     }
@@ -294,17 +293,18 @@ public class PostgresDatabase extends AbstractDatabase {
     }
 
     /**
-     *
-     * @param id
-     * @param stream
+     * @param filename base filename
+     * @param stream data stream to write to disk, compressed using gzip
      * @return a stream of the file URI pointing where the data was written
      * @throws IOException
      */
-    private BufferedInputStream writeDataToDisk(String id, InputStream stream) throws Exception {
+    private BufferedInputStream writeDataToDiskWithGZIP(String filename, InputStream stream) throws Exception {
         Files.createDirectories(BASE_DIRECTORY);
-        Path filePath = Paths.get(BASE_DIRECTORY.toString(), id);
+        Path filePath = Paths.get(BASE_DIRECTORY.toString(), Joiner.on(".").join(filename, SUFFIX_GZIP));
         filePath = Files.createFile(filePath);
-        Files.copy(stream, filePath, StandardCopyOption.REPLACE_EXISTING);
+        OutputStream outputStream = new GZIPOutputStream(Files.newOutputStream(filePath));
+        IOUtils.copy(stream, outputStream);
+        IOUtils.closeQuietly(outputStream);
         byte[] filePathByteArray = filePath.toUri().toString().getBytes();
         return new BufferedInputStream(new ByteArrayInputStream(filePathByteArray));
     }
