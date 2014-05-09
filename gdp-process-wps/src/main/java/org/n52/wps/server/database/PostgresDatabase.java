@@ -139,7 +139,7 @@ public class PostgresDatabase extends AbstractDatabase {
     private void initializeResultsTable() throws SQLException {
         try (Connection connection = getConnection(); ResultSet rs = connection.getMetaData().getTables(null, null, "results", new String[]{"TABLE"})) {
             if (!rs.next()) {
-                LOGGER.info("Table RESULTS does not yet exist.");
+                LOGGER.debug("Table RESULTS does not yet exist, creating it.");
                 Statement st = connection.createStatement();
                 st.executeUpdate(CREATE_RESULTS_TABLE_PSQL);
             }
@@ -244,7 +244,7 @@ public class PostgresDatabase extends AbstractDatabase {
                 if (id.toLowerCase().contains("output") && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
                     try {
                         String outputFileLocation = IOUtils.toString(result);
-                        LOGGER.info("ID {} is output and saved to disk instead of database. Path = " + outputFileLocation);
+                        LOGGER.debug("ID {} is output and saved to disk instead of database. Path = " + outputFileLocation);
                         if (Files.exists(Paths.get(outputFileLocation))) {
                             result = new GZIPInputStream(new FileInputStream(outputFileLocation));
                         } else {
