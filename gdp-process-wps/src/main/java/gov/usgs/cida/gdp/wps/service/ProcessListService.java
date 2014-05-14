@@ -47,7 +47,7 @@ public class ProcessListService extends HttpServlet {
             resp.getWriter().write(json);
         } catch (SQLException | JAXBException ex) {
             LOGGER.error("Failed to retrieve or unmarshall data", ex);
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to retrieve or unmarshall data.");
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to retrieve or unmarshall data: " + ex);
         }
     }
 

@@ -60,13 +60,12 @@ public class ProcessReportService extends HttpServlet {
                     report.addAlgorithm(getIdentifier(xml)).addDataSet(dataSetURI);
                 }
                 String json = new Gson().toJson(report);
-                json = json.replaceFirst("\\{", "{\"dateExcecuted\" : 5,");
                 resp.setContentType("application/json");
                 resp.getWriter().write(json);
             }
         } catch (SQLException | JAXBException ex) {
             LOGGER.error("Failed to retrieve or unmarshall data", ex);
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to retrieve or unmarshall data.");
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to retrieve or unmarshall data: " + ex);
         }
     }
 
