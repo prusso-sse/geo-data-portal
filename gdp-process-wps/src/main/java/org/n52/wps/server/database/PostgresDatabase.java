@@ -54,8 +54,9 @@ public class PostgresDatabase extends AbstractDatabase {
     private static final String KEY_DATABASE_WIPE_PERIOD = "wipe.period";
     private static final String KEY_DATABASE_WIPE_THRESHOLD = "wipe.threshold";
     private static final boolean DEFAULT_DATABASE_WIPE_ENABLED = true;
-    private static final long DEFAULT_DATABASE_WIPE_PERIOD = 1000 * 60 * 60;
-    private static final long DEFAULT_DATABASE_WIPE_THRESHOLD = 1000 * 60 * 60 * 24 * 7;
+    private static final long DEFAULT_DATABASE_WIPE_PERIOD = 1000 * 60 * 60; // default to running once an hour
+    private static final long DEFAULT_DATABASE_WIPE_THRESHOLD = 1000 * 60 * 60 * 24 * 7; // default to wipe things over a week old
+
     private static final int DATA_BUFFER_SIZE = 8192;
     private static final String FILE_URI_PREFIX = "file://";
     private static final String SUFFIX_GZIP = "gz";
@@ -64,6 +65,10 @@ public class PostgresDatabase extends AbstractDatabase {
     private static final ServerDocument.Server server = WPSConfig.getInstance().getWPSConfig().getServer();
     private static final String baseResultURL = String.format("http://%s:%s/%s/RetrieveResultServlet?id=",
             server.getHostname(), server.getHostport(), server.getWebappPath());
+
+    private static final int SELECTION_STRING_REQUEST_ID_PARAM_INDEX = 1;
+    private static final int SELECTION_STRING_RESPONSE_COLUMN_INDEX = 1;
+    private static final int SELECTION_STRING_RESPONSE_MIMETYPE_COLUMN_INDEX = 2;
 
     private static String connectionURL;
     private static Path BASE_DIRECTORY;
@@ -101,9 +106,7 @@ public class PostgresDatabase extends AbstractDatabase {
         String baseDirectoryPath = propertyUtil.extractString(KEY_DATABASE_PATH, DEFAULT_BASE_DIRECTORY);
         BASE_DIRECTORY = Paths.get(baseDirectoryPath);
         LOGGER.info("Using \"{}\" as base directory for results database", baseDirectoryPath);
-        if (!Files.isDirectory(BASE_DIRECTORY)) {
-            Files.createDirectories(BASE_DIRECTORY);
-        }
+        Files.createDirectories(BASE_DIRECTORY);
     }
 
     private void initializeDatabaseWiper(PropertyUtil propertyUtil) {
@@ -195,13 +198,13 @@ public class PostgresDatabase extends AbstractDatabase {
             }
         }
 
-        try (Connection connection = getConnection(); PreparedStatement myInsertSQL = connection.prepareStatement(insertionString)) {
-            myInsertSQL.setString(INSERT_COLUMN_REQUEST_ID, id);
-            myInsertSQL.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
-            myInsertSQL.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
-            myInsertSQL.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
-            myInsertSQL.setAsciiStream(INSERT_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
-            myInsertSQL.executeUpdate();
+        try (Connection connection = getConnection(); PreparedStatement insertStatement = connection.prepareStatement(insertionString)) {
+            insertStatement.setString(INSERT_COLUMN_REQUEST_ID, id);
+            insertStatement.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
+            insertStatement.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
+            insertStatement.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
+            insertStatement.setAsciiStream(INSERT_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
+            insertStatement.executeUpdate();
             LOGGER.debug("inserted request {} into database", id);
         } catch (SQLException ex) {
             LOGGER.error("Failed to insert result data into the database", ex);
@@ -214,10 +217,10 @@ public class PostgresDatabase extends AbstractDatabase {
     public void updateResponse(String id, InputStream stream) {
         BufferedInputStream dataStream = new BufferedInputStream(stream, DATA_BUFFER_SIZE);
 
-        try (Connection connection = getConnection(); PreparedStatement myUpdateSQL = connection.prepareStatement(updateString)) {
-            myUpdateSQL.setString(UPDATE_COLUMN_REQUEST_ID, id);
-            myUpdateSQL.setAsciiStream(UPDATE_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
-            myUpdateSQL.executeUpdate();
+        try (Connection connection = getConnection(); PreparedStatement updateStatement = connection.prepareStatement(updateString)) {
+            updateStatement.setString(UPDATE_COLUMN_REQUEST_ID, id);
+            updateStatement.setAsciiStream(UPDATE_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
+            updateStatement.executeUpdate();
         } catch (SQLException ex) {
             LOGGER.error("Could not update response in database", ex);
         }
@@ -227,13 +230,13 @@ public class PostgresDatabase extends AbstractDatabase {
     public InputStream lookupResponse(String id) {
         InputStream result = null;
         if (null != id) {
-            try (Connection connection = getConnection(); PreparedStatement mySelectSQL = connection.prepareStatement(selectionString)) {
-                mySelectSQL.setString(SELECT_COLUMN_RESPONSE, id);
-                try (ResultSet rs = mySelectSQL.executeQuery()) {
+            try (Connection connection = getConnection(); PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
+                selectStatement.setString(SELECTION_STRING_REQUEST_ID_PARAM_INDEX, id);
+                try (ResultSet rs = selectStatement.executeQuery()) {
                     if (null == rs || !rs.next()) {
                         LOGGER.warn("No response found for request id " + id);
                     } else {
-                        result = rs.getAsciiStream(1);
+                        result = rs.getAsciiStream(SELECTION_STRING_RESPONSE_COLUMN_INDEX);
                     }
                 }
             } catch (SQLException ex) {
@@ -268,13 +271,13 @@ public class PostgresDatabase extends AbstractDatabase {
     @Override
     public String getMimeTypeForStoreResponse(String id) {
         String mimeType = null;
-        try (Connection connection = getConnection(); PreparedStatement mySelectSQL = connection.prepareStatement(selectionString)) {
-            mySelectSQL.setString(SELECT_COLUMN_RESPONSE, id);
-            try (ResultSet rs = mySelectSQL.executeQuery()) {
+        try (Connection connection = getConnection(); PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
+            selectStatement.setString(SELECTION_STRING_REQUEST_ID_PARAM_INDEX, id);
+            try (ResultSet rs = selectStatement.executeQuery()) {
                 if (null == rs || !rs.next()) {
                     LOGGER.warn("No response found for request id " + id);
                 } else {
-                    mimeType = rs.getString(2);
+                    mimeType = rs.getString(SELECTION_STRING_RESPONSE_MIMETYPE_COLUMN_INDEX);
                 }
             }
         } catch (SQLException ex) {
@@ -354,8 +357,11 @@ public class PostgresDatabase extends AbstractDatabase {
 
         private final long thresholdMillis;
         private static final String DELETE_STATEMENT = "DELETE FROM RESULTS WHERE RESULTS.REQUEST_ID = ANY ( ? );";
+        private static final int DELETE_STATEMENT_LIST_PARAM_INDEX = 1;
         private static final String LOOKUP_STATEMENT = "SELECT * FROM "
                 + "(SELECT REQUEST_ID, EXTRACT(EPOCH FROM REQUEST_DATE) * 1000 AS TIMESTAMP FROM RESULTS) items WHERE TIMESTAMP < ?";
+        private static final int LOOKUP_STATEMENT_TIMESTAMP_PARAM_INDEX = 1;
+        private static final int LOOKUP_STATEMENT_REQUEST_ID_COLUMN_INDEX = 1;
 
         WipeTimerTask(long thresholdMillis) {
             this.thresholdMillis = thresholdMillis;
@@ -363,16 +369,23 @@ public class PostgresDatabase extends AbstractDatabase {
 
         @Override
         public void run() {
+            LOGGER.info(getDatabaseName() + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
             Boolean savingResultsToDB = Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"));
             try {
-                wipe(thresholdMillis, savingResultsToDB);
+                int deletedRecordsCount = wipe(savingResultsToDB);
+                if (deletedRecordsCount > 0) {
+                    LOGGER.info(getDatabaseName() + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
+                } else {
+                    LOGGER.debug(getDatabaseName() + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
+                }
             } catch (SQLException | IOException ex) {
-                LOGGER.warn("Failed to deleted old records.", ex);
+                LOGGER.warn(getDatabaseName() + " Postgres wiper, failed to deleted old records", ex);
             }
         }
 
-        private void wipe(long thresholdMillis, Boolean saveResultsToDB) throws SQLException, IOException {
-            LOGGER.info(getDatabaseName() + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
+        private int wipe(Boolean saveResultsToDB) throws SQLException, IOException {
+            LOGGER.debug(getDatabaseName() + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
+            int deletedRecordsCount = 0;
             List<String> oldRecords = findOldRecords();
             if (!saveResultsToDB) {
                 for (String recordId : oldRecords) {
@@ -382,27 +395,28 @@ public class PostgresDatabase extends AbstractDatabase {
                 }
             }
             if (!oldRecords.isEmpty()) {
-                deleteRecords(oldRecords);
+                deletedRecordsCount = deleteRecords(oldRecords);
             }
+            return deletedRecordsCount;
         }
 
-        private void deleteRecords(List<String> recordIds) throws SQLException {
-            Integer deletedRecordsCount = 0;
+        private int deleteRecords(List<String> recordIds) throws SQLException {
+            int deletedRecordsCount = 0;
             try (Connection connection = getConnection(); PreparedStatement deleteStatement = connection.prepareStatement(DELETE_STATEMENT)) {
-                deleteStatement.setArray(1, connection.createArrayOf("varchar", recordIds.toArray()));
+                deleteStatement.setArray(DELETE_STATEMENT_LIST_PARAM_INDEX, connection.createArrayOf("varchar", recordIds.toArray()));
                 deletedRecordsCount = deleteStatement.executeUpdate();
             }
-            LOGGER.info("Cleaned {} records from database", deletedRecordsCount);
+            return deletedRecordsCount;
         }
 
         private List<String> findOldRecords() throws SQLException {
             List<String> matchingRecords = new ArrayList<>();
             try (Connection connection = getConnection(); PreparedStatement lookupStatement = connection.prepareStatement(LOOKUP_STATEMENT)) {
                 long ageMillis = System.currentTimeMillis() - thresholdMillis;
-                lookupStatement.setLong(1, ageMillis);
+                lookupStatement.setLong(LOOKUP_STATEMENT_TIMESTAMP_PARAM_INDEX, ageMillis);
                 try (ResultSet rs = lookupStatement.executeQuery()) {
                     while (rs.next()) {
-                        matchingRecords.add(rs.getString(1));
+                        matchingRecords.add(rs.getString(LOOKUP_STATEMENT_REQUEST_ID_COLUMN_INDEX));
                     }
                 }
             }
