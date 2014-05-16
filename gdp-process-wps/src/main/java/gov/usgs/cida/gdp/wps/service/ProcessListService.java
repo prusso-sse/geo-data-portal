@@ -6,13 +6,11 @@ import java.io.StringReader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
@@ -21,7 +19,6 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
-import net.opengis.wps.v_1_0_0.Execute;
 import net.opengis.wps.v_1_0_0.ExecuteResponse;
 import net.opengis.wps.v_1_0_0.StatusType;
 import org.n52.wps.server.database.PostgresDatabase;
@@ -31,12 +28,10 @@ import org.slf4j.LoggerFactory;
 /**
  * @author abramhall
  */
-public class ProcessListService extends HttpServlet {
+public class ProcessListService extends BaseProcessServlet {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProcessListService.class);
-    private static final String ALL_REQUESTS_QUERY = "select request_id from results where response_type = 'ExecuteRequest' order by request_date;";
     private static final String DATA_QUERY = "select request_id, request_date, response from results where request_id like ?;";
-    private static final String WPS_NAMESPACE = "net.opengis.wps.v_1_0_0";
     private static final String REQUEST_PREFIX = "REQ_";
 
     @Override
@@ -47,7 +42,7 @@ public class ProcessListService extends HttpServlet {
             resp.getWriter().write(json);
         } catch (SQLException | JAXBException ex) {
             LOGGER.error("Failed to retrieve or unmarshall data", ex);
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to retrieve or unmarshall data.");
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to retrieve or unmarshall data: " + ex);
         }
     }
 
@@ -64,17 +59,6 @@ public class ProcessListService extends HttpServlet {
             dataset.add(dashboardData);
         }
         return dataset;
-    }
-
-    private List<String> getRequestIds() throws SQLException {
-        List<String> request_ids = new ArrayList<>();
-        try (Statement st = PostgresDatabase.getInstance().getConnection().createStatement(); ResultSet rs = st.executeQuery(ALL_REQUESTS_QUERY)) {
-            while (rs.next()) {
-                String id = rs.getString(1);
-                request_ids.add(id);
-            }
-            return request_ids;
-        }
     }
 
     private DashboardData buildDashboardData(String baseRequestId) throws SQLException, JAXBException {
@@ -107,16 +91,6 @@ public class ProcessListService extends HttpServlet {
             }
         }
         return data;
-    }
-
-    private String getIdentifier(String xml) throws JAXBException {
-        JAXBContext context = JAXBContext.newInstance(WPS_NAMESPACE);
-        Unmarshaller unmarshaller = context.createUnmarshaller();
-        StreamSource source = new StreamSource(new StringReader(xml));
-        JAXBElement<Execute> wpsExecuteElement = unmarshaller.unmarshal(source, Execute.class);
-        Execute execute = wpsExecuteElement.getValue();
-        String identifier = execute.getIdentifier().getValue();
-        return identifier.substring(identifier.lastIndexOf(".") + 1);
     }
 
     private String getStatus(String xml) throws JAXBException {

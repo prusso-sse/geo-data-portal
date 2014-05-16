@@ -12,11 +12,14 @@
         <title>GDP Web Processing Service Dashboard</title>
     </head>
     <body>
-        <input id="loadProcessesButton" type="button" value="Load Processes" />
-        <div id="processTableContainer"></div>
+        <p>Geo Data Portal Web Processing Service Dashboard</p>
+        <input id="loadProcessesButton" type="button" value="Load Processes" />Last loaded: <span id="lastProcessLoad">never</span>
+        <br />
+        <div id="processData">Load processes...</div>
         <br />
         <br />
-        <input id="reportButton" type="button" value="Get Report" />
-        <div id="reportContainer"></div>
+        <input id="reportButton" type="button" value="Run Report" />Last run: <span id="lastReportRun">never</span>
+        <br />
+        <div id="reportData">Run a report...</div>
     </body>
 </html>
