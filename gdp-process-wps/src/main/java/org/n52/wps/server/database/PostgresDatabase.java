@@ -8,14 +8,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,6 +28,7 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -47,471 +47,126 @@ import org.slf4j.LoggerFactory;
 public class PostgresDatabase extends AbstractDatabase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PostgresDatabase.class);
-    private static PostgresDatabase db;
-    private static String connectionURL = null;
-    private static Connection conn = null;
-    private final static String KEY_DATABASE_ROOT = "org.n52.wps.server.database";
-    private final static String KEY_DATABASE_PATH = "path";
-    private final static String KEY_DATABASE_WIPE_ENABLED = "wipe.enabled";
-    private final static String KEY_DATABASE_WIPE_PERIOD = "wipe.period";
-    private final static String KEY_DATABASE_WIPE_THRESHOLD = "wipe.threshold";
-    private final static boolean DEFAULT_DATABASE_WIPE_ENABLED = true;
-    private final static long DEFAULT_DATABASE_WIPE_PERIOD = 1000 * 60 * 60;
-    private final static long DEFAULT_DATABASE_WIPE_THRESHOLD = 1000 * 60 * 60 * 24 * 7;
-    private final static int DATA_BUFFER_SIZE = 8192;
-    private final static String SUFFIX_GZIP = "gz";
-    private final static String DEFAULT_BASE_DIRECTORY
-            = Joiner.on(File.separator).join(
-                    System.getProperty("java.io.tmpdir", "."),
-                    "Database",
-                    "Results");
-    private static Path BASE_DIRECTORY;
+
+    private static final String KEY_DATABASE_ROOT = "org.n52.wps.server.database";
+    private static final String KEY_DATABASE_PATH = "path";
+    private static final String KEY_DATABASE_WIPE_ENABLED = "wipe.enabled";
+    private static final String KEY_DATABASE_WIPE_PERIOD = "wipe.period";
+    private static final String KEY_DATABASE_WIPE_THRESHOLD = "wipe.threshold";
+    private static final boolean DEFAULT_DATABASE_WIPE_ENABLED = true;
+    private static final long DEFAULT_DATABASE_WIPE_PERIOD = 1000 * 60 * 60; // default to running once an hour
+    private static final long DEFAULT_DATABASE_WIPE_THRESHOLD = 1000 * 60 * 60 * 24 * 7; // default to wipe things over a week old
+
+    private static final int DATA_BUFFER_SIZE = 8192;
+    private static final String FILE_URI_PREFIX = "file://";
+    private static final String SUFFIX_GZIP = "gz";
+    private static final String DEFAULT_BASE_DIRECTORY
+            = Joiner.on(File.separator).join(System.getProperty("java.io.tmpdir", "."), "Database", "Results");
     private static final ServerDocument.Server server = WPSConfig.getInstance().getWPSConfig().getServer();
     private static final String baseResultURL = String.format("http://%s:%s/%s/RetrieveResultServlet?id=",
             server.getHostname(), server.getHostport(), server.getWebappPath());
-    public static final String pgCreationString = "CREATE TABLE RESULTS ("
+
+    private static final int SELECTION_STRING_REQUEST_ID_PARAM_INDEX = 1;
+    private static final int SELECTION_STRING_RESPONSE_COLUMN_INDEX = 1;
+    private static final int SELECTION_STRING_RESPONSE_MIMETYPE_COLUMN_INDEX = 2;
+
+    private static String connectionURL;
+    private static Path BASE_DIRECTORY;
+    private static PostgresDatabase instance;
+    private static ConnectionHandler connectionHandler;
+
+    protected static Timer wipeTimer;
+
+    private static final String CREATE_RESULTS_TABLE_PSQL
+            = "CREATE TABLE RESULTS ("
             + "REQUEST_ID VARCHAR(100) NOT NULL PRIMARY KEY, "
             + "REQUEST_DATE TIMESTAMP, "
             + "RESPONSE_TYPE VARCHAR(100), "
             + "RESPONSE TEXT, "
             + "RESPONSE_MIMETYPE VARCHAR(100))";
-    protected final Object storeResponseSerialNumberLock;
-    protected final Timer wipeTimer;
 
     private PostgresDatabase() {
         try {
             Class.forName("org.postgresql.Driver");
-            PostgresDatabase.connectionURL = "jdbc:postgresql:" + getDatabasePath() + "/" + getDatabaseName();
-            LOGGER.debug("Database connection URL is: " + PostgresDatabase.connectionURL);
-
-            // Create lock object
-            storeResponseSerialNumberLock = new Object();
-
-            // Create database wiper task
             PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
-            if (propertyUtil.extractBoolean(KEY_DATABASE_WIPE_ENABLED, DEFAULT_DATABASE_WIPE_ENABLED)) {
-                long periodMillis = propertyUtil.extractPeriodAsMillis(KEY_DATABASE_WIPE_PERIOD, DEFAULT_DATABASE_WIPE_PERIOD);
-                long thresholdMillis = propertyUtil.extractPeriodAsMillis(KEY_DATABASE_WIPE_THRESHOLD, DEFAULT_DATABASE_WIPE_THRESHOLD);
+            initializeBaseDirectory(propertyUtil);
+            initializeDatabaseWiper(propertyUtil);
+            initializeConnectionHandler();
+            initializeResultsTable();
+        } catch (ClassNotFoundException cnfe) {
+            LOGGER.error("Database class could not be loaded.", cnfe);
+            throw new UnsupportedDatabaseException("The database class could not be loaded.", cnfe);
+        } catch (NamingException | IOException | SQLException ex) {
+            LOGGER.error("Error creating PostgresDatabase", ex);
+            throw new RuntimeException("Error creating PostgresDatabase", ex);
+        }
+    }
 
-                wipeTimer = new Timer(getClass().getSimpleName() + " Postgres Wiper", true);
-                wipeTimer.scheduleAtFixedRate(new PostgresDatabase.WipeTimerTask(thresholdMillis), 15000, periodMillis);
-                LOGGER.info("Started {} Postgres wiper timer; period {} ms, threshold {} ms",
-                        new Object[]{getDatabaseName(), periodMillis, thresholdMillis});
-            } else {
-                wipeTimer = null;
+    private void initializeBaseDirectory(PropertyUtil propertyUtil) throws IOException {
+        String baseDirectoryPath = propertyUtil.extractString(KEY_DATABASE_PATH, DEFAULT_BASE_DIRECTORY);
+        BASE_DIRECTORY = Paths.get(baseDirectoryPath);
+        LOGGER.info("Using \"{}\" as base directory for results database", baseDirectoryPath);
+        Files.createDirectories(BASE_DIRECTORY);
+    }
+
+    private void initializeDatabaseWiper(PropertyUtil propertyUtil) {
+        if (propertyUtil.extractBoolean(KEY_DATABASE_WIPE_ENABLED, DEFAULT_DATABASE_WIPE_ENABLED)) {
+            long periodMillis = propertyUtil.extractPeriodAsMillis(KEY_DATABASE_WIPE_PERIOD, DEFAULT_DATABASE_WIPE_PERIOD);
+            long thresholdMillis = propertyUtil.extractPeriodAsMillis(KEY_DATABASE_WIPE_THRESHOLD, DEFAULT_DATABASE_WIPE_THRESHOLD);
+            wipeTimer = new Timer(getClass().getSimpleName() + " Postgres Wiper", true);
+            wipeTimer.scheduleAtFixedRate(new PostgresDatabase.WipeTimerTask(thresholdMillis), 15000, periodMillis);
+            LOGGER.info("Started {} Postgres wiper timer; period {} ms, threshold {} ms",
+                    new Object[]{getDatabaseName(), periodMillis, thresholdMillis});
+        } else {
+            wipeTimer = null;
+        }
+    }
+
+    private void initializeConnectionHandler() throws SQLException, NamingException {
+        String jndiName = getDatabaseProperties("jndiName");
+        if (null != jndiName) {
+            connectionHandler = new JNDIConnectionHandler(jndiName);
+        } else {
+            connectionURL = "jdbc:postgresql:" + getDatabasePath() + "/" + getDatabaseName();
+            LOGGER.debug("Database connection URL is: " + connectionURL);
+            String username = getDatabaseProperties("username");
+            String password = getDatabaseProperties("password");
+            Properties props = new Properties();
+            props.setProperty("create", "true");
+            props.setProperty("user", username);
+            props.setProperty("password", password);
+            connectionHandler = new DefaultConnectionHandler(connectionURL, props);
+        }
+    }
+
+    private void initializeResultsTable() throws SQLException {
+        try (Connection connection = getConnection(); ResultSet rs = connection.getMetaData().getTables(null, null, "results", new String[]{"TABLE"})) {
+            if (!rs.next()) {
+                LOGGER.debug("Table RESULTS does not yet exist, creating it.");
+                Statement st = connection.createStatement();
+                st.executeUpdate(CREATE_RESULTS_TABLE_PSQL);
             }
-        } catch (ClassNotFoundException cnf_ex) {
-            LOGGER.error("Database class could not be loaded", cnf_ex);
-            throw new UnsupportedDatabaseException("The database class could not be loaded.");
         }
     }
 
     public static synchronized PostgresDatabase getInstance() {
-        if (db == null) {
-            db = new PostgresDatabase();
+        if (instance == null) {
+            instance = new PostgresDatabase();
         }
-
-        if (db.getConnection() == null) {
-            if (!PostgresDatabase.createConnection()) {
-                throw new RuntimeException("Creating database connection failed.");
-            }
-            if (!PostgresDatabase.createResultTable()) {
-                throw new RuntimeException("Creating result table failed.");
-            }
-            if (!PostgresDatabase.createPreparedStatements()) {
-                throw new RuntimeException("Creating prepared statements failed.");
-            }
-        }
-
-        PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
-        String baseDirectoryPath = propertyUtil.extractString(KEY_DATABASE_PATH, DEFAULT_BASE_DIRECTORY);
-        BASE_DIRECTORY = Paths.get(baseDirectoryPath);
-        LOGGER.info("Using \"{}\" as base directory for results database", baseDirectoryPath);
-        try {
-            Files.createDirectories(BASE_DIRECTORY);
-        } catch (IOException ex) {
-            LOGGER.error("Error ensuring base directory exists", ex);
-        }
-        return PostgresDatabase.db;
-    }
-
-    private static boolean createConnection() {
-        Properties props = new Properties();
-        DataSource dataSource;
-        String jndiName = getDatabaseProperties("jndiName");
-        String username = getDatabaseProperties("username");
-        String password = getDatabaseProperties("password");
-
-        if (jndiName != null) {
-            InitialContext context;
-            try {
-                context = new InitialContext();
-                dataSource = (DataSource) context.lookup("java:comp/env/jdbc/" + jndiName);
-                conn = dataSource.getConnection();
-                PostgresDatabase.conn.setAutoCommit(false);
-                LOGGER.info("Connected to WPS database.");
-            } catch (NamingException e) {
-                LOGGER.error("Could not connect to or create the database.", e);
-                return false;
-            } catch (SQLException e) {
-                LOGGER.error("Could not connect to or create the database.", e);
-                return false;
-            }
-        } else {
-            props.setProperty("create", "true");
-            props.setProperty("user", username);
-            props.setProperty("password", password);
-            PostgresDatabase.conn = null;
-            try {
-                PostgresDatabase.conn = DriverManager.getConnection(
-                        PostgresDatabase.connectionURL, props);
-                PostgresDatabase.conn.setAutoCommit(false);
-                LOGGER.info("Connected to WPS database.");
-            } catch (SQLException e) {
-                LOGGER.error("Could not connect to or create the database.", e);
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean createResultTable() {
-        try {
-            ResultSet rs;
-            DatabaseMetaData meta = PostgresDatabase.conn.getMetaData();
-            rs = meta.getTables(null, null, "results", new String[]{"TABLE"});
-            if (!rs.next()) {
-                LOGGER.info("Table RESULTS does not yet exist.");
-                Statement st = PostgresDatabase.conn.createStatement();
-                st.executeUpdate(PostgresDatabase.pgCreationString);
-
-                PostgresDatabase.conn.commit();
-
-                meta = PostgresDatabase.conn.getMetaData();
-
-                rs = meta.getTables(null, null, "RESULTS", new String[]{"TABLE"});
-                if (rs.next()) {
-                    LOGGER.info("Succesfully created table RESULTS.");
-                } else {
-                    LOGGER.error("Could not create table RESULTS.");
-                    return false;
-                }
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Connection to the Postgres database failed: " + e.getMessage());
-            return false;
-        }
-        return true;
-    }
-
-    private static boolean createPreparedStatements() {
-        try {
-            PostgresDatabase.closePreparedStatements();
-            PostgresDatabase.insertSQL = PostgresDatabase.conn.prepareStatement(insertionString);
-            PostgresDatabase.selectSQL = PostgresDatabase.conn.prepareStatement(selectionString);
-            PostgresDatabase.updateSQL = PostgresDatabase.conn.prepareStatement(updateString);
-        } catch (SQLException e) {
-            LOGGER.error("Could not create the prepared statements.", e);
-            return false;
-        }
-        return true;
-    }
-
-    private static boolean closePreparedStatements() {
-        try {
-            if (PostgresDatabase.insertSQL != null) {
-                PostgresDatabase.insertSQL.close();
-                PostgresDatabase.insertSQL = null;
-            }
-            if (PostgresDatabase.selectSQL != null) {
-                PostgresDatabase.selectSQL.close();
-                PostgresDatabase.selectSQL = null;
-            }
-            if (PostgresDatabase.updateSQL != null) {
-                PostgresDatabase.updateSQL.close();
-                PostgresDatabase.updateSQL = null;
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Prepared statements could not be closed.", e);
-            return false;
-        }
-        return true;
+        return instance;
     }
 
     @Override
-    public synchronized void insertRequest(String id, InputStream inputStream, boolean xml) {
-        insertResultEntity(inputStream, "REQ_" + id, "ExecuteRequest", xml ? "text/xml" : "text/plain");
+    public String getConnectionURL() {
+        return connectionURL;
     }
 
     @Override
-    public synchronized String insertResponse(String id, InputStream inputStream) {
-        return insertResultEntity(inputStream, id, "ExecuteResponse", "text/xml");
-    }
-
-    @Override
-    protected synchronized String insertResultEntity(InputStream stream, String id, String type, String mimeType) {
-        BufferedInputStream dataStream = new BufferedInputStream(stream, DATA_BUFFER_SIZE);
-        boolean isOutput = null != id && id.toLowerCase().contains("output");
-
-        if (isOutput && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
-            try {
-                dataStream = writeDataToDisk(id, stream);
-            } catch (Exception ex) {
-                LOGGER.error("Failed to write output data to disk", ex);
-            }
-        }
-
+    public Connection getConnection() {
         try {
-            insertSQL.setString(INSERT_COLUMN_REQUEST_ID, id);
-            insertSQL.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
-            insertSQL.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
-            insertSQL.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
-            insertSQL.setAsciiStream(INSERT_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
-            insertSQL.executeUpdate();
-            getConnection().commit();
-            LOGGER.debug("inserted request {} into database", id);
+            return connectionHandler.getConnection();
         } catch (SQLException ex) {
-            LOGGER.error("Failed to insert result data into the database", ex);
-        }
-
-        return generateRetrieveResultURL(id);
-    }
-
-    /**
-     *
-     * @param id
-     * @param stream
-     * @return a stream of the file URI pointing where the data was written
-     * @throws IOException
-     */
-    private BufferedInputStream writeDataToDisk(String id, InputStream stream) throws Exception {
-        Files.createDirectories(BASE_DIRECTORY);
-        Path filePath = Paths.get(BASE_DIRECTORY.toString(), id);
-        filePath = Files.createFile(filePath);
-        Files.copy(stream, filePath, StandardCopyOption.REPLACE_EXISTING);
-        byte[] filePathByteArray = filePath.toUri().toString().getBytes();
-        return new BufferedInputStream(new ByteArrayInputStream(filePathByteArray));
-    }
-
-    @Override
-    public synchronized void updateResponse(String id, InputStream stream) {
-        BufferedInputStream dataStream = new BufferedInputStream(stream, DATA_BUFFER_SIZE);
-        try {
-            updateSQL.setString(UPDATE_COLUMN_REQUEST_ID, id);
-            updateSQL.setAsciiStream(UPDATE_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
-            updateSQL.executeUpdate();
-            getConnection().commit();
-        } catch (SQLException ex) {
-            LOGGER.error("Could not update response in database", ex);
-        }
-    }
-
-    @Override
-    public void shutdown() {
-        boolean isClosedPreparedStatements = false;
-        boolean isClosedConnection = false;
-
-        try {
-            if (PostgresDatabase.conn != null) {
-                isClosedPreparedStatements = closePreparedStatements();
-                Properties props = new Properties();
-                props.setProperty("shutdown", "true");
-                PostgresDatabase.conn = DriverManager.getConnection(PostgresDatabase.connectionURL, props);
-                PostgresDatabase.conn.close();
-                PostgresDatabase.conn = null;
-                isClosedConnection = true;
-                PostgresDatabase.db = null;
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Error occured while closing Postgres database connection: "
-                    + "closed prepared statements?" + isClosedPreparedStatements
-                    + ";closed connection?" + isClosedConnection, e);
-            return;
-        } finally {
-            try {
-                if (PostgresDatabase.conn != null) {
-                    try {
-                        PostgresDatabase.conn.close();
-                    } catch (SQLException e) {
-                        LOGGER.warn("Postgres database connection was not closed successfully during shutdown", e);
-                    }
-                    PostgresDatabase.conn = null;
-                }
-            } finally {
-                System.gc();
-            }
-        }
-        LOGGER.info("Postgres database connection is closed succesfully");
-    }
-
-    @Override
-    public InputStream lookupResponse(String id) {
-        if (null == id) {
-            LOGGER.warn("tried to look up response for null id, returned null");
-            return null;
-        }
-        InputStream result = super.lookupResponse(id);
-        if (id.toLowerCase().contains("output") && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
-            LOGGER.debug("ID {} is output and saved to disk instead of database");
-            FileInputStream fis = null;
-            try {
-                String outputFileLocation = IOUtils.toString(result);
-                if (Files.exists(Paths.get(outputFileLocation))) {
-                    fis = new FileInputStream(outputFileLocation);
-                    result = outputFileLocation.endsWith(SUFFIX_GZIP) ? new GZIPInputStream(fis) : fis;
-                }
-            } catch (FileNotFoundException ex) {
-                LOGGER.warn("Response not found for id " + id, ex);
-            } catch (IOException ex) {
-                LOGGER.warn("Error processing response for id " + id, ex);
-            } finally {
-                try {
-                    fis.close();
-                } catch (IOException ex) {
-                    LOGGER.warn("failed to close file input stream", ex);
-                }
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public File lookupResponseAsFile(String id) {
-        if (id.toLowerCase().contains("output") && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
-            try {
-                String outputFileLocation = IOUtils.toString(lookupResponse(id));
-                return new File(new URI(outputFileLocation));
-            } catch (URISyntaxException ex) {
-                LOGGER.warn("Could not get file location for response file for id " + id, ex);
-            } catch (IOException ex) {
-                LOGGER.warn("Could not get file location for response file for id " + id, ex);
-            }
-        }
-        LOGGER.warn("requested response as file for a response stored in the database, returning null");
-        return null;
-    }
-
-    private class WipeTimerTask extends TimerTask {
-
-        public final long thresholdMillis;
-
-        WipeTimerTask(long thresholdMillis) {
-            this.thresholdMillis = thresholdMillis;
-        }
-
-        @Override
-        public void run() {
-            Boolean savingResultsToDB = Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"));
-            wipe(thresholdMillis, savingResultsToDB);
-        }
-
-        private void wipe(long thresholdMillis, Boolean saveResultsToDB) {
-            // SimpleDataFormat is not thread-safe.
-            long currentTimeMillis = System.currentTimeMillis();
-            LOGGER.info(getDatabaseName() + " Postgres wiper, checking for records older than {} ms",
-                    thresholdMillis);
-
-            List<String> oldRecords = findOldRecords(currentTimeMillis, thresholdMillis);
-            if (oldRecords.size() > 0) {
-                // Clean up files on disk if needed
-                if (!saveResultsToDB) {
-                    for (String recordId : oldRecords) {
-                        if (recordId.toLowerCase().contains("output")) {
-                            deleteFileOnDisk(recordId);
-                        }
-                    }
-                }
-
-                // Clean up records in database
-                Integer recordsDeleted = deleteRecords(oldRecords);
-                LOGGER.info("Cleaned {} records from database", recordsDeleted);
-
-            }
-        }
-
-        private void deleteFileOnDisk(String id) {
-            try {
-                Files.deleteIfExists(Paths.get(BASE_DIRECTORY.toString(), id));
-            } catch (IOException ex) {
-                LOGGER.warn("Failed to delete file", ex);
-            }
-        }
-
-        private Integer deleteRecords(List<String> recordIds) {
-            Integer deletedRecordsCount = 0;
-            PreparedStatement deleteStatement = null;
-
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < recordIds.size(); i++) {
-                builder.append("?,");
-            }
-
-            try {
-
-                String deleteStatementString = "DELETE FROM RESULTS "
-                        + "WHERE RESULTS.REQUEST_ID IN (" + builder.deleteCharAt(builder.length() - 1).toString() + ")";
-                deleteStatement = PostgresDatabase.conn.prepareStatement(deleteStatementString);
-
-                int idIdx = 1;
-                for (String id : recordIds) {
-                    deleteStatement.setString(idIdx, id);
-                    idIdx++;
-                }
-                deletedRecordsCount = deleteStatement.executeUpdate();
-                PostgresDatabase.conn.commit();
-            } catch (SQLException ex) {
-                LOGGER.warn("Could not delete rows from Postgres database", ex);
-            } finally {
-                if (null != deleteStatement) {
-                    try {
-                        deleteStatement.close();
-                    } catch (SQLException e) {
-                        LOGGER.warn("Postgres Wiper: Could not close prepared statement", e);
-                    }
-                }
-            }
-
-            return deletedRecordsCount;
-        }
-
-        private List<String> findOldRecords(long currentTimeMillis, long threshold) {
-            PreparedStatement lookupStatement = null;
-            ResultSet rs = null;
-            List<String> matchingRecords = new ArrayList<String>();
-            try {
-                long ageMillis = currentTimeMillis - thresholdMillis;
-                String lookupStatementString = "SELECT * FROM "
-                        + "(SELECT REQUEST_ID, EXTRACT(EPOCH FROM REQUEST_DATE) * 1000 AS TIMESTAMP "
-                        + "FROM RESULTS) items "
-                        + "WHERE TIMESTAMP < ?";
-                lookupStatement = PostgresDatabase.conn.prepareStatement(lookupStatementString);
-                lookupStatement.setLong(1, ageMillis);
-                rs = lookupStatement.executeQuery();
-
-                while (rs.next()) {
-                    matchingRecords.add(rs.getString(1));
-                }
-
-            } catch (SQLException ex) {
-                LOGGER.warn("");
-            } finally {
-                if (null != rs) {
-                    try {
-                        rs.close();
-                    } catch (SQLException e) {
-                        LOGGER.warn("Postgres Wiper: Could not close result set", e);
-                    }
-                }
-
-                if (null != lookupStatement) {
-                    try {
-                        lookupStatement.close();
-                    } catch (SQLException e) {
-                        LOGGER.warn("Postgres Wiper: Could not close prepared statement", e);
-                    }
-                }
-            }
-            return matchingRecords;
+            throw new RuntimeException("Unable to obtain connection to database!", ex);
         }
     }
 
@@ -521,13 +176,251 @@ public class PostgresDatabase extends AbstractDatabase {
     }
 
     @Override
-    public Connection getConnection() {
-        return PostgresDatabase.conn;
+    public void insertRequest(String id, InputStream inputStream, boolean xml) {
+        insertResultEntity(inputStream, "REQ_" + id, "ExecuteRequest", xml ? "text/xml" : "text/plain");
     }
 
     @Override
-    public String getConnectionURL() {
-        return PostgresDatabase.connectionURL;
+    public String insertResponse(String id, InputStream inputStream) {
+        return insertResultEntity(inputStream, id, "ExecuteResponse", "text/xml");
     }
 
+    @Override
+    protected String insertResultEntity(InputStream stream, String id, String type, String mimeType) {
+        BufferedInputStream dataStream = new BufferedInputStream(stream, DATA_BUFFER_SIZE);
+        boolean isOutput = null != id && id.toLowerCase().contains("output");
+
+        if (isOutput && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
+            try {
+                dataStream = writeDataToDiskWithGZIP(id, stream);
+            } catch (Exception ex) {
+                LOGGER.error("Failed to write output data to disk", ex);
+            }
+        }
+
+        try (Connection connection = getConnection(); PreparedStatement insertStatement = connection.prepareStatement(insertionString)) {
+            insertStatement.setString(INSERT_COLUMN_REQUEST_ID, id);
+            insertStatement.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
+            insertStatement.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
+            insertStatement.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
+            insertStatement.setAsciiStream(INSERT_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
+            insertStatement.executeUpdate();
+            LOGGER.debug("inserted request {} into database", id);
+        } catch (SQLException ex) {
+            LOGGER.error("Failed to insert result data into the database", ex);
+        }
+
+        return generateRetrieveResultURL(id);
+    }
+
+    @Override
+    public void updateResponse(String id, InputStream stream) {
+        BufferedInputStream dataStream = new BufferedInputStream(stream, DATA_BUFFER_SIZE);
+
+        try (Connection connection = getConnection(); PreparedStatement updateStatement = connection.prepareStatement(updateString)) {
+            updateStatement.setString(UPDATE_COLUMN_REQUEST_ID, id);
+            updateStatement.setAsciiStream(UPDATE_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
+            updateStatement.executeUpdate();
+        } catch (SQLException ex) {
+            LOGGER.error("Could not update response in database", ex);
+        }
+    }
+
+    @Override
+    public InputStream lookupResponse(String id) {
+        InputStream result = null;
+        if (null != id) {
+            try (Connection connection = getConnection(); PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
+                selectStatement.setString(SELECTION_STRING_REQUEST_ID_PARAM_INDEX, id);
+                try (ResultSet rs = selectStatement.executeQuery()) {
+                    if (null == rs || !rs.next()) {
+                        LOGGER.warn("No response found for request id " + id);
+                    } else {
+                        result = rs.getAsciiStream(SELECTION_STRING_RESPONSE_COLUMN_INDEX);
+                    }
+                }
+            } catch (SQLException ex) {
+                LOGGER.error("Could not look up response in database", ex);
+            }
+
+            if (null != result) {
+                if (id.toLowerCase().contains("output") && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
+                    try {
+                        String outputFileLocation = IOUtils.toString(result);
+                        LOGGER.debug("ID {} is output and saved to disk instead of database. Path = " + outputFileLocation);
+                        if (Files.exists(Paths.get(outputFileLocation))) {
+                            result = new GZIPInputStream(new FileInputStream(outputFileLocation));
+                        } else {
+                            LOGGER.warn("Response not found on disk for id " + id + " at " + outputFileLocation);
+                        }
+                    } catch (FileNotFoundException ex) {
+                        LOGGER.warn("Response not found on disk for id " + id, ex);
+                    } catch (IOException ex) {
+                        LOGGER.warn("Error processing response for id " + id, ex);
+                    }
+                }
+            } else {
+                LOGGER.warn("response found but returned null");
+            }
+        } else {
+            LOGGER.warn("tried to look up response for null id, returned null");
+        }
+        return result;
+    }
+
+    @Override
+    public String getMimeTypeForStoreResponse(String id) {
+        String mimeType = null;
+        try (Connection connection = getConnection(); PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
+            selectStatement.setString(SELECTION_STRING_REQUEST_ID_PARAM_INDEX, id);
+            try (ResultSet rs = selectStatement.executeQuery()) {
+                if (null == rs || !rs.next()) {
+                    LOGGER.warn("No response found for request id " + id);
+                } else {
+                    mimeType = rs.getString(SELECTION_STRING_RESPONSE_MIMETYPE_COLUMN_INDEX);
+                }
+            }
+        } catch (SQLException ex) {
+            LOGGER.error("Could not look up response in database", ex);
+        }
+        return mimeType;
+    }
+
+    @Override
+    public File lookupResponseAsFile(String id) {
+        if (id.toLowerCase().contains("output") && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
+            try {
+                String outputFileLocation = IOUtils.toString(lookupResponse(id));
+                return new File(new URI(outputFileLocation));
+            } catch (URISyntaxException | IOException ex) {
+                LOGGER.warn("Could not get file location for response file for id " + id, ex);
+            }
+        }
+        LOGGER.warn("requested response as file for a response stored in the database, returning null");
+        return null;
+    }
+
+    /**
+     * @param filename base filename
+     * @param stream data stream to write to disk, compressed using gzip
+     * @return a stream of the file URI pointing where the data was written
+     * @throws IOException
+     */
+    private BufferedInputStream writeDataToDiskWithGZIP(String filename, InputStream stream) throws Exception {
+        Path filePath = Files.createFile(BASE_DIRECTORY.resolve(Joiner.on(".").join(filename, SUFFIX_GZIP)));
+        OutputStream outputStream = new GZIPOutputStream(Files.newOutputStream(filePath));
+        IOUtils.copy(stream, outputStream);
+        IOUtils.closeQuietly(outputStream);
+        byte[] filePathByteArray = filePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "").getBytes();
+        return new BufferedInputStream(new ByteArrayInputStream(filePathByteArray));
+    }
+
+    private interface ConnectionHandler {
+
+        public Connection getConnection() throws SQLException;
+    }
+
+    private class JNDIConnectionHandler implements ConnectionHandler {
+
+        private final DataSource dataSource;
+
+        public JNDIConnectionHandler(String jndiName) throws NamingException {
+            InitialContext context = new InitialContext();
+            dataSource = (DataSource) context.lookup("java:comp/env/jdbc/" + jndiName);
+        }
+
+        @Override
+        public Connection getConnection() throws SQLException {
+            Connection conn = dataSource.getConnection();
+            return conn;
+        }
+    }
+
+    private class DefaultConnectionHandler implements ConnectionHandler {
+
+        private final String dbConnectionURL;
+        private final Properties dbProps;
+
+        public DefaultConnectionHandler(String dbConnectionURL, Properties dbProps) {
+            this.dbConnectionURL = dbConnectionURL;
+            this.dbProps = dbProps;
+        }
+
+        @Override
+        public Connection getConnection() throws SQLException {
+            Connection conn = DriverManager.getConnection(dbConnectionURL, dbProps);
+            return conn;
+        }
+    }
+
+    private class WipeTimerTask extends TimerTask {
+
+        private final long thresholdMillis;
+        private static final String DELETE_STATEMENT = "DELETE FROM RESULTS WHERE RESULTS.REQUEST_ID = ANY ( ? );";
+        private static final int DELETE_STATEMENT_LIST_PARAM_INDEX = 1;
+        private static final String LOOKUP_STATEMENT = "SELECT * FROM "
+                + "(SELECT REQUEST_ID, EXTRACT(EPOCH FROM REQUEST_DATE) * 1000 AS TIMESTAMP FROM RESULTS) items WHERE TIMESTAMP < ?";
+        private static final int LOOKUP_STATEMENT_TIMESTAMP_PARAM_INDEX = 1;
+        private static final int LOOKUP_STATEMENT_REQUEST_ID_COLUMN_INDEX = 1;
+
+        WipeTimerTask(long thresholdMillis) {
+            this.thresholdMillis = thresholdMillis;
+        }
+
+        @Override
+        public void run() {
+            LOGGER.info(getDatabaseName() + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
+            Boolean savingResultsToDB = Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"));
+            try {
+                int deletedRecordsCount = wipe(savingResultsToDB);
+                if (deletedRecordsCount > 0) {
+                    LOGGER.info(getDatabaseName() + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
+                } else {
+                    LOGGER.debug(getDatabaseName() + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
+                }
+            } catch (SQLException | IOException ex) {
+                LOGGER.warn(getDatabaseName() + " Postgres wiper, failed to deleted old records", ex);
+            }
+        }
+
+        private int wipe(Boolean saveResultsToDB) throws SQLException, IOException {
+            LOGGER.debug(getDatabaseName() + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
+            int deletedRecordsCount = 0;
+            List<String> oldRecords = findOldRecords();
+            if (!saveResultsToDB) {
+                for (String recordId : oldRecords) {
+                    if (recordId.toLowerCase().contains("output")) {
+                        Files.deleteIfExists(Paths.get(BASE_DIRECTORY.toString(), recordId));
+                    }
+                }
+            }
+            if (!oldRecords.isEmpty()) {
+                deletedRecordsCount = deleteRecords(oldRecords);
+            }
+            return deletedRecordsCount;
+        }
+
+        private int deleteRecords(List<String> recordIds) throws SQLException {
+            int deletedRecordsCount = 0;
+            try (Connection connection = getConnection(); PreparedStatement deleteStatement = connection.prepareStatement(DELETE_STATEMENT)) {
+                deleteStatement.setArray(DELETE_STATEMENT_LIST_PARAM_INDEX, connection.createArrayOf("varchar", recordIds.toArray()));
+                deletedRecordsCount = deleteStatement.executeUpdate();
+            }
+            return deletedRecordsCount;
+        }
+
+        private List<String> findOldRecords() throws SQLException {
+            List<String> matchingRecords = new ArrayList<>();
+            try (Connection connection = getConnection(); PreparedStatement lookupStatement = connection.prepareStatement(LOOKUP_STATEMENT)) {
+                long ageMillis = System.currentTimeMillis() - thresholdMillis;
+                lookupStatement.setLong(LOOKUP_STATEMENT_TIMESTAMP_PARAM_INDEX, ageMillis);
+                try (ResultSet rs = lookupStatement.executeQuery()) {
+                    while (rs.next()) {
+                        matchingRecords.add(rs.getString(LOOKUP_STATEMENT_REQUEST_ID_COLUMN_INDEX));
+                    }
+                }
+            }
+            return matchingRecords;
+        }
+    }
 }
