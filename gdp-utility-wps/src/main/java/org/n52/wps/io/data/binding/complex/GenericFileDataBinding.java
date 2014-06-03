@@ -55,12 +55,12 @@ public class GenericFileDataBinding implements IComplexData {
 
 	@Override
 	public void dispose() {
-    	File baseFile;
+		File baseFile;
 		try {
 			baseFile = payload.getBaseFile(false);
 			FileUtils.deleteQuietly(baseFile);
 		} catch (Exception e) {
-			LOGGER.error("Exception caught during dispose", e);
+			LOGGER.debug("Exception caught during dispose", e);
 		}
 	}
 }
