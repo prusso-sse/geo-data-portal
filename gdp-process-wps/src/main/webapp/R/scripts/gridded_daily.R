@@ -14,28 +14,10 @@
 # wps.in: OPeNDAP_URI, string, OPeNDAP URI, An OPeNDAP (dods) url for the climate dataset of interest.;
 # wps.in: tmax_var, string, Tmax Variable, The variable from the OPeNDAP dataset to use as tmax.;
 # wps.in: tmin_var, string, Tmin Variable, The variable from the OPeNDAP dataset to use as tmin.;
-# wps.in: tave_var, string, Tave Variable, The variable from the OPeNDAP dataset to use as tave, can be "NULL".;
+# wps.in: tave_var, string, Tave Variable, The variable from the OPeNDAP dataset to use as tave can be "NULL".;
 # wps.in: prcp_var, string, Prcp Variable, The variable from the OPeNDAP dataset to use as prcp.;
 library("dapClimates")
 library("climates") # Because climates uses depends on stuff, this is needed as well as the dapClimates load.
-
-# start <- "1961"
-# end <- "1961"
-# bbox_in<-"-88,42,-89,43"
-# days_tmax_abv_thresh<-"32.2222,35,37.7778"
-# days_tmin_blw_thresh<-"-17.7778,-12.2222,0"
-# days_prcp_abv_thresh<-"25.4,50.8,76.2,101.6"
-# longest_run_tmax_abv_thresh<-"32.2222,35,37.7778"
-# longest_run_prcp_blw_thresh<-"76.2"
-# growing_degree_day_thresh<-"15.5556"
-# heating_degree_day_thresh<-"18.3333"
-# cooling_degree_day_thresh<-"18.3333"
-# growing_season_lngth_thresh<-"0"
-# OPeNDAP_URI<-"http://cida.usgs.gov/thredds/dodsC/dcp/conus"
-# tmax_var  <- "ccsm-a1b-tmax-NAm-grid"
-# tmin_var <- "ccsm-a1b-tmin-NAm-grid"
-# prcp_var <- "ccsm-a1fi-pr-NAm-grid"
-# tave_var <- "NULL"
 
 t_names<-c("days_tmax_abv_thresh",
   "days_tmin_blw_thresh",
@@ -57,4 +39,4 @@ if(tave_var=="NULL") tave_var<-NULL
 fileNames<-dap_daily_stats(start,end,bbox_in,thresholds,OPeNDAP_URI,tmax_var,tmin_var,tave_var,prcp_var)
 name<-'dailyInd.zip'
 dailyInd_zip<-zip(name,fileNames)
-#wps.out: name, zip, bioclim_zip, A zip pf the resulting bioclim getiffs..;
+#wps.out: name, zip, bioclim_zip, A zip of the resulting bioclim geotiffs.;
