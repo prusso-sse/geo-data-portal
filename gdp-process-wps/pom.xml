@@ -226,6 +226,11 @@
             <version>9.3-1101-jdbc4</version>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jvnet.ogc</groupId>
+            <artifactId>wps-v_1_0_0-schema</artifactId>
+            <version>1.1.0</version>
+        </dependency>
         <!-- Testing dependency -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
