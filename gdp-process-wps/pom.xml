@@ -231,6 +231,11 @@
             <artifactId>wps-v_1_0_0-schema</artifactId>
             <version>1.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.2.4</version>
+        </dependency>
         <!-- Testing dependency -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
