@@ -1,0 +1,18 @@
+table {
+    margin: 0px;
+    padding: 0px;
+    border-collapse: collapse;
+}
+
+td {
+    border: solid #D8D8D8;
+    padding: 2px;
+}
+
+tr.reportHeader {
+    font-weight: bold;
+}
+
+td.indented {
+    padding-left: 20px;
+}
