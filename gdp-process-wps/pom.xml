@@ -25,6 +25,7 @@
     <properties>
         <version.maven.failsafe.plugin>2.12.2</version.maven.failsafe.plugin>
         <version.maven.jetty.plugin>6.1.26</version.maven.jetty.plugin>
+        <version.jquery>2.1.0</version.jquery>
         <!--<version.maven.jetty.plugin>7.0.0.pre5</version.maven.jetty.plugin>-->
     </properties>
     
@@ -225,6 +226,15 @@
             <artifactId>postgresql</artifactId>
             <version>9.3-1101-jdbc4</version>
             <scope>runtime</scope>
+        </dependency>
+       	<dependency>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>jsp-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>jquery</artifactId>
+            <version>${version.jquery}-2</version>
         </dependency>
         <dependency>
             <groupId>org.jvnet.ogc</groupId>
