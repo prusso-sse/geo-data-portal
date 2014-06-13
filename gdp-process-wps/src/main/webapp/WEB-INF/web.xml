@@ -50,6 +50,15 @@
         <servlet-name>processList</servlet-name>
         <url-pattern>/list</url-pattern>
     </servlet-mapping>
+    <servlet>
+        <servlet-name>processReport</servlet-name>
+        <servlet-class>gov.usgs.cida.gdp.wps.service.ProcessReportService</servlet-class>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>processReport</servlet-name>
+        <url-pattern>/report</url-pattern>
+    </servlet-mapping>
     <welcome-file-list>
         <welcome-file>/index.html</welcome-file>
     </welcome-file-list>
