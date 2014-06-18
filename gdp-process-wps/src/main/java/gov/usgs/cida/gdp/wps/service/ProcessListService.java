@@ -34,7 +34,7 @@ public class ProcessListService extends BaseProcessServlet {
     private static final int DATA_QUERY_REQUEST_ID_PARAM_INDEX = 1;
     private static final int DATA_QUERY_REQUEST_ID_COLUMN_INDEX = 1;
     private static final int DATA_QUERY_REQUEST_DATE_COLUMN_INDEX = 2;
-    private static final int DATA_QUERY_RESPONSECOLUMN_INDEX = 3;
+    private static final int DATA_QUERY_RESPONSE_COLUMN_INDEX = 3;
     private static final String REQUEST_PREFIX = "REQ_";
     
     @Override
@@ -74,7 +74,7 @@ public class ProcessListService extends BaseProcessServlet {
                 while (rs.next()) {
                     String requestId = rs.getString(DATA_QUERY_REQUEST_ID_COLUMN_INDEX);
                     String requestDate = rs.getString(DATA_QUERY_REQUEST_DATE_COLUMN_INDEX);
-                    String xml = removeUTF8BOM(rs.getString(DATA_QUERY_RESPONSECOLUMN_INDEX));
+                    String xml = removeUTF8BOM(rs.getString(DATA_QUERY_RESPONSE_COLUMN_INDEX));
                     if (requestId.toUpperCase().endsWith("OUTPUT")) {
                         endTime = Timestamp.valueOf(requestDate).getTime();
                         data.setOutput(xml);
