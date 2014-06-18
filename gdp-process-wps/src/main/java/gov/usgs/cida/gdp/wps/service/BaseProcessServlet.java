@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 public abstract class BaseProcessServlet extends HttpServlet {
     protected static final String WPS_NAMESPACE = "net.opengis.wps.v_1_0_0";
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseProcessServlet.class);
+    // FEFF because this is the Unicode char represented by the UTF-8 byte order mark (EF BB BF).
+    private static final String UTF8_BOM = "\uFEFF";
     private static final int DEFAULT_OFFSET = 0;
     private static final int DEFAULT_LIMIT = 50;
     private static final int LIMIT_PARAM_INDEX = 1;
@@ -108,5 +110,12 @@ public abstract class BaseProcessServlet extends HttpServlet {
         Execute execute = wpsExecuteElement.getValue();
         String identifier = execute.getIdentifier().getValue();
         return identifier.substring(identifier.lastIndexOf(".") + 1);
+    }
+       
+    protected final String removeUTF8BOM(String s) {
+        if (s.startsWith(UTF8_BOM)) {
+            s = s.substring(1);
+        }
+        return s;
     }
 }

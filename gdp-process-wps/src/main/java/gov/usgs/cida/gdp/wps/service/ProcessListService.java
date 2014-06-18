@@ -70,7 +70,7 @@ public class ProcessListService extends BaseProcessServlet {
                 while (rs.next()) {
                     String requestId = rs.getString(1);
                     String requestDate = rs.getString(2);
-                    String xml = rs.getString(3);
+                    String xml = removeUTF8BOM(rs.getString(3));
                     if (requestId.toUpperCase().endsWith("OUTPUT")) {
                         endTime = Timestamp.valueOf(requestDate).getTime();
                         data.setOutput(xml);
@@ -123,4 +123,4 @@ public class ProcessListService extends BaseProcessServlet {
         Calendar start = DatatypeConverter.parseDateTime(statusElement.getCreationTime().toString());
         return start.getTimeInMillis();
     }
-}
+ }
