@@ -39,7 +39,7 @@ public class ProcessReportService extends BaseProcessServlet {
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     String dataSetURI = null;
-                    String xml = rs.getString(1);
+                    String xml = removeUTF8BOM(rs.getString(1));
                     StreamSource source = new StreamSource(new StringReader(xml));
                     if (null == unmarshaller) {
                         unmarshaller = JAXBContext.newInstance(WPS_NAMESPACE).createUnmarshaller();
