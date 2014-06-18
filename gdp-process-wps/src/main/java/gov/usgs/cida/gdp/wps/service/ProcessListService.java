@@ -31,6 +31,10 @@ import org.slf4j.LoggerFactory;
 public class ProcessListService extends BaseProcessServlet {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProcessListService.class);
     private static final String DATA_QUERY = "select request_id, request_date, response from results where request_id like ?;";
+    private static final int DATA_QUERY_REQUEST_ID_PARAM_INDEX = 1;
+    private static final int DATA_QUERY_REQUEST_ID_COLUMN_INDEX = 1;
+    private static final int DATA_QUERY_REQUEST_DATE_COLUMN_INDEX = 2;
+    private static final int DATA_QUERY_RESPONSECOLUMN_INDEX = 3;
     private static final String REQUEST_PREFIX = "REQ_";
     
     @Override
@@ -65,12 +69,12 @@ public class ProcessListService extends BaseProcessServlet {
         long startTime = -1;
         long endTime = System.currentTimeMillis();
         try (Connection conn = getConnection(); PreparedStatement pst = conn.prepareStatement(DATA_QUERY)) {
-            pst.setString(1, "%" + baseRequestId + "%");
+            pst.setString(DATA_QUERY_REQUEST_ID_PARAM_INDEX, "%" + baseRequestId + "%");
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
-                    String requestId = rs.getString(1);
-                    String requestDate = rs.getString(2);
-                    String xml = removeUTF8BOM(rs.getString(3));
+                    String requestId = rs.getString(DATA_QUERY_REQUEST_ID_COLUMN_INDEX);
+                    String requestDate = rs.getString(DATA_QUERY_REQUEST_DATE_COLUMN_INDEX);
+                    String xml = removeUTF8BOM(rs.getString(DATA_QUERY_RESPONSECOLUMN_INDEX));
                     if (requestId.toUpperCase().endsWith("OUTPUT")) {
                         endTime = Timestamp.valueOf(requestDate).getTime();
                         data.setOutput(xml);
