@@ -12,12 +12,13 @@ public class DashboardData {
     private static final long MILLIS_PER_DAY = 1000 * 60 * 60 * 24;
     private static final long MILLIS_PER_HOUR = 1000 * 60 * 60;
     private static final long MILLIS_PER_MIN = 1000 * 60;
-
+    
     private String identifier = null;
     private String status = null;
     private String creationTime = null;
     private String elapsedTime = null;
     private String output = null;
+    private String errorMessage = null;
 
     public String getIdentifier() {
         return identifier;
@@ -59,6 +60,14 @@ public class DashboardData {
 
     public void setOutput(String output) {
         this.output = output;
+    }
+    
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+    
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage =  errorMessage;
     }
 
     /**

@@ -43,9 +43,9 @@ public class ProcessListService extends BaseProcessServlet {
             String json = new Gson().toJson(getDashboardData());
             resp.setContentType("application/json");
             resp.getWriter().write(json);
-        } catch (SQLException | JAXBException ex) {
-            LOGGER.error("Failed to retrieve or unmarshall data", ex);
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to retrieve or unmarshall data: " + ex);
+        } catch (SQLException ex) {
+            LOGGER.error("Failed to retrieve data", ex);
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to retrieve data: " + ex);
         }
     }
     
@@ -54,7 +54,7 @@ public class ProcessListService extends BaseProcessServlet {
         resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "This servlet is read only. Try using Get.");
     }
     
-    private List<DashboardData> getDashboardData() throws SQLException, JAXBException {
+    private List<DashboardData> getDashboardData() throws SQLException {
         List<DashboardData> dataset = new ArrayList<>();
         for (String request : getRequestIds()) {
             String baseRequestId = request.substring(REQUEST_PREFIX.length());
@@ -64,7 +64,7 @@ public class ProcessListService extends BaseProcessServlet {
         return dataset;
     }
     
-    private DashboardData buildDashboardData(String baseRequestId) throws SQLException, JAXBException {
+    private DashboardData buildDashboardData(String baseRequestId) throws SQLException {
         DashboardData data = new DashboardData();
         long startTime = -1;
         long endTime = System.currentTimeMillis();
@@ -91,6 +91,8 @@ public class ProcessListService extends BaseProcessServlet {
                 if (startTime != -1) {
                     data.setElapsedTime(endTime - startTime);
                 }
+            } catch (JAXBException ex) {
+                data.setErrorMessage("Unmarshalling error for request [" + baseRequestId + "] " + ex.toString());
             }
         }
         return data;
