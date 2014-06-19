@@ -31,6 +31,10 @@ import org.slf4j.LoggerFactory;
 public class ProcessListService extends BaseProcessServlet {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProcessListService.class);
     private static final String DATA_QUERY = "select request_id, request_date, response from results where request_id like ?;";
+    private static final int DATA_QUERY_REQUEST_ID_PARAM_INDEX = 1;
+    private static final int DATA_QUERY_REQUEST_ID_COLUMN_INDEX = 1;
+    private static final int DATA_QUERY_REQUEST_DATE_COLUMN_INDEX = 2;
+    private static final int DATA_QUERY_RESPONSE_COLUMN_INDEX = 3;
     private static final String REQUEST_PREFIX = "REQ_";
     
     @Override
@@ -39,9 +43,9 @@ public class ProcessListService extends BaseProcessServlet {
             String json = new Gson().toJson(getDashboardData());
             resp.setContentType("application/json");
             resp.getWriter().write(json);
-        } catch (SQLException | JAXBException ex) {
-            LOGGER.error("Failed to retrieve or unmarshall data", ex);
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to retrieve or unmarshall data: " + ex);
+        } catch (SQLException ex) {
+            LOGGER.error("Failed to retrieve data", ex);
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to retrieve data: " + ex);
         }
     }
     
@@ -50,7 +54,7 @@ public class ProcessListService extends BaseProcessServlet {
         resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "This servlet is read only. Try using Get.");
     }
     
-    private List<DashboardData> getDashboardData() throws SQLException, JAXBException {
+    private List<DashboardData> getDashboardData() throws SQLException {
         List<DashboardData> dataset = new ArrayList<>();
         for (String request : getRequestIds()) {
             String baseRequestId = request.substring(REQUEST_PREFIX.length());
@@ -60,17 +64,17 @@ public class ProcessListService extends BaseProcessServlet {
         return dataset;
     }
     
-    private DashboardData buildDashboardData(String baseRequestId) throws SQLException, JAXBException {
+    private DashboardData buildDashboardData(String baseRequestId) throws SQLException {
         DashboardData data = new DashboardData();
         long startTime = -1;
         long endTime = System.currentTimeMillis();
         try (Connection conn = getConnection(); PreparedStatement pst = conn.prepareStatement(DATA_QUERY)) {
-            pst.setString(1, "%" + baseRequestId + "%");
+            pst.setString(DATA_QUERY_REQUEST_ID_PARAM_INDEX, "%" + baseRequestId + "%");
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
-                    String requestId = rs.getString(1);
-                    String requestDate = rs.getString(2);
-                    String xml = removeUTF8BOM(rs.getString(3));
+                    String requestId = rs.getString(DATA_QUERY_REQUEST_ID_COLUMN_INDEX);
+                    String requestDate = rs.getString(DATA_QUERY_REQUEST_DATE_COLUMN_INDEX);
+                    String xml = removeUTF8BOM(rs.getString(DATA_QUERY_RESPONSE_COLUMN_INDEX));
                     if (requestId.toUpperCase().endsWith("OUTPUT")) {
                         endTime = Timestamp.valueOf(requestDate).getTime();
                         data.setOutput(xml);
@@ -87,6 +91,8 @@ public class ProcessListService extends BaseProcessServlet {
                 if (startTime != -1) {
                     data.setElapsedTime(endTime - startTime);
                 }
+            } catch (JAXBException ex) {
+                data.setErrorMessage("Unmarshalling error for request [" + baseRequestId + "] " + ex.toString());
             }
         }
         return data;

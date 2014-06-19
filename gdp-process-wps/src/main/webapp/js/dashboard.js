@@ -20,12 +20,16 @@ $(document).ready(function() {
                             $(thString).text('Output'));
                     $.each(processJSON, function(idx, data) {
                         var $dataRow = $(trString).appendTo($table);
-                        $dataRow.append(
+                        if (data.errorMessage) {
+                            $dataRow.append($(tdString).attr('colspan', 5).text(data.errorMessage));
+                        } else {
+                            $dataRow.append(
                                 $(tdString).text(data.identifier),
                                 $(tdString).text(data.status),
                                 $(tdString).text(data.creationTime),
                                 $(tdString).text(data.elapsedTime),
                                 $(tdString).text(data.output));
+                        }
                     });
                 } else {
                     $('#processData').text("No processes found");

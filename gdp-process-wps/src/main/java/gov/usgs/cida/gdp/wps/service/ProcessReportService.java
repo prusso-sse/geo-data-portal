@@ -29,17 +29,19 @@ public class ProcessReportService extends BaseProcessServlet {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ProcessReportService.class);
     private static final String RESPONSE_QUERY = "select response from results where request_id = ANY ( ? );";
+    private static final int RESPONSE_QUERY_RESPONSE_COLUMN_INDEX = 1;
+    private static final int RESPONSE_QUERY_REQUEST_ID_LIST_PARAM_INDEX = 1;
     
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try (Connection conn = getConnection(); PreparedStatement pst = conn.prepareStatement(RESPONSE_QUERY)) {
             Report report = new Report();
             Unmarshaller unmarshaller = null;
-            pst.setArray(1, conn.createArrayOf("varchar", getRequestIds().toArray()));
+            pst.setArray(RESPONSE_QUERY_REQUEST_ID_LIST_PARAM_INDEX, conn.createArrayOf("varchar", getRequestIds().toArray()));
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     String dataSetURI = null;
-                    String xml = removeUTF8BOM(rs.getString(1));
+                    String xml = removeUTF8BOM(rs.getString(RESPONSE_QUERY_RESPONSE_COLUMN_INDEX));
                     StreamSource source = new StreamSource(new StringReader(xml));
                     if (null == unmarshaller) {
                         unmarshaller = JAXBContext.newInstance(WPS_NAMESPACE).createUnmarshaller();
