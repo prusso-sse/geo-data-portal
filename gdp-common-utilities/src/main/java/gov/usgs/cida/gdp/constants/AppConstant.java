@@ -42,8 +42,20 @@ public enum AppConstant {
     private static org.slf4j.Logger log = LoggerFactory.getLogger(AppConstant.class);
 
     private AppConstant(final String input) {
-        DynamicReadOnlyProperties properties = JNDISingleton.getInstance();
-        String result = properties.getProperty(input);
+        DynamicReadOnlyProperties properties = null;
+        
+        try{
+        	properties = JNDISingleton.getInstance();
+        } catch (Exception e) {
+        	// Silently fail as we will just go ahead and load the defaults...
+        	//System.out.println(e.getMessage());
+        }
+        
+        String result = null;
+        
+        if(properties != null) {
+        	result = properties.getProperty(input);
+        }
 
         if (result == null || "".equals(result)) {
             ///////////////////// File system constants
