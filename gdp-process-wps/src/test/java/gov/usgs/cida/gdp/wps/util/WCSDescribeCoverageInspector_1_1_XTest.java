@@ -36,6 +36,16 @@ public class WCSDescribeCoverageInspector_1_1_XTest {
     public void testArcGISServer_10_Response_1_1_1() throws SAXException, IOException {
         validateArcGISServer_10_ResponseParsing("/wcs/ArcGIS-10.03-DescribeCoverage-1.1.1.xml");
     }
+    
+    @Test
+    public void testArcGISServer_10_21_Response_1_1_0() throws SAXException, IOException {
+    	validateArcGISServer_10_21_ResponseParsing("/wcs/ArcGIS-10.21-DescribeCoverage-1.1.0.xml");
+    }
+
+    @Test
+    public void testArcGISServer_10__21_Response_1_1_1() throws SAXException, IOException {
+    	validateArcGISServer_10_21_ResponseParsing("/wcs/ArcGIS-10.21-DescribeCoverage-1.1.1.xml");
+    }
 
     @Test
     public void testGeoServer_2_1_Response_1_1_1() throws SAXException, IOException {
@@ -158,6 +168,65 @@ public class WCSDescribeCoverageInspector_1_1_XTest {
             assertArrayEquals(
                     new String[]{
                         "urn:ogc:def:crs:EPSG::4326",
+                        "urn:ogc:def:crs:EPSG::4326"},
+                    supportedCRS);
+
+        } finally {
+            IOUtils.closeQuietly(inputStream);
+        }
+    }
+    
+    private void validateArcGISServer_10_21_ResponseParsing(String resourceName) throws SAXException, IOException {
+
+        InputStream inputStream = null;
+        try {
+            inputStream = getClass().getResourceAsStream(resourceName);
+            assertNotNull(inputStream);
+
+            WCSDescribeCoverageInspector_1_1_X inspector = new WCSDescribeCoverageInspector_1_1_X(
+                    DocumentUtil.createDocument(inputStream),
+                    "1");
+
+            assertEquals("urn:ogc:def:crs:EPSG::3857", inspector.getGridBaseCRSAsString());
+
+            assertEquals("", inspector.getGridTypeAsString());
+
+            double[] gridOffsets = inspector.getGridOffsets();
+            assertNotNull(gridOffsets);
+            assertEquals(30, gridOffsets[0], 1e-12);
+            assertEquals(-30, gridOffsets[1], 1e-12);
+
+            double[] gridOrigin = inspector.getGridOrigin();
+            assertNotNull(gridOrigin);
+            assertEquals(-14497438.9106248, gridOrigin[0], 1e-12);
+            assertEquals(6960313.8817100283, gridOrigin[1], 1e-12);
+
+            double[] gridLowerCorner = inspector.getGridLowerCorner();
+            assertNotNull(gridLowerCorner);
+            assertEquals(-14497453.9106248, gridLowerCorner[0], 1e-9);
+            assertEquals(2480608.8817100283, gridLowerCorner[1], 1e-10);
+
+
+            double[] gridUpperCorner = inspector.getGridUpperCorner();
+            assertNotNull(gridUpperCorner);
+            assertEquals(-7087933.9106248002, gridUpperCorner[0], 1e-10);
+            assertEquals(6960328.8817100283, gridUpperCorner[1], 1e-10);
+
+            assertEquals("Byte", inspector.getGridDataTypeAsString());
+
+            String[] supportedFormats = inspector.getGridSupportedFormats();
+            assertArrayEquals(
+                    new String[]{
+                        "image/GeoTIFF",
+                        "image/NITF",
+                        "image/HDF",
+                        "image/PNG"},
+                    supportedFormats);
+
+            String[] supportedCRS = inspector.getGridSupportedCRS();
+            assertArrayEquals(
+                    new String[]{
+                        "urn:ogc:def:crs:EPSG::3857",
                         "urn:ogc:def:crs:EPSG::4326"},
                     supportedCRS);
 
