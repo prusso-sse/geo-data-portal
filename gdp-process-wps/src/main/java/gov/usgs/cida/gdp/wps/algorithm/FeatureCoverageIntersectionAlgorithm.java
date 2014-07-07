@@ -1,10 +1,13 @@
 package gov.usgs.cida.gdp.wps.algorithm;
 
+import gov.usgs.cida.gdp.constants.AppConstant;
 import gov.usgs.cida.gdp.wps.binding.GMLStreamingFeatureCollectionBinding;
 import gov.usgs.cida.gdp.wps.binding.GeoTIFFFileBinding;
 import gov.usgs.cida.gdp.wps.util.WCSUtil;
+
 import java.io.File;
 import java.net.URI;
+
 import org.geotools.feature.FeatureCollection;
 import org.n52.wps.algorithm.annotation.Algorithm;
 import org.n52.wps.algorithm.annotation.ComplexDataInput;
@@ -74,7 +77,7 @@ public class FeatureCoverageIntersectionAlgorithm extends AbstractAnnotatedAlgor
 
     @Execute
     public void process() {
-        output = WCSUtil.generateTIFFFile(datasetURI, datasetId, featureCollection.getBounds(), requireFullCoverage);
+        output = WCSUtil.generateTIFFFile(datasetURI, datasetId, featureCollection.getBounds(), requireFullCoverage, AppConstant.WORK_LOCATION.getValue());
     }
 
 

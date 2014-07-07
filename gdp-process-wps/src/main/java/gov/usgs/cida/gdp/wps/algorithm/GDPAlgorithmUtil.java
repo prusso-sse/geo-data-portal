@@ -1,17 +1,21 @@
 package gov.usgs.cida.gdp.wps.algorithm;
 
+import gov.usgs.cida.gdp.constants.AppConstant;
 import gov.usgs.cida.gdp.coreprocessing.analysis.grid.GridUtility;
 import gov.usgs.cida.gdp.wps.util.WCSUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Date;
 import java.util.Formatter;
+
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import ucar.ma2.InvalidRangeException;
 import ucar.ma2.Range;
 import ucar.nc2.constants.FeatureType;
@@ -93,7 +97,7 @@ public abstract class GDPAlgorithmUtil {
                         log.error("Error generating grid data type", ex);
                     }
                 } else if ("http".equals(featureDatasetScheme)) {
-                    File tiffFile = WCSUtil.generateTIFFFile(datasetURI, datasetId, featureBounds, requireFullCoverage);
+                    File tiffFile = WCSUtil.generateTIFFFile(datasetURI, datasetId, featureBounds, requireFullCoverage, AppConstant.WORK_LOCATION.getValue());
                     featureDataset = FeatureDatasetFactoryManager.open(
                             FeatureType.GRID,
                             tiffFile.getCanonicalPath(),

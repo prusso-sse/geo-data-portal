@@ -1,14 +1,17 @@
 package org.n52.wps.server.database;
 
-import com.google.common.base.Joiner;
 import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -29,16 +32,19 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+
 import org.apache.commons.io.IOUtils;
 import org.n52.wps.ServerDocument;
 import org.n52.wps.commons.PropertyUtil;
 import org.n52.wps.commons.WPSConfig;
-import static org.n52.wps.server.database.AbstractDatabase.getDatabasePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Joiner;
 
 /**
  *
@@ -47,6 +53,8 @@ import org.slf4j.LoggerFactory;
 public class PostgresDatabase extends AbstractDatabase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PostgresDatabase.class);
+    
+    private static final String DEFAULT_ENCODING = "UTF-8";
 
     private static final String KEY_DATABASE_ROOT = "org.n52.wps.server.database";
     private static final String KEY_DATABASE_PATH = "path";
@@ -184,46 +192,172 @@ public class PostgresDatabase extends AbstractDatabase {
     public String insertResponse(String id, InputStream inputStream) {
         return insertResultEntity(inputStream, id, "ExecuteResponse", "text/xml");
     }
-
+    
     @Override
     protected String insertResultEntity(InputStream stream, String id, String type, String mimeType) {
-        BufferedInputStream dataStream = new BufferedInputStream(stream, DATA_BUFFER_SIZE);
-        boolean isOutput = null != id && id.toLowerCase().contains("output");
-
-        if (isOutput && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
+    	/**
+    	 * The following is a possible memory risk.  Blodgett says its possible
+    	 * to get a data stream that will overflow our available memory but this
+    	 * is an issue that is present in many places in GDP (circa 7/07/14 Blodgett).
+    	 * 
+    	 *  He wants this bug fix (JIRA GDP-810) in place asap and assumes Jordan
+    	 *  will improvise a fix for this possibility with the rewrite (circa 7/07/14 Blodgett).
+    	 */
+    	StringWriter writer = new StringWriter();
+    	try {
+			IOUtils.copy(stream, writer, DEFAULT_ENCODING);
+		} catch (IOException e) {
+			LOGGER.error("Failed to copy data stream", e);
+			return "";
+		}
+    	String data = writer.toString();
+    	writer.flush();
+    	try {
+			writer.close();
+		} catch (IOException e) {
+			LOGGER.warn("Failed to close stream writer.  Continuing...", e);
+		}
+    	
+    	/**
+    	 * Save response to disk for further requests.
+    	 * 
+    	 * If we save it like this we change the data saved into the DB as the
+    	 * name of the file instead of the actual data
+    	 */
+    	boolean isOutput = null != id && id.toLowerCase().contains("output");
+    	if (isOutput && !Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"))) {
             try {
-                dataStream = writeDataToDiskWithGZIP(id, stream);
+                data = writeDataToDiskWithGZIP(id, data);
             } catch (Exception ex) {
                 LOGGER.error("Failed to write output data to disk", ex);
             }
         }
-
-        try (Connection connection = getConnection(); PreparedStatement insertStatement = connection.prepareStatement(insertionString)) {
-            insertStatement.setString(INSERT_COLUMN_REQUEST_ID, id);
-            insertStatement.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
-            insertStatement.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
-            insertStatement.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
-            insertStatement.setAsciiStream(INSERT_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
-            insertStatement.executeUpdate();
-            LOGGER.debug("inserted request {} into database", id);
-        } catch (SQLException ex) {
-            LOGGER.error("Failed to insert result data into the database", ex);
-        }
+    	
+    	Connection connection = getConnection();
+    	
+    	/**
+    	 *  This is a single insert but we'll use a prepared statement for auto
+    	 *  escaping.
+    	 */
+    	PreparedStatement insertStatement;
+		try {
+			insertStatement = connection.prepareStatement(insertionString);
+		} catch (SQLException e) {
+			LOGGER.error("Failed to create prepared statement", e);
+			
+			try {
+		    	connection.close();
+	    	} catch (Exception e1) {
+	    		LOGGER.warn("Failed to close database connection.", e1);
+	    	}
+			return "";
+		}
+    	
+		/**
+    	 * Result insert looks like:
+    	 * 
+    	 * 		"INSERT INTO RESULTS VALUES (id, date, type, data, mimeType)"
+    	 */
+        try {
+			insertStatement.setString(INSERT_COLUMN_REQUEST_ID, id);
+	        insertStatement.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
+	        insertStatement.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
+	        insertStatement.setString(INSERT_COLUMN_RESPONSE, data);
+	        insertStatement.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
+	        
+	        insertStatement.executeUpdate();
+	        
+	        LOGGER.debug("inserted data {" + data + "} into database with id of:" + id + ", type of: " + type + ", mimetype of: " + mimeType);
+        } catch (SQLException e) {
+			LOGGER.error("Failed to insert data into database for ID: " + id, e);
+		} finally {    	
+	    	try {
+	    		insertStatement.close();
+	    	} catch (Exception e) {
+	    		LOGGER.warn("Failed to close database statement.  Continuing...", e);
+	    	}
+	    	
+	    	try {
+		    	connection.close();
+	    	} catch (Exception e) {
+	    		LOGGER.warn("Failed to close database connection.  Continuing...", e);
+	    	}
+		}
 
         return generateRetrieveResultURL(id);
     }
 
     @Override
     public void updateResponse(String id, InputStream stream) {
-        BufferedInputStream dataStream = new BufferedInputStream(stream, DATA_BUFFER_SIZE);
+    	/**
+    	 * The following is a possible memory risk.  Blodgett says its possible
+    	 * to get a data stream that will overflow our available memory but this
+    	 * is an issue that is present in many places in GDP (circa 7/07/14 Blodgett).
+    	 * 
+    	 *  He wants this bug fix (JIRA GDP-810) in place asap and assumes Jordan
+    	 *  will improvise a fix for this possibility with the rewrite (circa 7/07/14 Blodgett).
+    	 */
+        StringWriter writer = new StringWriter();
+    	try {
+			IOUtils.copy(stream, writer, DEFAULT_ENCODING);
+		} catch (IOException e) {
+			LOGGER.error("Failed to copy data stream", e);
+			return;
+		}
+    	String data = writer.toString();
+    	writer.flush();
+    	try {
+			writer.close();
+		} catch (IOException e) {
+			LOGGER.warn("Failed to close stream writer.  Continuing...", e);
+		}
 
-        try (Connection connection = getConnection(); PreparedStatement updateStatement = connection.prepareStatement(updateString)) {
-            updateStatement.setString(UPDATE_COLUMN_REQUEST_ID, id);
-            updateStatement.setAsciiStream(UPDATE_COLUMN_RESPONSE, dataStream, DATA_BUFFER_SIZE);
+    	Connection connection = getConnection();
+    	
+    	/**
+    	 *  This is a single insert but we'll use a prepared statement for auto
+    	 *  escaping.
+    	 */
+    	PreparedStatement updateStatement;
+		try {
+			updateStatement = connection.prepareStatement(updateString);
+		} catch (SQLException e) {
+			LOGGER.error("Failed to create prepared statement", e);
+			
+			try {
+		    	connection.close();
+	    	} catch (Exception e1) {
+	    		LOGGER.warn("Failed to close database connection.", e1);
+	    	}
+			
+			return;
+		}
+		
+		/**
+    	 * Result update looks like:
+    	 * 		"UPDATE RESULTS SET RESPONSE = ('') WHERE REQUEST_ID = ('')"
+    	 */
+		try {			
+			updateStatement.setString(UPDATE_COLUMN_REQUEST_ID, id);
+            updateStatement.setString(UPDATE_COLUMN_RESPONSE, data);
             updateStatement.executeUpdate();
-        } catch (SQLException ex) {
-            LOGGER.error("Could not update response in database", ex);
-        }
+	        
+	        LOGGER.debug("inserted data {" + data + "} into database with id of:" + id);
+        } catch (SQLException e) {
+			LOGGER.error("Failed to insert data into database for ID: " + id, e);
+		} finally {    	
+	    	try {
+	    		updateStatement.close();
+	    	} catch (Exception e) {
+	    		LOGGER.warn("Failed to close database statement.  Continuing...", e);
+	    	}
+	    	
+	    	try {
+		    	connection.close();
+	    	} catch (Exception e) {
+	    		LOGGER.warn("Failed to close database connection.  Continuing...", e);
+	    	}
+		}
     }
 
     @Override
@@ -306,13 +440,31 @@ public class PostgresDatabase extends AbstractDatabase {
      * @return a stream of the file URI pointing where the data was written
      * @throws IOException
      */
-    private BufferedInputStream writeDataToDiskWithGZIP(String filename, InputStream stream) throws Exception {
+    private BufferedInputStream writeDataStreamToDiskWithGZIP(String filename, InputStream stream) throws Exception {
         Path filePath = Files.createFile(BASE_DIRECTORY.resolve(Joiner.on(".").join(filename, SUFFIX_GZIP)));
         OutputStream outputStream = new GZIPOutputStream(Files.newOutputStream(filePath));
         IOUtils.copy(stream, outputStream);
         IOUtils.closeQuietly(outputStream);
         byte[] filePathByteArray = filePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "").getBytes();
         return new BufferedInputStream(new ByteArrayInputStream(filePathByteArray));
+    }
+    
+    /**
+     * 
+     * @param filename base filename
+     * @param data String of data to write to disk, compressed using gzip
+     * @return String of the file URI pointing where the data was written
+     * @throws Exception
+     */
+    private String writeDataToDiskWithGZIP(String filename, String data) throws Exception {    	
+        Path filePath = Files.createFile(BASE_DIRECTORY.resolve(Joiner.on(".").join(filename, SUFFIX_GZIP)));
+        BufferedWriter writer = null;
+        GZIPOutputStream zip = new GZIPOutputStream(new FileOutputStream(filePath.toFile()));
+        writer = new BufferedWriter(new OutputStreamWriter(zip, DEFAULT_ENCODING));
+        writer.append(data);
+        writer.close();
+        
+        return filePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "");
     }
 
     private interface ConnectionHandler {

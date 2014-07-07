@@ -56,7 +56,7 @@ public class WCSUtil {
                     null /* drop fragement */);
     }
     
-    public static File generateTIFFFile(URI wcsURI, String wcsIdentifier, ReferencedEnvelope featureBounds, boolean requireFullCoverage) {
+    public static File generateTIFFFile(URI wcsURI, String wcsIdentifier, ReferencedEnvelope featureBounds, boolean requireFullCoverage, String outputFileDir) {
         File tiffFile = null;
         try {
             URI wcsBaseURI = extractWCSBaseURI(wcsURI);
@@ -310,7 +310,7 @@ public class WCSUtil {
                     if (GeoTIFFUtil.isAllowedMimeType(contentType)) {
                         String contentTransferEncoding = headerMap.get("Content-Transfer-Encoding");
                         if (contentTransferEncoding != null) {
-                            tiffFile = File.createTempFile("gdp", ".tiff", new File(AppConstant.WORK_LOCATION.getValue()));
+                            tiffFile = File.createTempFile("gdp", ".tiff", new File(outputFileDir));
                             OutputStream tiffOutputStream = new BufferedOutputStream(new FileOutputStream(tiffFile));
                             mimeMultipartStream.readBodyData(tiffOutputStream, contentTransferEncoding);
                             tiffOutputStream.close();
