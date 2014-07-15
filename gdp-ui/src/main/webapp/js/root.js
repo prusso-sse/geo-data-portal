@@ -2,7 +2,7 @@
 /*jslint sloppy : true */
 /*global log4javascript */
 /*global $ */
-/*global cookie */
+/*global logger */
 /*global window */
 /*global CSWClient */
 /*global incomingParams */
@@ -82,26 +82,26 @@ function createPopupView(popupText, overrideCookie) {
     var popupDiv = $(Constant.divString).attr('id', 'info_popup_modal_window').append(popupText);
 
     if (!overrideCookie) {
-        if (cookie.get('gdp-hide-popup')) {
+		if ($.cookie('gdp-hide-popup')) {
 			return true;
 		}
-        $(popupDiv).append(
-            $(Constant.divString).attr('id', 'info_popup_modal_window_hide_popup_option').append(
-                "Do not show this again?",
-                $(Constant.inputString).attr({
-                    'type': 'checkbox',
-                    'id' : 'dont-show-again-check'
-                })
+		$(popupDiv).append(
+			$(Constant.divString).attr('id', 'info_popup_modal_window_hide_popup_option').append(
+			"Do not show this again?",
+			$(Constant.inputString).attr({
+			'type': 'checkbox',
+			'id': 'dont-show-again-check'
+		})
 			)
-		);
-        $('#dont-show-again-check').live('change', function (action) {
-            if (action.target.checked) {
-                cookie.set('gdp-hide-popup', 'true', '');
-            } else {
-                cookie.del('gdp-hide-popup');
-            }
-        });
-    }
+			);
+		$('#dont-show-again-check').live('change', function (action) {
+			if (action.target.checked) {
+				$.cookie('gdp-hide-popup', 'true');
+			} else {
+				$.removeCookie('gdp-hide-popup');
+			}
+		});
+	}
 
     $('body').append(popupDiv);
     $('#info_popup_modal_window').dialog({

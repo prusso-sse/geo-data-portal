@@ -21,11 +21,11 @@
 		}
 	}
 	boolean development = Boolean.parseBoolean(props.getProperty("development", "false"));
+	String versionCookieJquery = props.getProperty("version.cookie.jquery", "");
 %>
 <%
 	String method = request.getMethod();
 %>
-<script type="text/javascript" src="js/cookie/cookie.js"></script>
 
 <jsp:include page="../js/log4javascript/log4javascript.jsp">
     <jsp:param name="relPath" value=""/>
@@ -34,6 +34,8 @@
 <jsp:include page="../js/jquery/jquery.jsp">
     <jsp:param name="debug-qualifier" value="false"/>
 </jsp:include>
+
+<script type="text/javascript" src="webjars/jquery-cookie/<%=versionCookieJquery%>/jquery.cookie.js"></script>
 
 <script type="text/javascript" src="js/xslt/jquery.xslt.js"></script>
 <script type="text/javascript" src="js/xmlns/jquery.xmlns.js"></script>
