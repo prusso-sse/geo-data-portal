@@ -1260,21 +1260,21 @@ var Dataset = function() {
 			return false;
 		}
 		
+		_hasTimeRange = false;
 		if (!json.availabletimes.time || json.availabletimes.time.length === 0) {
 			logger.debug('GDP: This grid does not contain a time range.');
-			_hasTimeRange = false;
 			return true;
 		}
 		
-		logger.debug('GDP: Initiating date pickers for grid timerange.');
 		var startTime = json.availabletimes.time[0];
 		var endTime = json.availabletimes.time[1];
 		if (!startTime || !endTime) {
 			logger.debug('GDP: This grid does not contain a time range.');
-			_hasTimeRange = false;
 			return true;
 		}
 		_hasTimeRange = true;
+		logger.debug('GDP: Initiating date pickers for grid timerange.');
+
 
 		var fromDate = $.datepicker.parseDate('yy-mm-dd', startTime.split('T')[0]);
 		var toDate = $.datepicker.parseDate('yy-mm-dd', endTime.split('T')[0]);
