@@ -399,13 +399,6 @@ function loadStep(stepNum) {
     return true;
 }
 
-function showIntro() {
-    $.colorbox({
-        href: 'jsp/intro.jsp',
-        width: '600px',
-        transition: 'none'
-    });
-}
 function resizeElements() {
     logger.trace("GDP:root.js::resizeElements(): The application window is resizing. Resizing all elements to fit.");
     resizeCenterDiv();
