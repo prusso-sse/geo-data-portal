@@ -28,6 +28,7 @@
 #row-wps-select,
 #row-proceed {
 	display : none;
+	margin-top: 15px;
 }
 
 .top-lvl-opt {
@@ -36,4 +37,9 @@
 
 optgroup {
 	margin-left: 3px;
+}
+
+#row-incoming-caller-info {
+	margin-top: 15px;
+	color: #888;
 }

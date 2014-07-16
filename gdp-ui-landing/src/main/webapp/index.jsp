@@ -5,15 +5,15 @@
 <!DOCTYPE HTML>
 <%!	protected DynamicReadOnlyProperties props = null;
 
-    {
-        try {
-            props = new DynamicReadOnlyProperties();
-            props = props.addJNDIContexts(new String[0]);
-        } catch (Exception e) {
-            LoggerFactory.getLogger("index.jsp").error("Could not find JNDI - Application will probably not function correctly");
-        }
-    }
-    boolean development = Boolean.parseBoolean(props.getProperty("development"));
+	{
+		try {
+			props = new DynamicReadOnlyProperties();
+			props = props.addJNDIContexts(new String[0]);
+		} catch (Exception e) {
+			LoggerFactory.getLogger("index.jsp").error("Could not find JNDI - Application will probably not function correctly");
+		}
+	}
+	boolean development = Boolean.parseBoolean(props.getProperty("development"));
 %>
 <html lang="en">
     <head>
@@ -123,6 +123,10 @@
                     </div>
                 </div>
             </div>
+
+			<div id="row-incoming-caller-info" class="row text-center">
+				<%-- If user is coming through an external caller (like ScienceBase), this will have content --%>
+			</div>
 
             <div id="row-proceed" class="row text-center">
                 <button id="btn-proceed" class="btn btn-success">Process Data with the Geo Data Portal</button>
