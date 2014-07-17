@@ -16,14 +16,14 @@ GDP.UI = function (args) {
 
 		// Attach arrays of algorithm names to their respective buttons
 		$('#btn-choice-algorithm-areal').data({
-			algorithms : [
+			algorithms: [
 				"gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm",
 				"gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm",
 				"gov.usgs.cida.gdp.wps.algorithm.FeatureCategoricalGridCoverageAlgorithm"
 			]
 		});
 		$('#btn-choice-algorithm-subset').data({
-			algorithms : [
+			algorithms: [
 				"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageOPeNDAPIntersectionAlgorithm",
 				"gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm"
 			]
@@ -36,9 +36,9 @@ GDP.UI = function (args) {
 		var me = this,
 			updateOfferingMaps = function () {
 				GDP.CONFIG.cswClient.getDomain({
-					propertyName : 'keyword',
-					callbacks : {
-						success : [
+					propertyName: 'keyword',
+					callbacks: {
+						success: [
 							function (cswGetDomainResponseObject) {
 								var dvIdx,
 									value,
@@ -52,10 +52,10 @@ GDP.UI = function (args) {
 								}
 
 								this.getRecordsByKeywordsFromServer({
-									scope : me,
-									keywords : [Object.keys(GDP.CONFIG.offeringMaps.wpsToCsw)],
-									callbacks : {
-										success : [
+									scope: me,
+									keywords: [Object.keys(GDP.CONFIG.offeringMaps.wpsToCsw)],
+									callbacks: {
+										success: [
 											function (cswGetRecRespObj) {
 												var records = cswGetRecRespObj.records,
 													wpsToCsw = GDP.CONFIG.offeringMaps.wpsToCsw,
@@ -78,7 +78,7 @@ GDP.UI = function (args) {
 													}
 
 													algorithmArray = GDP.CONFIG.cswClient.getAlgorithmArrayFromRecord({
-														record : record
+														record: record
 													});
 
 													for (algIdx = 0; algIdx < algorithmArray.length; algIdx++) {
@@ -108,11 +108,11 @@ GDP.UI = function (args) {
 												this.initializationCompleted();
 											}
 										],
-										error : [
+										error: [
 											function (error) {
 												GDP.CONFIG.ui.errorEncountered({
-													data : error,
-													recoverable : false
+													data: error,
+													recoverable: false
 												});
 											}
 										]
@@ -120,11 +120,11 @@ GDP.UI = function (args) {
 								});
 							}
 						],
-						error : [
+						error: [
 							function (error) {
 								GDP.CONFIG.ui.errorEncountered({
-									data : error,
-									recoverable : false
+									data: error,
+									recoverable: false
 								});
 							}
 						]
@@ -176,9 +176,9 @@ GDP.UI = function (args) {
 					}
 				} else if (buttonId === btnAlgorithmArealId) {
 					if (depressedButtonIds.indexOf(btnDatasetClimateId) === -1 &&
-							depressedButtonIds.indexOf(btnDatasetLandscapeId) === -1) {
+						depressedButtonIds.indexOf(btnDatasetLandscapeId) === -1) {
 						records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
-							algorithms : arealAlgs
+							algorithms: arealAlgs
 						});
 					} else {
 						keywords.push(arealAlgs);
@@ -190,9 +190,9 @@ GDP.UI = function (args) {
 					}
 				} else if (buttonId === btnAlgorithmSubsetId) {
 					if (depressedButtonIds.indexOf(btnDatasetClimateId) === -1 &&
-							depressedButtonIds.indexOf(btnDatasetLandscapeId) === -1) {
+						depressedButtonIds.indexOf(btnDatasetLandscapeId) === -1) {
 						records = GDP.CONFIG.wpsClient.getRecordsByAlgorithmArray({
-							algorithms : subsetAlgs
+							algorithms: subsetAlgs
 						});
 					} else {
 						keywords.push(subsetAlgs);
@@ -206,39 +206,39 @@ GDP.UI = function (args) {
 
 				if (records) {
 					me.updateCswDropdown({
-						offerings : records
+						offerings: records
 					});
 				} else {
 					GDP.CONFIG.cswClient.getRecordsByKeywordsFromServer({
-						scope : me,
-						keywords : keywords,
-						callbacks : {
-							success : [
+						scope: me,
+						keywords: keywords,
+						callbacks: {
+							success: [
 								function (cswGetRecRespObj) {
 									var records;
 
 									records = GDP.CONFIG.cswClient.getCswIdentToRecordMapFromRecordsArray({
-										records : cswGetRecRespObj.records
+										records: cswGetRecRespObj.records
 									});
 
 									if (Object.keys(cswGetRecRespObj).length > 0) {
 										me.updateCswDropdown({
-											offerings : records
+											offerings: records
 										});
 									} else {
 										$.bootstrapGrowl('Could not find any records to match your criteria',
 											{
-												type : 'info',
-												'allow_dismiss' : false
+												type: 'info',
+												'allow_dismiss': false
 											});
 									}
 								}
 							],
-							error : [
+							error: [
 								function (error) {
 									GDP.CONFIG.ui.errorEncountered({
-										data : error,
-										recoverable : false
+										data: error,
+										recoverable: false
 									});
 								}
 							]
@@ -279,7 +279,7 @@ GDP.UI = function (args) {
 				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[ident];
 				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[ident];
 				title = GDP.CONFIG.cswClient.getTitleFromRecord({
-					record : record
+					record: record
 				});
 				subtitle = $(event.target).find('option[value="' + value + '"]').html();
 				isDatasetChosen = $('.btn-group label.active input').attr('id').indexOf('dataset') !== -1;
@@ -289,18 +289,18 @@ GDP.UI = function (args) {
 				}
 
 				content = GDP.CONFIG.cswClient.getAbstractFromRecord({
-					record : record
+					record: record
 				});
 
 				titleContainer.html(title);
 				contentContainer.html(window.replaceURLWithHTMLLinks(content));
 				contentContainer.append('&nbsp;&nbsp;&nbsp;&nbsp;',
 					$('<a />')
-						.attr({
-						'id' :  'view-full-info-link',
-						'ident' : ident
+					.attr({
+						'id': 'view-full-info-link',
+						'ident': ident
 					})
-						.html('View Full Record')
+					.html('View Full Record')
 					);
 
 				if (datasetDropdown.val() && me.isProcessingButtonSelected()) {
@@ -312,7 +312,7 @@ GDP.UI = function (args) {
 				$('#view-full-info-link').on('click', function () {
 					var ident = this.attributes.ident.value;
 					GDP.CONFIG.cswClient.createFullRecordView({
-						identifier : ident
+						identifier: ident
 					});
 
 					// The excat client we are using is specific to the GDP so it has
@@ -326,8 +326,8 @@ GDP.UI = function (args) {
 							rootHref = hrefAttr.substring(firstIndex, lastIndex);
 
 						$(o).attr({
-							'href' : rootHref,
-							'target' : '_datasetTab'
+							'href': rootHref,
+							'target': '_datasetTab'
 						});
 					});
 
@@ -343,16 +343,16 @@ GDP.UI = function (args) {
 
 		this.updateCswDropdown = function (args) {
 			args = args || {};
-			var offerings =  args.offerings || GDP.CONFIG.offeringMaps.cswToWps,
+			var offerings = args.offerings || GDP.CONFIG.offeringMaps.cswToWps,
 				datasetDropDown = $('#form-control-select-csw'),
 				cswGroupRow = $('#row-csw-group'),
 				ident,
 				option,
 				emptyOption = $('<option />').attr({
-					'value' : '',
-					'disabled' : true,
-					'selected' : true
-				}).html('Select dataset from this drop down menu'),
+				'value': '',
+				'disabled': true,
+				'selected': true
+			}).html('Select dataset from this drop down menu'),
 				currentlySelectedOption = datasetDropDown.val();
 
 			datasetDropDown.empty();
@@ -360,7 +360,7 @@ GDP.UI = function (args) {
 			for (ident in offerings) {
 				if (offerings.hasOwnProperty(ident)) {
 					option = GDP.CONFIG.cswClient.createOptionFromRecord({
-						record : GDP.CONFIG.offeringMaps.cswIdentToRecord[ident]
+						record: GDP.CONFIG.offeringMaps.cswIdentToRecord[ident]
 					});
 					datasetDropDown.append(option);
 				}
@@ -386,15 +386,15 @@ GDP.UI = function (args) {
 			if (recoverable) {
 				$.bootstrapGrowl(data,
 					{
-						type : 'info',
-						'allow_dismiss' : false
+						type: 'info',
+						'allow_dismiss': false
 					});
 			} else {
 				$('#unrecoverable-error-modal .modal-body').append(
 					$('<div />').attr({
-						'id' : 'unrecoverable-error-modal-modal-body-content'
-					}).html(data + '<br /><br />Please try to reload the application or contact the system administrator for support with this error.')
-				);
+					'id': 'unrecoverable-error-modal-modal-body-content'
+				}).html(data + '<br /><br />Please try to reload the application or contact the system administrator for support with this error.')
+					);
 				$('#unrecoverable-error-modal').modal('show');
 			}
 		};
@@ -406,7 +406,6 @@ GDP.UI = function (args) {
 				var csw,
 					cswIdent,
 					cswUrl,
-                    cswRecord,
 					win,
 					url,
 					pKey,
@@ -417,8 +416,8 @@ GDP.UI = function (args) {
 					recordAlgorithms,
 					formContainer,
 					form,
-                    useCache,
-                    status,
+					useCache,
+					status,
 					incomingParams = GDP.CONFIG.incomingParams,
 					datasetDropdown = $('#form-control-select-csw'),
 					datasetDropdownValue = datasetDropdown.val(),
@@ -430,7 +429,7 @@ GDP.UI = function (args) {
 					cswIdent = datasetDropdownValue.split(';')[1];
 
 					recordAlgorithms = GDP.CONFIG.cswClient.getAlgorithmArrayFromRecord({
-						record : GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent]
+						record: GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent]
 					});
 
 					// Try to figure out which algorithsm from the selected 
@@ -446,10 +445,10 @@ GDP.UI = function (args) {
 					algorithms = algorithms.join(',');
 
 					csw = encodeURIComponent(cswUrl);
-                    status = GDP.CONFIG.cswClient.getStatusFromRecord({
-                        'record' : GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent]
-                    });
-                    useCache = status === 'completed';
+					status = GDP.CONFIG.cswClient.getStatusFromRecord({
+						'record': GDP.CONFIG.offeringMaps.cswIdentToRecord[cswIdent]
+					});
+					useCache = status === 'completed';
 					if (GDP.CONFIG.incomingMethod === 'GET') {
 						url = GDP.CONFIG.hosts.gdp + '?dataset=' + csw + '&algorithm=' + algorithms + '&useCache=' + useCache;
 
@@ -495,8 +494,8 @@ GDP.UI = function (args) {
 							'name': 'dataset',
 							'value': csw
 						}));
-                        
-                        form.append($('<input />').attr({
+
+						form.append($('<input />').attr({
 							'type': 'hidden',
 							'name': 'useCache',
 							'value': useCache
@@ -521,19 +520,19 @@ GDP.UI = function (args) {
 		};
 
 		GDP.CONFIG.cswClient.requestGetCapabilities({
-			callbacks : {
-				success : [
+			callbacks: {
+				success: [
 					function () {
 						if (GDP.CONFIG.wpsClient.capabilitiesDocument) {
 							updateOfferingMaps();
 						}
 					}
 				],
-				error : [
+				error: [
 					function (error) {
 						GDP.CONFIG.ui.errorEncountered({
-							data : error,
-							recoverable : false
+							data: error,
+							recoverable: false
 						});
 					}
 				]
@@ -541,19 +540,19 @@ GDP.UI = function (args) {
 		});
 
 		GDP.CONFIG.wpsClient.requestGetCapabilities({
-			callbacks : {
-				success : [
+			callbacks: {
+				success: [
 					function (capabilities) {
 						if (GDP.CONFIG.cswClient.capabilitiesDocument) {
 							updateOfferingMaps();
 						}
 					}
 				],
-				error : [
+				error: [
 					function (error) {
 						GDP.CONFIG.ui.errorEncountered({
-							data : error,
-							recoverable : false
+							data: error,
+							recoverable: false
 						});
 					}
 				]
@@ -564,11 +563,11 @@ GDP.UI = function (args) {
 	this.init();
 
 	return {
-		isProcessingButtonSelected : this.isProcessingButtonSelected,
-		bindProceedButton : this.bindProceedButton,
-		updateCswDropdown : this.updateCswDropdown,
-		cswDropdownUpdated : this.cswDropdownChanged,
-		errorEncountered : this.errorEncountered,
-		removeOverlay : this.removeOverlay
+		isProcessingButtonSelected: this.isProcessingButtonSelected,
+		bindProceedButton: this.bindProceedButton,
+		updateCswDropdown: this.updateCswDropdown,
+		cswDropdownUpdated: this.cswDropdownChanged,
+		errorEncountered: this.errorEncountered,
+		removeOverlay: this.removeOverlay
 	};
 };
