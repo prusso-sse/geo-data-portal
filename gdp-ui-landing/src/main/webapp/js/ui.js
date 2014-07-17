@@ -131,6 +131,10 @@ GDP.UI = function (args) {
 					}
 				});
 			},
+			/**
+			 * Handles clicking of either datasets buttons or processing buttons
+			 * @type type
+			 */
 			buttonSelected = function (event) {
 				var me = this,
 					button = event.target,
@@ -254,6 +258,12 @@ GDP.UI = function (args) {
 				});
 		};
 
+		/**
+		 * Handles both dataset selection dropdowns changing
+		 * 
+		 * @param {type} event
+		 * @returns {undefined}
+		 */
 		this.cswDropdownChanged = function (event) {
 			var eventTarget = event.target,
 				value = eventTarget.value,
@@ -369,13 +379,12 @@ GDP.UI = function (args) {
 							}
 						}
 
-						$childSelectControl.off('change', GDP.UI().cswDropdownUpdated);
-						$childSelectControl.on('change', GDP.UI().cswDropdownUpdated);
 						$childSelectRow.fadeIn();
 					} else {
 						// Chosen option has no children
 						var descriptionObject = getDescriptionObject(value, $(eventTarget));
 						updateContent(descriptionObject, ident, titleContainer, contentContainer);
+						$childSelectControl.off('change', this.cswDropdownChanged);
 					}
 				} else {
 					var descriptionObject = getDescriptionObject(value, $(eventTarget));
@@ -384,7 +393,7 @@ GDP.UI = function (args) {
 
 				isDatasetChosen = $('.btn-group label.active input').attr('id').indexOf('dataset') !== -1;
 
-				if ($(eventTarget).val() && me.isProcessingButtonSelected()) {
+				if ($chosenOption.attr('value') && me.isProcessingButtonSelected()) {
 					proceedRowPlaceholder.fadeOut();
 					proceedRow.fadeIn();
 					me.bindProceedButton();
@@ -395,8 +404,10 @@ GDP.UI = function (args) {
 		this.updateCswDropdown = function (args) {
 			args = args || {};
 			var offerings = args.offerings || GDP.CONFIG.offeringMaps.cswToWps,
-				datasetDropDown = $('#form-control-select-csw'),
-				cswGroupRow = $('#row-csw-group'),
+				$datasetDropDown = $('#form-control-select-csw'),
+				$childSelectRow = $('#row-csw-select-child'),
+				$datasetDropDownChild = $('#form-control-select-csw-child'),
+				$cswGroupRow = $('#row-csw-group'),
 				ident,
 				option,
 				emptyOption = $('<option />').attr({
@@ -404,28 +415,40 @@ GDP.UI = function (args) {
 				'disabled': true,
 				'selected': true
 			}).html('Select dataset from this drop down menu'),
-				currentlySelectedOption = datasetDropDown.val();
+				currentlySelectedOption = $datasetDropDown.val(),
+				currentlySelectedChildOption = $datasetDropDownChild.val();
 
-			datasetDropDown.empty();
-			datasetDropDown.append(emptyOption);
+			$datasetDropDown.empty();
+			$datasetDropDown.append(emptyOption);
+
+			$childSelectRow.fadeOut();
+			$datasetDropDownChild.empty();
+
 			for (ident in offerings) {
 				if (offerings.hasOwnProperty(ident)) {
 					option = GDP.CONFIG.cswClient.createOptionFromRecord({
 						record: GDP.CONFIG.offeringMaps.cswIdentToRecord[ident]
 					});
-					datasetDropDown.append(option);
+					$datasetDropDown.append(option);
 				}
 			}
 
-			datasetDropDown.val(currentlySelectedOption);
-			datasetDropDown.trigger('change');
-
-			if (cswGroupRow.css('display') === 'none') {
-				cswGroupRow.fadeIn();
+			$datasetDropDown.val(currentlySelectedOption);
+			$datasetDropDown.trigger('change');
+			if (currentlySelectedChildOption) {
+				$datasetDropDownChild.val(currentlySelectedChildOption);
+				$datasetDropDownChild.trigger('change');
 			}
 
-			datasetDropDown.off('change', this.cswDropdownChanged);
-			datasetDropDown.on('change', this.cswDropdownChanged);
+
+			if ($cswGroupRow.css('display') === 'none') {
+				$cswGroupRow.fadeIn();
+			}
+
+			$datasetDropDown.off('change', this.cswDropdownChanged);
+			$datasetDropDown.on('change', this.cswDropdownChanged);
+			$datasetDropDownChild.off('change', this.cswDropdownChanged);
+			$datasetDropDownChild.on('change', this.cswDropdownChanged);
 		};
 
 		this.errorEncountered = function (args) {
