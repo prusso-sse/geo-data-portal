@@ -265,14 +265,13 @@ GDP.UI = function (args) {
 				isDatasetChosen,
 				datasetDropdown = $('#form-control-select-csw'),
 				proceedRow = $('#row-proceed'),
-                proceedRowPlaceholder = $('#row-proceed-placeholder'),
-				fullInfoLink = $('#view-full-info-link'),
+				proceedRowPlaceholder = $('#row-proceed-placeholder'),
 				contentContainer = $('#p-csw-information-content'),
 				titleContainer = $('#p-csw-information-title');
 
 			if (!value) {
 				proceedRow.fadeOut();
-                proceedRowPlaceholder.fadeIn();
+				proceedRowPlaceholder.fadeIn();
 				titleContainer.html('');
 				contentContainer.html('');
 			} else {
@@ -305,7 +304,7 @@ GDP.UI = function (args) {
 					);
 
 				if (datasetDropdown.val() && me.isProcessingButtonSelected()) {
-                    proceedRowPlaceholder.fadeOut();
+					proceedRowPlaceholder.fadeOut();
 					proceedRow.fadeIn();
 					me.bindProceedButton();
 				}
@@ -349,17 +348,15 @@ GDP.UI = function (args) {
 				cswGroupRow = $('#row-csw-group'),
 				ident,
 				option,
+				emptyOption = $('<option />').attr({
+					'value' : '',
+					'disabled' : true,
+					'selected' : true
+				}).html('Select dataset from this drop down menu'),
 				currentlySelectedOption = datasetDropDown.val();
 
 			datasetDropDown.empty();
-			datasetDropDown.append(
-				$('<option />')
-					.attr({
-						name : '',
-						value : '',
-						label : ''
-					}).html('')
-			);
+			datasetDropDown.append(emptyOption);
 			for (ident in offerings) {
 				if (offerings.hasOwnProperty(ident)) {
 					option = GDP.CONFIG.cswClient.createOptionFromRecord({
