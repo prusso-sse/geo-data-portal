@@ -130,6 +130,8 @@ GDP.CSW = function (args) {
 		},
 		/**
 		 * Returns all keywords associated with a specific record
+		 * @param {type} args
+		 * @returns {Array|GDP.CSW.getKeywordsForRecord.keywords}
 		 */
 		getKeywordsForRecord = function (args) {
 			args = args || {};
@@ -161,6 +163,11 @@ GDP.CSW = function (args) {
 
 			return keywords;
 		},
+		/**
+		 * 
+		 * @param {type} args
+		 * @returns {undefined}
+		 */
 		getRecordsByKeywordsFromServer = function (args) {
 			args = args || {};
 			var keywords = args.keywords || [],
@@ -272,6 +279,11 @@ GDP.CSW = function (args) {
 				}
 			});
 		},
+		/**
+		 * 
+		 * @param {type} args
+		 * @returns {undefined}
+		 */
 		getDomain = function (args) {
 			args = args || {};
 
@@ -283,8 +295,8 @@ GDP.CSW = function (args) {
 					error: []
 				},
 			getDomainReqData = cswGetDomainFormat.write({
-				PropertyName: propertyName
-			});
+					PropertyName: propertyName
+				});
 
 			OpenLayers.Request.POST({
 				url: this.proxy + this.url,
@@ -579,7 +591,7 @@ GDP.CSW = function (args) {
 				transferOptionName,
 				parentTitle,
 				opt,
-				option,
+				$option,
 				optionsCount = 0,
 				options = {},
 				url,
@@ -642,7 +654,7 @@ GDP.CSW = function (args) {
 			if (optionsCount === 1) {
 				for (opt in options) {
 					if (options.hasOwnProperty(opt)) {
-						option = $('<option>').
+						$option = $('<option>').
 							attr({
 								value: opt + ';' + ident
 							}).
@@ -651,25 +663,31 @@ GDP.CSW = function (args) {
 					}
 				}
 			} else if (optionsCount > 1) {
-				option = $('<optgroup>').
+				$option = $('<option>').
 					attr({
-						label: parentTitle
+						value: parentTitle
 					}).
-					addClass('top-lvl-opt');
-				for (opt in options) {
-					if (options.hasOwnProperty(opt)) {
-						option.append(
-							$('<option>').
-							attr({
-								value: opt + ';' + ident
-							}).
-							html(options[opt].title)
-							);
-					}
-				}
+					addClass('top-lvl-opt opt-haschildren').
+					html(parentTitle + '&nbsp;&darr;');
+				
+				// This options object is used if this option is selected in order to create a secondary dropdown
+				// list using this options object
+				$option.data('suboptions', options);
+				
+//				for (opt in options) {
+//					if (options.hasOwnProperty(opt)) {
+//						option.append(
+//							$('<option>').
+//							attr({
+//								value: opt + ';' + ident
+//							}).
+//							html(options[opt].title)
+//							);
+//					}
+//				}
 			}
 
-			return option;
+			return $option;
 
 		};
 

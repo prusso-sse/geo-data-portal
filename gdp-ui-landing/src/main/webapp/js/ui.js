@@ -263,18 +263,20 @@ GDP.UI = function (args) {
 				subtitle,
 				content,
 				isDatasetChosen,
+				$chosenOption = $(event.target).find('option:selected'),
 				datasetDropdown = $('#form-control-select-csw'),
 				proceedRow = $('#row-proceed'),
 				proceedRowPlaceholder = $('#row-proceed-placeholder'),
 				contentContainer = $('#p-csw-information-content'),
 				titleContainer = $('#p-csw-information-title');
-
+			
 			if (!value) {
 				proceedRow.fadeOut();
 				proceedRowPlaceholder.fadeIn();
 				titleContainer.html('');
 				contentContainer.html('');
 			} else {
+				if ($chosenOption.hasClass('opt-haschildren'))
 				ident = value.split(';')[1];
 				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[ident];
 				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[ident];
@@ -349,10 +351,10 @@ GDP.UI = function (args) {
 				ident,
 				option,
 				emptyOption = $('<option />').attr({
-				'value': '',
-				'disabled': true,
-				'selected': true
-			}).html('Select dataset from this drop down menu'),
+					'value': '',
+					'disabled': true,
+					'selected': true
+				}).html('Select dataset from this drop down menu'),
 				currentlySelectedOption = datasetDropDown.val();
 
 			datasetDropDown.empty();
