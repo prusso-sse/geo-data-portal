@@ -664,27 +664,13 @@ GDP.CSW = function (args) {
 				}
 			} else if (optionsCount > 1) {
 				$option = $('<option>').
-					attr({
-						value: parentTitle
-					}).
 					addClass('top-lvl-opt opt-haschildren').
 					html(parentTitle + '&nbsp;&darr;');
 				
 				// This options object is used if this option is selected in order to create a secondary dropdown
 				// list using this options object
+				options.ident = ident;
 				$option.data('suboptions', options);
-				
-//				for (opt in options) {
-//					if (options.hasOwnProperty(opt)) {
-//						option.append(
-//							$('<option>').
-//							attr({
-//								value: opt + ';' + ident
-//							}).
-//							html(options[opt].title)
-//							);
-//					}
-//				}
 			}
 
 			return $option;

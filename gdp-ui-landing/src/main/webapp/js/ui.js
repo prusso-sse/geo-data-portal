@@ -255,91 +255,140 @@ GDP.UI = function (args) {
 		};
 
 		this.cswDropdownChanged = function (event) {
-			var value = event.target.value,
-				validAlgorithms,
-				record,
+			var eventTarget = event.target,
+				value = eventTarget.value,
 				ident,
-				title,
-				subtitle,
-				content,
 				isDatasetChosen,
-				$chosenOption = $(event.target).find('option:selected'),
-				datasetDropdown = $('#form-control-select-csw'),
+				subOptions,
+				subOptionsChild,
+				isChildSelect = $(eventTarget).attr('id') === 'form-control-select-csw-child',
+				$childSelectRow = $('#row-csw-select-child'),
+				$childSelectControl = $('#form-control-select-csw-child'),
+				$chosenOption = $(eventTarget).find('option:selected'),
 				proceedRow = $('#row-proceed'),
 				proceedRowPlaceholder = $('#row-proceed-placeholder'),
 				contentContainer = $('#p-csw-information-content'),
-				titleContainer = $('#p-csw-information-title');
-			
-			if (!value) {
-				proceedRow.fadeOut();
-				proceedRowPlaceholder.fadeIn();
-				titleContainer.html('');
-				contentContainer.html('');
-			} else {
-				if ($chosenOption.hasClass('opt-haschildren'))
-				ident = value.split(';')[1];
-				record = GDP.CONFIG.offeringMaps.cswIdentToRecord[ident];
-				validAlgorithms = GDP.CONFIG.offeringMaps.cswToWps[ident];
-				title = GDP.CONFIG.cswClient.getTitleFromRecord({
-					record: record
-				});
-				subtitle = $(event.target).find('option[value="' + value + '"]').html();
-				isDatasetChosen = $('.btn-group label.active input').attr('id').indexOf('dataset') !== -1;
+				titleContainer = $('#p-csw-information-title'),
+				getDescriptionObject = function (value, $target) {
+					var ident = value.split(';')[1],
+						record = GDP.CONFIG.offeringMaps.cswIdentToRecord[ident],
+						title = GDP.CONFIG.cswClient.getTitleFromRecord({
+							record: record
+						}),
+						subtitle = $target.find('option[value="' + value + '"]').html(),
+						content = GDP.CONFIG.cswClient.getAbstractFromRecord({
+							record: record
+						});
 
-				if (subtitle !== title) {
-					title += '<br />' + subtitle;
+					if (subtitle !== title) {
+						title += '<br />' + subtitle;
+					}
+
+					return {
+						title: title,
+						content: content
+					};
+				},
+				updateContent = function (descriptionObject, ident, titleContainer, contentContainer) {
+					titleContainer.html(descriptionObject.title);
+					contentContainer.html(window.replaceURLWithHTMLLinks(descriptionObject.content));
+					contentContainer.append('&nbsp;&nbsp;&nbsp;&nbsp;',
+						$('<a />')
+						.attr({
+							'id': 'view-full-info-link',
+							'ident': ident
+						})
+						.html('View Full Record')
+						);
+				},
+				bindInfoLink = function () {
+					$('#view-full-info-link').on('click', function () {
+						var ident = this.attributes.ident.value;
+						GDP.CONFIG.cswClient.createFullRecordView({
+							identifier: ident
+						});
+
+						// The excat client we are using is specific to the GDP so it has
+						// GDP functionality attached to some of the hrefs. We need to 
+						// extract the links that the javascript are bound to and make 
+						// the href regular hrefs
+						$('.meta-value a[href*="javascript"]').each(function (i, o) {
+							var hrefAttr = o.attributes.href.value,
+								firstIndex = hrefAttr.indexOf("'") + 1,
+								lastIndex = hrefAttr.lastIndexOf("'"),
+								rootHref = hrefAttr.substring(firstIndex, lastIndex);
+
+							$(o).attr({
+								'href': rootHref,
+								'target': '_datasetTab'
+							});
+						});
+
+						// Create HTML links in the full record view
+						$('.captioneddiv .meta td.meta-value').each(function (i, o) {
+							$(o).html(window.replaceURLWithHTMLLinks($(o).html()));
+						});
+
+						$('#full-record-modal').modal('show');
+					});
+				};
+
+			proceedRow.fadeOut();
+			proceedRowPlaceholder.fadeIn();
+			titleContainer.html('');
+			contentContainer.html('');
+
+			if (!value) {
+				if (!isChildSelect) {
+					$childSelectRow.fadeOut();
+				}
+			} else {
+				ident = value.split(';')[1];
+
+				if (!isChildSelect) {
+					$childSelectRow.fadeOut();
+					if ($chosenOption.hasClass('opt-haschildren')) {
+						// User chose an option which has children
+						subOptions = $chosenOption.data('suboptions');
+						$childSelectControl.empty();
+						$childSelectControl.append($('<option />').attr({
+							'value': '',
+							'disabled': true,
+							'selected': true
+						}).html('Select dataset from this drop down menu'));
+
+						for (subOptionsChild in subOptions) {
+							if (subOptions.hasOwnProperty(subOptionsChild) && subOptionsChild !== 'ident') {
+								$childSelectControl.append(
+									$('<option>').
+									attr({
+										value: subOptionsChild + ';' + subOptions.ident
+									}).
+									html(subOptions[subOptionsChild].title)
+									);
+							}
+						}
+
+						$childSelectControl.off('change', GDP.UI().cswDropdownUpdated);
+						$childSelectControl.on('change', GDP.UI().cswDropdownUpdated);
+						$childSelectRow.fadeIn();
+					} else {
+						// Chosen option has no children
+						var descriptionObject = getDescriptionObject(value, $(eventTarget));
+						updateContent(descriptionObject, ident, titleContainer, contentContainer);
+					}
+				} else {
+					var descriptionObject = getDescriptionObject(value, $(eventTarget));
+					updateContent(descriptionObject, ident, titleContainer, contentContainer);
 				}
 
-				content = GDP.CONFIG.cswClient.getAbstractFromRecord({
-					record: record
-				});
+				isDatasetChosen = $('.btn-group label.active input').attr('id').indexOf('dataset') !== -1;
 
-				titleContainer.html(title);
-				contentContainer.html(window.replaceURLWithHTMLLinks(content));
-				contentContainer.append('&nbsp;&nbsp;&nbsp;&nbsp;',
-					$('<a />')
-					.attr({
-						'id': 'view-full-info-link',
-						'ident': ident
-					})
-					.html('View Full Record')
-					);
-
-				if (datasetDropdown.val() && me.isProcessingButtonSelected()) {
+				if ($(eventTarget).val() && me.isProcessingButtonSelected()) {
 					proceedRowPlaceholder.fadeOut();
 					proceedRow.fadeIn();
 					me.bindProceedButton();
 				}
-
-				$('#view-full-info-link').on('click', function () {
-					var ident = this.attributes.ident.value;
-					GDP.CONFIG.cswClient.createFullRecordView({
-						identifier: ident
-					});
-
-					// The excat client we are using is specific to the GDP so it has
-					// GDP functionality attached to some of the hrefs. We need to 
-					// extract the links that the javascript are bound to and make 
-					// the href regular hrefs
-					$('.meta-value a[href*="javascript"]').each(function (i, o) {
-						var hrefAttr = o.attributes.href.value,
-							firstIndex = hrefAttr.indexOf("'") + 1,
-							lastIndex = hrefAttr.lastIndexOf("'"),
-							rootHref = hrefAttr.substring(firstIndex, lastIndex);
-
-						$(o).attr({
-							'href': rootHref,
-							'target': '_datasetTab'
-						});
-					});
-
-					// Create HTML links in the full record view
-					$('.captioneddiv .meta td.meta-value').each(function (i, o) {
-						$(o).html(window.replaceURLWithHTMLLinks($(o).html()));
-					});
-
-					$('#full-record-modal').modal('show');
-				});
 			}
 		};
 
@@ -351,10 +400,10 @@ GDP.UI = function (args) {
 				ident,
 				option,
 				emptyOption = $('<option />').attr({
-					'value': '',
-					'disabled': true,
-					'selected': true
-				}).html('Select dataset from this drop down menu'),
+				'value': '',
+				'disabled': true,
+				'selected': true
+			}).html('Select dataset from this drop down menu'),
 				currentlySelectedOption = datasetDropDown.val();
 
 			datasetDropDown.empty();
