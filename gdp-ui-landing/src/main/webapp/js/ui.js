@@ -365,7 +365,7 @@ GDP.UI = function (args) {
 							'value': '',
 							'disabled': true,
 							'selected': true
-						}).html('Select dataset from this drop down menu'));
+						}).html(GDP.CONFIG.constants.DATASET_SELECT));
 
 						for (subOptionsChild in subOptions) {
 							if (subOptions.hasOwnProperty(subOptionsChild) && subOptionsChild !== 'ident') {
@@ -413,7 +413,7 @@ GDP.UI = function (args) {
 				'value': '',
 				'disabled': true,
 				'selected': true
-			}).html('Select dataset from this drop down menu'),
+			}).html(GDP.CONFIG.constants.DATASET_SELECT),
 				currentlySelectedOption = $datasetDropDown.val(),
 				currentlySelectedChildOption = $datasetDropDownChild.val();
 
