@@ -384,7 +384,6 @@ GDP.UI = function (args) {
 						// Chosen option has no children
 						var descriptionObject = getDescriptionObject(value, $(eventTarget));
 						updateContent(descriptionObject, ident, titleContainer, contentContainer);
-						$childSelectControl.off('change', this.cswDropdownChanged);
 					}
 				} else {
 					var descriptionObject = getDescriptionObject(value, $(eventTarget));
@@ -435,7 +434,7 @@ GDP.UI = function (args) {
 
 			$datasetDropDown.val(currentlySelectedOption);
 			$datasetDropDown.trigger('change');
-			if (currentlySelectedChildOption) {
+			if (currentlySelectedChildOption && $datasetDropDownChild.children().length > 0) {
 				$datasetDropDownChild.val(currentlySelectedChildOption);
 				$datasetDropDownChild.trigger('change');
 			}
