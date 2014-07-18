@@ -67,6 +67,9 @@
 			wpsToUrl: {},
 			urlTocswIdentifier: {},
 			cswIdentToRecord: {}
+		},
+		constants: {
+			DATASET_SELECT : 'Select dataset from this drop down menu'
 		}
 	};
 
