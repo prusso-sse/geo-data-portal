@@ -560,9 +560,13 @@ function testPreflightParams () {
 
 	for (vIdx; vIdx < vars.length; vIdx++) {
 		pair = vars[vIdx].split('=');
-		key = pair[0];
-		value = pair[1];
-		incomingParams[key] = value;
+		if (pair.length === 2) {
+			key = pair[0];
+			value = pair[1];
+			if (key) {
+				incomingParams[key] = value;
+			}
+		}
 	}
 
     if (!incomingParams['development'] && (!incomingParams['algorithm'] || !incomingParams['dataset'])) {
@@ -598,18 +602,18 @@ function testPreflightParams () {
 }
 
 $(document).ready(function () {
-    try {
+	try {
+		initializeLogging();
 		testPreflightParams();
-        initializeLogging();
 
-        if (init()) {
-            logger.debug("GDP: Application initialized successfully.");
-            removeOverlay();
-        } else {
-            logger.error("GDP: A non-fatal error occured while loading the application.");
-        }
-        
-    } catch(err) {
-        handleException(err);
-    }
+		if (init()) {
+			logger.debug("GDP: Application initialized successfully.");
+			removeOverlay();
+		} else {
+			logger.error("GDP: A non-fatal error occured while loading the application.");
+		}
+
+	} catch (err) {
+		handleException(err);
+	}
 });

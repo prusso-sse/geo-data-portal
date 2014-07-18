@@ -163,6 +163,18 @@
 					</p>
 				</div>
 			</div>
+			<div id="row-incoming-caller-info" class="row text-center">
+				<%-- If user is coming through an external caller (like ScienceBase), this will have content --%>
+			</div>
+
+            <div id="row-proceed" class="row text-center">
+                <button id="btn-proceed" class="btn btn-success">Process Data with the Geo Data Portal</button>
+            </div>
+            <div id="row-proceed-placeholder" class="row text-center spacer">
+                <button id="btn-proceed-placeholder" class="btn btn-default disabled" disabled="disabled">
+                    Select a dataset and processing type to use with the Geo Data Portal
+                </button>
+            </div>
 
 			<div class="row">
 				<jsp:include page="template/USGSFooter.jsp">

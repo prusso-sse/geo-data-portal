@@ -633,6 +633,16 @@ GDP.UI = function (args) {
 				]
 			}
 		});
+		
+		// Check is incoming request has caller parameters. If so, update the view 
+		var $incomingCallerDiv = $('#row-incoming-caller-info');
+		var incomingParams = GDP.CONFIG.incomingParams;
+		if (incomingParams['caller'] && incomingParams['item_id']) {
+			var callerMsg = 'Areas of interest ' + incomingParams['item_id'] +  ' from ' + incomingParams['caller'] + ' already selected.';
+			$incomingCallerDiv.append(callerMsg);
+		} else {
+			$incomingCallerDiv.remove();
+		}
 	};
 
 	this.init();

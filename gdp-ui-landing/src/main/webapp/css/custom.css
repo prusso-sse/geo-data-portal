@@ -29,6 +29,7 @@
 #row-proceed,
 #row-csw-select-child {
 	display : none;
+	margin-top: 15px;
 }
 
 #row-csw-select-child {
@@ -42,4 +43,8 @@
 
 .top-lvl-opt {
 	font-weight: bold;
+}
+#row-incoming-caller-info {
+	margin-top: 15px;
+	color: #888;
 }
