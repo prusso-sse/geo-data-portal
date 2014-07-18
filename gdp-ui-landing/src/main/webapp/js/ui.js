@@ -493,8 +493,10 @@ GDP.UI = function (args) {
 					useCache,
 					status,
 					incomingParams = GDP.CONFIG.incomingParams,
-					datasetDropdown = $('#form-control-select-csw'),
-					datasetDropdownValue = datasetDropdown.val(),
+					$primaryDatasetDropdownOption = $('#form-control-select-csw option:selected'),
+					$secondaryDatasetDropdownOption = $('#form-control-select-csw-child option:selected'),
+					// If the first dropdown has no value, it means there's a second dataset open and that should have the value
+					datasetDropdownValue = $primaryDatasetDropdownOption.attr('value') || $secondaryDatasetDropdownOption.attr('value'),
 					algorithmButtonId = $('#col-choice-start-algorithm .btn-group label.active input').attr('id');
 
 

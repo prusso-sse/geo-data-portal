@@ -113,8 +113,8 @@
 						<select id="form-control-select-csw" class="form-control"></select>
 					</label>
 				</div>
-				<div id="row-csw-select-child" class="row text-center" style="display: none;">
-					<span class="down-arrow">&darr;</span>
+				<div id="row-csw-select-child" class="row text-center">
+					<div class="down-arrow">&darr;</div>
 					<select id="form-control-select-csw-child" class="form-control"></select>
 				</div>
 				<div id="row-csw-desc" class="row">
