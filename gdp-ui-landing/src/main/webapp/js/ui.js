@@ -397,6 +397,8 @@ GDP.UI = function (args) {
 					proceedRow.fadeIn();
 					me.bindProceedButton();
 				}
+				
+				bindInfoLink();
 			}
 		};
 
