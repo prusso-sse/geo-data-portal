@@ -1,3 +1,9 @@
+/*global Constant */
+/*global Algorithm */
+/*global logger */
+/*jshint multistr: true */
+/*jshint bitwise: false*/
+/*jslint white: true */
 var Dataset = function () {
 	"use strict";
 	// This is set when the user selects a dataset from the dropdown or enters
@@ -56,7 +62,7 @@ var Dataset = function () {
 		OPENDAP: 'opendap'
 	};
 
-	function createAlgorithmDropdown () {
+	function createAlgorithmDropdown() {
 		logger.debug('GDP: Checking for populated Algorithm object.');
 
 		if (!Algorithm.isPopulated()) {
@@ -137,7 +143,7 @@ var Dataset = function () {
 		return true;
 	}
 
-	function configureDocumentationLink (title, abstractText) {
+	function configureDocumentationLink(title, abstractText) {
 		logger.debug('GDP: Adding algorithm documentation for: ' + title);
 		$(_ALGORITHM_DOC_CONTAINER).html((abstractText) ? abstractText : 'This algorithm does not contain documentation.');
 
@@ -161,7 +167,7 @@ var Dataset = function () {
 		});
 	}
 
-	function bindAlgorithmDropDown () {
+	function bindAlgorithmDropDown() {
 		// Bind the dropdown list
 		$(_ALGORITHM_DROPDOWN).change(function () {
 			var selectedAlgorithm = $(_ALGORITHM_DROPDOWN).find('option:selected').val();
@@ -235,7 +241,7 @@ var Dataset = function () {
 
 				}
 
-				if (Algorithm.algorithms[selectedAlgorithm].inputs['DATASET_URI'] !== undefined) {
+				if (Algorithm.algorithms[selectedAlgorithm].inputs.DATASET_URI !== undefined) {
 					logger.debug('GDP: Algorithm requires a CSW dataset. Setting up the CSW client.');
 					setupCSWClientView();
 					$(_CSW_CLIENT).fadeIn(Constant.ui.fadeSpeed);
@@ -254,7 +260,7 @@ var Dataset = function () {
 	 * @param {type} xml
 	 * @returns {undefined}
 	 */
-	function populateDynamicContent (xml) {
+	function populateDynamicContent(xml) {
 		logger.trace('GDP: Removing all information from the algorithm dynamic input container and beginning rebuild.');
 		$(_ALGORITHM_DYNAMIC_CONTAINER_CONTENT).html('');
 
@@ -320,8 +326,8 @@ var Dataset = function () {
 				}
 			},
 			title: 'Configure ' + Algorithm.algorithms[algorithm].title,
-			width: isIE7 ? $(window).width() * .75 : 'auto',
-			height: isIE7 ? $(window).height() * .75 : 'auto',
+			width: isIE7 ? $(window).width() * 0.75 : 'auto',
+			height: isIE7 ? $(window).height() * 0.75 : 'auto',
 			resizable: true,
 			draggable: false,
 			modal: true,
@@ -329,7 +335,7 @@ var Dataset = function () {
 		});
 	}
 
-	function submitForProcessingCallback (xml) {
+	function submitForProcessingCallback(xml) {
 		showThrobber(true);
 		if (!WPS.checkWpsResponse(xml, 'Error submitting request for processing.')) {
 			$(_RETRIEVE_OUTPUT_BUTTON).fadeOut(Constant.ui.fadeSpeed);
@@ -383,11 +389,11 @@ var Dataset = function () {
 		showNotification('Processing your request.');
 	}
 
-	function emailCallback (xml) {
+	function emailCallback(xml) {
 		WPS.checkWpsResponse(xml, 'Error setting up email acknowledgment.');
 	}
 
-	function statusCallback (xmlText, intervalID, statusID) {
+	function statusCallback(xmlText, intervalID, statusID) {
 		// Workaround and extra logging for bug where empty xml is returned. 
 		// Ignore it and keep rechecking.
 		if (!xmlText || xmlText === '') {
@@ -457,7 +463,7 @@ var Dataset = function () {
 
 					// Remove the "Do you want to leave this page OK/CANCEL"
 					// Only if not IE7 -- http://internal.cida.usgs.gov/jira/browse/GDP-505
-					if (!($.browser.msie && parseInt($.browser.version) === 7) && Constant.ui.view_pop_unload_warning === 1) {
+					if (!($.browser.msie && parseInt($.browser.version, 10) === 7) && Constant.ui.view_pop_unload_warning === 1) {
 						window.onbeforeunload = null;
 					}
 
@@ -496,7 +502,7 @@ var Dataset = function () {
 		}
 	}
 
-	function _createGetFeatureXML (featureType, attribute, featureIDs, options) {
+	function _createGetFeatureXML(featureType, attribute, featureIDs, options) {
 		// For now, we're assuming that the geometry is associated with attribute
 		// 'the_geom', which might not be true for all WFS servers. So make sure
 		// that 'the_geom' is an attribute, and throw an error if not. Note that
@@ -505,8 +511,9 @@ var Dataset = function () {
 		// where the assumption is made (below, when creating the xml).
 		logger.debug('GDP: Creating XML needed for inline WFS call for process.');
 
-		if (!options)
+		if (!options) {
 			options = {};
+		}
 
 		AOI.callDescribeFeatureType(featureType, function (data) {
 			var attrNames = [];
@@ -551,24 +558,25 @@ var Dataset = function () {
 		return xml;
 	}
 
-	function displayNotReadyDialog (result) {
+	function displayNotReadyDialog(result) {
 		logger.debug('GDP: Work is missing one or more configuration elements.');
 		$(_MISSING_INPUT_SUMMARY).append($(Constant.tableString).attr('id', 'input_summary_table'));
 		var inputSummaryTable = $('#input_summary_table');
 		$.each(result, function (k, v) {
-			if (k === 'ready')
+			if (k === 'ready') {
 				return true; // (this is the same as 'continue')
+			}
 			if (v.complete) {
 				$(inputSummaryTable).append(
-					$(Constant.tableRowString).
-					append($(Constant.tableDataString).text(v.txt)).
-					append($(Constant.tableDataString).addClass('green-check-mark').text('&#x2714;'.htmlDecode()))
+					$(Constant.tableRowString)
+						.append($(Constant.tableDataString).text(v.txt))
+						.append($(Constant.tableDataString).addClass('green-check-mark').text('&#x2714;'.htmlDecode()))
 					);
 			} else {
 				$(inputSummaryTable).append(
-					$(Constant.tableRowString).
-					append($(Constant.tableDataString).text(v.txt)).
-					append($(Constant.tableDataString).addClass('red-x').text('X'))
+					$(Constant.tableRowString)
+						.append($(Constant.tableDataString).text(v.txt))
+						.append($(Constant.tableDataString).addClass('red-x').text('X'))
 					);
 			}
 		});
@@ -591,7 +599,7 @@ var Dataset = function () {
 		return false;
 	}
 
-	function bindSubmitForProcessingButton () {
+	function bindSubmitForProcessingButton() {
 		var submitDialog = $('#submit-dialog');
 		var submitDialogInfoText = $('#submit-dialog-info-text');
 		var submitWpsAlgorithm;
@@ -619,19 +627,21 @@ var Dataset = function () {
 				$(_MISSING_INPUT_SUMMARY).append(inputSummaryTable);
 
 				$.each(result, function (k, v) {
-					if (k === 'ready')
+					if (k === 'ready') {
 						return true; // (this is the same as 'continue' for $.jQuery.each())
+					}
+					
 					if (v.complete) {
 						$(inputSummaryTable).append(
-							$(Constant.tableRowString).
-							append($(Constant.tableDataString).text(v.txt)).
-							append($(Constant.tableDataString).addClass('green-check-mark').text('&#x2714;'.htmlDecode()))
+							$(Constant.tableRowString)
+								.append($(Constant.tableDataString).text(v.txt))
+								.append($(Constant.tableDataString).addClass('green-check-mark').text('&#x2714;'.htmlDecode()))
 							);
 					} else {
 						$(inputSummaryTable).append(
-							$(Constant.tableRowString).
-							append($(Constant.tableDataString).text(v.txt)).
-							append($(Constant.tableDataString).addClass('red-x').text('X'))
+							$(Constant.tableRowString)
+								.append($(Constant.tableDataString).text(v.txt))
+								.append($(Constant.tableDataString).addClass('red-x').text('X'))
 							);
 					}
 				});
@@ -682,7 +692,7 @@ var Dataset = function () {
 			// http://internal.cida.usgs.gov/jira/browse/GDP-172
 			// Now we remove any inputs not found in the algorithm
 			// First get all of the inputs from the process
-			var processDescriptionInputsObject = new Object();
+			var processDescriptionInputsObject = {};
 			$(WPS.processDescriptions[submitWpsAlgorithm]).find("DataInputs Input ns1|Identifier").each(function () {
 				processDescriptionInputsObject[$(this).text()] = {
 					'minOccurs': $(this).parent().attr("minOccurs"),
@@ -697,8 +707,9 @@ var Dataset = function () {
 
 			// Test each element of our input strings against what the process has. if it's not in there, wipe it
 			$.each(submitWpsStringInputs, function (k, v) {
-				if (!processDescriptionInputsObject[k])
+				if (!processDescriptionInputsObject[k]) {
 					delete submitWpsStringInputs[k];
+				}
 			});
 
 			var wfsXML = _createGetFeatureXML(featureType, attribute, features);
@@ -749,7 +760,7 @@ var Dataset = function () {
 		});
 	}
 
-	function createMiscOptionsJSON () {
+	function createMiscOptionsJSON() {
 		var optionsJSON = {};
 		$('.di_element_wrapper').each(function (i, e) {
 			var inputId = $(e).find('.di_identifier').html();
@@ -758,35 +769,38 @@ var Dataset = function () {
 			$(e).find('.di_field:has("select")').each(function (ind, ele) {
 				$(ele).find("option:selected").each(function (inex, element) {
 					var selectedOption = $(this).text();
-					if (optionsJSON[inputId])
+					if (optionsJSON[inputId]) {
 						optionsJSON[inputId].push(selectedOption);
-					else
+					} else {
 						optionsJSON[inputId] = new Array(selectedOption);
+					}
 				});
 			});
 
 			// For every text box
 			$(e).find('.di_field:has("input[type="text"]")').each(function (ind, ele) {
 				var enteredText = $(ele).find('input[type="text"]').val();
-				if (optionsJSON[inputId])
+				if (optionsJSON[inputId]) {
 					optionsJSON[inputId].push(enteredText);
-				else
+				} else {
 					optionsJSON[inputId] = new Array(enteredText);
+				}
 			});
 
 			// For every checkbox
 			$(e).find('.di_field:has("input[type="checkbox"]")').each(function (ind, ele) {
 				var checked = $(ele).find('input[type="checkbox"]').is(':checked');
-				if (optionsJSON[inputId])
+				if (optionsJSON[inputId]) {
 					optionsJSON[inputId].push(checked);
-				else
+				} else {
 					optionsJSON[inputId] = new Array(checked);
+				}
 			});
 		});
 		return optionsJSON;
 	}
 
-	function isReadyForSubmit () {
+	function isReadyForSubmit() {
 		logger.debug('GDP: Checking to ensure that the work has been properly configured for submittal');
 		var algorithm_selected = $(_ALGORITHM_DROPDOWN).find('option:selected').val();
 		var result = {
@@ -829,29 +843,32 @@ var Dataset = function () {
 			}
 		};
 
-		if (!algorithm_selected)
+		if (!algorithm_selected) {
 			result.algorithm_selected.complete = false;
-		if (!AOI.getSelectedFeatureType())
+		}
+		if (!AOI.getSelectedFeatureType()) {
 			result.featuretype_selected.complete = false;
-		if (!AOI.getSelectedAttribute())
+		}
+		if (!AOI.getSelectedAttribute()) {
 			result.attribute_selected.complete = false;
-		if (AOI.getSelectedFeatures().length === 0)
+		}
+		if (AOI.getSelectedFeatures().length === 0) {
 			result.available_attribute_value_selected.complete = false;
-		if (!Dataset.getSelectedDatasetURL())
+		}
+		if (!Dataset.getSelectedDatasetURL()) {
 			result.dataset_url_selected.complete = false;
-		if (!Dataset.getCSWServerURL())
+		}
+		if (!Dataset.getCSWServerURL()) {
 			result.csw_url.complete = false;
-		if (!Dataset.getSelectedDatasetID())
+		}
+		if (!Dataset.getSelectedDatasetID()) {
 			result.datatype_selected.complete = false;
+		}
 		if (Dataset.hasTimeRange) {
-			if (result.algorithm_selected.complete
-				&& Algorithm.algorithms[algorithm_selected].inputs['TIME_START']
-				&& !Dataset.getFromDate()) {
+			if (result.algorithm_selected.complete && Algorithm.algorithms[algorithm_selected].inputs.TIME_START && !Dataset.getFromDate()) {
 				result.date_start_selected.complete = false;
 			}
-			if (result.algorithm_selected.complete
-				&& Algorithm.algorithms[algorithm_selected].inputs['TIME_END']
-				&& !Dataset.getToDate()) {
+			if (result.algorithm_selected.complete && Algorithm.algorithms[algorithm_selected].inputs.TIME_END && !Dataset.getToDate()) {
 				result.date_end_selected.complete = false;
 			}
 		} else {
@@ -859,20 +876,20 @@ var Dataset = function () {
 			delete result.date_end_selected;
 		}
 
-		result.ready = result.algorithm_selected.complete
-			&& result.featuretype_selected.complete
-			&& result.attribute_selected.complete
-			&& result.available_attribute_value_selected.complete
-			&& result.dataset_url_selected.complete
-			&& result.csw_url.complete
-			&& result.datatype_selected.complete;
+		result.ready = result.algorithm_selected.complete &&
+			result.featuretype_selected.complete &&
+			result.attribute_selected.complete &&
+			result.available_attribute_value_selected.complete &&
+			result.dataset_url_selected.complete &&
+			result.csw_url.complete &&
+			result.datatype_selected.complete;
 		result.ready &= (result.date_start_selected === undefined) ? true : result.date_start_selected.complete;
 		result.ready &= (result.date_end_selected === undefined) ? true : result.date_end_selected.complete;
 
 		return result;
 	}
 
-	function populateConfigurationSummary () {
+	function populateConfigurationSummary() {
 		logger.debug('GDP: Populating configuration summary.');
 		var configurationMap = {};
 
@@ -881,15 +898,16 @@ var Dataset = function () {
 
 			// Create the key for each of our inputs
 			var identifier = $(wrapperElement).find('.di_identifier').html();
-			var idMapElement = new Array();
+			var idMapElement = [];
 
 
 			// For each input element within each wrapper, add value to map
 			$(wrapperElement).find('input:not([type="hidden"])').each(function (inputIndex, inputElement) {
-				if (inputElement.type === 'checkbox')
+				if (inputElement.type === 'checkbox') {
 					idMapElement.push((inputElement.checked) ? 'TRUE' : 'FALSE');
-				else
+				} else {
 					idMapElement.push($(inputElement).val());
+				}
 			});
 
 			// For each selectbox
@@ -917,7 +935,7 @@ var Dataset = function () {
 		$(_ALGORITHM_CONFIGURATION_SUMMARY).fadeIn(Constant.ui.fadeSpeed);
 	}
 
-	function bindDynamicInputElements () {
+	function bindDynamicInputElements() {
 		$('.di_element_wrapper').each(function (i, e) {
 
 			// Bind all time fields as a calendar
@@ -943,11 +961,11 @@ var Dataset = function () {
 	 * @param {type} xml
 	 * @returns {jQuery|String}
 	 */
-	function createHTMLInputField (xml) {
-		var minOccurs = parseInt($(xml).attr('minOccurs'));
-		var maxOccurs = parseInt($(xml).attr('maxOccurs'));
+	function createHTMLInputField(xml) {
+		var minOccurs = parseInt($(xml).attr('minOccurs'), 10);
+		var maxOccurs = parseInt($(xml).attr('maxOccurs'), 10);
 		var lastIndexId = $(_ALGORITHM_DYNAMIC_CONTAINER_CONTENT).find('div:last-child').prop('id');
-		var lastIndex = parseInt(lastIndexId.substring(lastIndexId.length - 1));
+		var lastIndex = parseInt(lastIndexId.substring(lastIndexId.length - 1), 10);
 		var index = (isNaN(lastIndex)) ? '0' : lastIndex + 1;  // This will be used for labeling the input container
 		var identifierText = $(xml).find('ns1|Identifier').first().text();
 		var titleText = $(xml).find('ns1|Title').first().text();
@@ -1005,12 +1023,9 @@ var Dataset = function () {
 			defaultValue = $(xml).find('DefaultValue').text();
 
 			if (dataType === 'boolean') {
-				var literalCheckbox = $(Constant.inputString).
-					attr({
-						'type': 'checkbox',
-						'name': identifierText
-					}).
-					addClass('di_field_input');
+				var literalCheckbox = $(Constant.inputString)
+					.attr({'type': 'checkbox', 'name': identifierText})
+					.addClass('di_field_input');
 
 				$(inputContainer).append(literalCheckbox);
 
@@ -1034,10 +1049,12 @@ var Dataset = function () {
 				$(xml).find('LiteralData').find('ns1|AllowedValues').find('ns1|Value').each(function (i, e) {
 					$(literalListbox).append($(Constant.optionString).attr('value', $(e).text()).html($(e).text()));
 				});
-				if (maxOccurs > 1)
+				if (maxOccurs > 1) {
 					literalListbox.attr('multiple', 'multiple');
-				if (defaultValue)
+				}
+				if (defaultValue) {
 					$(literalListbox).find("option:contains('" + defaultValue + "')").attr('selected', 'selected');
+				}
 				$(inputContainer).append(literalListbox);
 			}
 		} else if ($(xml).find('BoundingBoxData').length) {
@@ -1050,7 +1067,7 @@ var Dataset = function () {
 		return containerDiv;
 	}
 
-	function callWMS (data, wmsUrl, successCallback) {
+	function callWMS(data, wmsUrl, successCallback) {
 		var defaultData = {
 			'service': 'WMS',
 			'version': '1.3.0'
@@ -1072,7 +1089,7 @@ var Dataset = function () {
 		});
 	}
 
-	function callWCS (data, wcsUrl, successCallback, errorCallback) {
+	function callWCS(data, wcsUrl, successCallback, errorCallback) {
 
 		var defaultData = {
 			'service': 'WCS',
@@ -1102,13 +1119,13 @@ var Dataset = function () {
 		});
 	}
 
-	function wcsDatasetSelected (datasetURL, errorCallback) {
+	function wcsDatasetSelected(datasetURL, errorCallback) {
 		logger.debug('GDP: Attempting to retrieve grids using WCS.');
 		gDatasetType = _datasetTypeEnum.WCS;
 		callWCS({'request': 'GetCapabilities'}, datasetURL, populateDatasetIdSelect, errorCallback);
 	}
 
-	function opendapDatasetSelected (datasetURL, useCache) {
+	function opendapDatasetSelected(datasetURL, useCache) {
 		useCache = useCache || false;
 		logger.debug('GDP: Attempting to retrieve grids using OpenDAP.');
 		gDatasetType = _datasetTypeEnum.OPENDAP;
@@ -1147,7 +1164,7 @@ var Dataset = function () {
 	 * @param {type} params
 	 * @returns {Dataset._parseWCS.result|Array}
 	 */
-	function _parseWCS (params) {
+	function _parseWCS(params) {
 		var xml = params.xml;
 		var result = [];
 		var namespace = '*|';
@@ -1189,7 +1206,7 @@ var Dataset = function () {
 	 * @param {type} data
 	 * @returns {undefined}
 	 */
-	function populateDatasetIdSelect (data) {
+	function populateDatasetIdSelect(data) {
 		logger.debug('GDP: Populating dataset ID select box.');
 		$(_DATASET_ID_SELECTBOX).empty();
 
@@ -1208,9 +1225,9 @@ var Dataset = function () {
 					);
 			});
 		} else { //     == datasetTypeEnum.OPENDAP
-			if (!data
-				|| !data.datatypecollection
-				|| !data.datatypecollection.types) {
+			if (!data ||
+				!data.datatypecollection ||
+				!data.datatypecollection.types) {
 				showErrorNotification("GDP: A WPS error was encountered: Error getting dataset ID's from server.");
 				hideThrobber();
 				logger.error("GDP: A WPS error was encountered: Error getting dataset ID's from server.");
@@ -1243,7 +1260,7 @@ var Dataset = function () {
 		$(_DATASET_ID_LABEL).fadeIn(Constant.ui.fadespeed);
 	}
 
-	function getTimeRange (datasetURL, selectedGrid, useCache) {
+	function getTimeRange(datasetURL, selectedGrid, useCache) {
 		useCache = useCache || false;
 		logger.debug('GDP: Attaining grid time range for dataset: ' + datasetURL + ' and selected grid: ' + selectedGrid);
 		var getTimeRangeWpsAlgorithm = 'gov.usgs.cida.gdp.wps.algorithm.discovery.GetGridTimeRange';
@@ -1268,7 +1285,7 @@ var Dataset = function () {
 			);
 	}
 
-	function initDatePickers (json) {
+	function initDatePickers(json) {
 		if (!json || !json.availabletimes) {
 			$(_DATASET_ID_TOOLTIP).hide();
 			$(_DATASET_ID_LABEL).hide();
@@ -1324,14 +1341,18 @@ var Dataset = function () {
 			var formattedBeginDate = (fromDate.getMonth() + 1) + "/" + fromDate.getDate() + "/" + fromDate.getFullYear();
 			var formattedToDate = (toDate.getMonth() + 1) + "/" + toDate.getDate() + "/" + toDate.getFullYear();
 
-			if (!$(this).val())
+			if (!$(this).val()) {
 				$(this).val(formattedBeginDate);
-			if (new Date($(this).val()).getTime() > toDate.getTime())
+			}
+			if (new Date($(this).val()).getTime() > toDate.getTime()) {
 				$(this).val(formattedToDate);
-			if (new Date($(this).val()).getTime() > new Date($(_DATE_RANGE_TO_INPUT_BOX).val()).getTime())
+			}
+			if (new Date($(this).val()).getTime() > new Date($(_DATE_RANGE_TO_INPUT_BOX).val()).getTime()) {
 				$(this).val($(_DATE_RANGE_TO_INPUT_BOX).val());
-			if (new Date($(this).val()).getTime() < fromDate.getTime())
+			}
+			if (new Date($(this).val()).getTime() < fromDate.getTime()) {
 				$(this).val(formattedBeginDate);
+			}
 		});
 		$(_DATE_RANGE_TO_INPUT_BOX).blur(function () {
 			var fromDate = $(this).datepicker('option', 'minDate');
@@ -1339,14 +1360,18 @@ var Dataset = function () {
 			var formattedBeginDate = (fromDate.getMonth() + 1) + "/" + fromDate.getDate() + "/" + fromDate.getFullYear();
 			var formattedToDate = (toDate.getMonth() + 1) + "/" + toDate.getDate() + "/" + toDate.getFullYear();
 
-			if (!$(this).val())
+			if (!$(this).val()) {
 				$(this).val(formattedToDate);
-			if (new Date($(this).val()).getTime() > toDate.getTime())
+			}
+			if (new Date($(this).val()).getTime() > toDate.getTime()) {
 				$(this).val(formattedToDate);
-			if (new Date($(this).val()).getTime() < new Date($(_DATE_RANGE_FROM_INPUT_BOX).val()).getTime())
+			}
+			if (new Date($(this).val()).getTime() < new Date($(_DATE_RANGE_FROM_INPUT_BOX).val()).getTime()) {
 				$(this).val($(_DATE_RANGE_FROM_INPUT_BOX).val());
-			if (new Date($(this).val()).getTime() < fromDate.getTime())
+			}
+			if (new Date($(this).val()).getTime() < fromDate.getTime()) {
 				$(this).val(formattedBeginDate);
+			}
 		});
 
 		$(_DATE_PICKER_TOOLTIP).fadeIn(Constant.ui.fadespeed);
@@ -1357,13 +1382,13 @@ var Dataset = function () {
 		return true;
 	}
 
-	function getWmsLayers (wmsURL) {
+	function getWmsLayers(wmsURL) {
 		callWMS({
 			'request': 'GetCapabilities'
 		}, wmsURL, populateWmsLayerSelectbox);
 	}
 
-	function populateWmsLayerSelectbox (xml) {
+	function populateWmsLayerSelectbox(xml) {
 		$(_WMS_LAYER_SELECTBOX).empty();
 
 		// TODO check for WMS failure
@@ -1387,7 +1412,7 @@ var Dataset = function () {
 		$(_WMS_LAYER_SELECTBOX).fadeIn(Constant.ui.fadespeed);
 	}
 
-	function wmsLayerSelected (wmsURL, layer) {
+	function wmsLayerSelected(wmsURL, layer) {
 		logger.debug('GDP: User has selected a WMS Layer');
 		if (layer === '') {
 			logger.debug('GDP: User\'s WMS Layer was blank. Clearing dataset overlay.');
@@ -1398,7 +1423,7 @@ var Dataset = function () {
 		setDatasetOverlay(wmsURL, layer);
 	}
 
-	function getMatchingWmsOption (datasetIdTitle) {
+	function getMatchingWmsOption(datasetIdTitle) {
 		// HACK: find longest WMS layer title which is a substring
 		// of the dataset ID title, or vice versa.
 		var matches = [];
@@ -1427,10 +1452,10 @@ var Dataset = function () {
 		}
 	}
 
-	function cswFillInCapabilities (xml) {
+	function cswFillInCapabilities(xml) {
 		var queryableElement = $('#queryable');
 		var defaultQueryables = ['AnyText', 'Title', 'Subject'];
-		var queryables = new Array();
+		var queryables = [];
 
 		// Pull out the queryables
 		$(xml).find('ows|Constraint[name="SupportedISOQueryables"]').children().each(function (qIndex, qElement) {
@@ -1458,13 +1483,13 @@ var Dataset = function () {
 		GDPCSWClient.setCSWHost($(_CSW_URL_INPUT_BOX).val());
 	}
 
-	function setupCSWClientView () {
+	function setupCSWClientView() {
 		logger.debug("GDP: Setting up CSW Client.");
 
-		var showSimpleCSWClient = parseInt(Constant.ui.view_simple_csw_client);
-		var showCSWURLInputBox = parseInt(Constant.ui.view_show_csw_url_input);
-		var showCSWDatasetUrl = parseInt(Constant.ui.view_show_csw_dataset_url);
-		var showDisplayDatasetsButton = parseInt(Constant.ui.view_show_display_datasets_button);
+		var showSimpleCSWClient = parseInt(Constant.ui.view_simple_csw_client, 10);
+		var showCSWURLInputBox = parseInt(Constant.ui.view_show_csw_url_input, 10);
+		var showCSWDatasetUrl = parseInt(Constant.ui.view_show_csw_dataset_url, 10);
+		var showDisplayDatasetsButton = parseInt(Constant.ui.view_show_display_datasets_button, 10);
 
 		var dsUrl = $.url().param('dataset') || Constant.incoming.dataset || ''; //TODO- We can actually probably use the parseURI script for this. 
 
@@ -1474,7 +1499,7 @@ var Dataset = function () {
 		var datasetURLInputRow = $('#dataset-url-input-row');
 		var cswUrlInputRow = $('#csw-url-input-row');
 
-		if (!parseInt(Constant.ui.view_show_csw_dialog)) {
+		if (!parseInt(Constant.ui.view_show_csw_dialog, 10)) {
 			logger.trace('GDP: Application configuration is set to not show the CSW dialog. Hiding.');
 			$(CSWDialogTableRow).fadeOut(Constant.ui.fadeSpeed);
 		}
@@ -1527,7 +1552,7 @@ var Dataset = function () {
 			if ($(_CSW_URL_INPUT_BOX).val()) {
 				CSW.sendCSWGetCapabilitiesRequest($(_CSW_URL_INPUT_BOX).val(), cswFillInCapabilities, Constant.config.csw.cache, Constant.endpoint.proxy);
 			} else {
-				logger.warn('GDP: User clicked CSW Endpoint Set button without setting a CSW endpoint.')
+				logger.warn('GDP: User clicked CSW Endpoint Set button without setting a CSW endpoint.');
 				showErrorNotification('A CSW endpoint must be defined.');
 			}
 		});
@@ -1645,14 +1670,14 @@ var Dataset = function () {
 		}
 	}
 
-	function bindRetrieveOutputButton () {
+	function bindRetrieveOutputButton() {
 		$(_RETRIEVE_OUTPUT_BUTTON).click(function () {
 			var urlAndData = _RETRIEVE_OUTPUT_URL.split('?');
 			$.download(urlAndData[0], urlAndData[1], 'get');
 		});
 	}
 
-	function bindRetrieveProcInfoButton (statusID) {
+	function bindRetrieveProcInfoButton(statusID) {
 		$(_RETRIEVE_PROC_INFO_BUTTON).click(function () {
 			var urlAndData = _RETRIEVE_OUTPUT_URL.split('?');
 			$.download(Constant.endpoint.proxy + urlAndData[0], 'id=' + statusID + '&attachment=true', 'get');
@@ -1669,7 +1694,7 @@ var Dataset = function () {
 		init: function () {
 			logger.info("GDP: Initializing Dataset/Submit View.");
 
-			_algorithmList = (Constant.ui.view_algorithm_list.length > 0) ? Constant.ui.view_algorithm_list.split(',') : new Array();
+			_algorithmList = (Constant.ui.view_algorithm_list.length > 0) ? Constant.ui.view_algorithm_list.split(',') : [];
 			logger.debug('GDP: We are working with ' + ((_algorithmList.length === 0) ? 'all' : _algorithmList.length) + ' algorithm(s).');
 
 			_usingCache = Constant.incoming.useCache;
@@ -1717,8 +1742,9 @@ var Dataset = function () {
 			return $(_DATASET_ID_SELECTBOX).val();
 		},
 		getFromDate: function () {
-			if (gDatasetType !== this.datasetTypeEnum.OPENDAP)
+			if (gDatasetType !== this.datasetTypeEnum.OPENDAP) {
 				return null;
+			}
 
 			var from = $(_DATE_RANGE_FROM_INPUT_BOX).datepicker('getDate');
 
@@ -1726,8 +1752,9 @@ var Dataset = function () {
 			return $.datepicker.formatDate('yy-mm-ddT00:00:00.000Z', from);
 		},
 		getToDate: function () {
-			if (gDatasetType !== this.datasetTypeEnum.OPENDAP)
+			if (gDatasetType !== this.datasetTypeEnum.OPENDAP) {
 				return null;
+			}
 
 			var to = $(_DATE_RANGE_TO_INPUT_BOX).datepicker('getDate');
 			return $.datepicker.formatDate('yy-mm-ddT00:00:00.000Z', to);
@@ -1783,13 +1810,14 @@ var Dataset = function () {
 			}
 
 			gWmsURL = wmsURL || Constant.ui.default_wms_url;
-			if (gWmsURL)
+			if (gWmsURL) {
 				getWmsLayers(gWmsURL);
+			}
 		},
 		stepLoading: function () {
-			if (_algorithmList.length === 1
-				&& Algorithm.algorithms[_algorithmList[0]].needsConfiguration
-				&& !_configured) {
+			if (_algorithmList.length === 1 &&
+				Algorithm.algorithms[_algorithmList[0]].needsConfiguration &&
+				!_configured) {
 				logger.trace('GDP: Single algorithm view found and algorithm chosen needs configuration. Automatically displaying configuration window.');
 				$(_ALGORITHM_DROPDOWN).trigger('change');
 			}
