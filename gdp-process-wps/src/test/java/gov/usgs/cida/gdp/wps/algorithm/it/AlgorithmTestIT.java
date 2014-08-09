@@ -27,8 +27,10 @@ import static org.junit.Assert.assertThat;
  * @author isuftin
  */
 public class AlgorithmTestIT {
-
-    private String describeProcessPrepend = "http://localhost:9090/gdp-process-wps/WebProcessingService?Service=WPS&Version=1.0.0&Request=DescribeProcess&Identifier=";
+	
+	private String testPort = System.getProperty("jetty.http.port");
+	private String finalName = System.getProperty("project.build.finalName");
+	private String describeProcessPrepend = "http://localhost:" + testPort + "/" + finalName + "/WebProcessingService?Service=WPS&Version=1.0.0&Request=DescribeProcess&Identifier=";
 
     public AlgorithmTestIT() {
     }
@@ -52,6 +54,7 @@ public class AlgorithmTestIT {
     @Test
     public void validateFeatureCoverageIntersectionAlgorithmDescribeProcess() throws IOException, XmlException {
         String url = describeProcessPrepend + "gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm";
+		System.out.println(describeProcessPrepend);
         HttpClient httpclient = new DefaultHttpClient();
         HttpGet httpget = new HttpGet(url);
         HttpResponse response = httpclient.execute(httpget);
