@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import javax.naming.NamingException;
@@ -79,8 +80,10 @@ public class PostgresDatabase extends AbstractDatabase {
     private static PostgresDatabase instance;
     private static ConnectionHandler connectionHandler;
 
-    protected static Timer wipeTimer;
-
+    private static Timer wipeTimer;
+	private static final String DATABASE_NAME;
+	private static final boolean initialized;
+	
     private static final String CREATE_RESULTS_TABLE_PSQL
             = "CREATE TABLE RESULTS ("
             + "REQUEST_ID VARCHAR(100) NOT NULL PRIMARY KEY, "
@@ -89,49 +92,56 @@ public class PostgresDatabase extends AbstractDatabase {
             + "RESPONSE TEXT, "
             + "RESPONSE_MIMETYPE VARCHAR(100))";
 
+	static {
+		PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
+		String baseDirectoryPath = propertyUtil.extractString(KEY_DATABASE_PATH, DEFAULT_BASE_DIRECTORY);
+		String dbName = getDatabaseProperties(PROPERTY_NAME_DATABASE_NAME);
+		DATABASE_NAME = (dbName == null || dbName.equals("")) ? "wps" : dbName;
+		try {	
+			Class.forName("org.postgresql.Driver");
+			initializeBaseDirectory(baseDirectoryPath);
+			initializeConnectionHandler();
+			initializeResultsTable();
+			 initializeDatabaseWiper(propertyUtil);
+		} catch (IOException | SQLException | NamingException ex) {
+			LOGGER.error("Error creating PostgresDatabase", ex);
+		} catch (ClassNotFoundException ex) {
+			LOGGER.error("Database class could not be loaded.", ex);
+		} 
+		initialized = true;
+	}
+	
     private PostgresDatabase() {
-        try {
-            Class.forName("org.postgresql.Driver");
-            PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
-            initializeBaseDirectory(propertyUtil);
-            initializeDatabaseWiper(propertyUtil);
-            initializeConnectionHandler();
-            initializeResultsTable();
-        } catch (ClassNotFoundException cnfe) {
-            LOGGER.error("Database class could not be loaded.", cnfe);
-            throw new UnsupportedDatabaseException("The database class could not be loaded.", cnfe);
-        } catch (NamingException | IOException | SQLException ex) {
-            LOGGER.error("Error creating PostgresDatabase", ex);
-            throw new RuntimeException("Error creating PostgresDatabase", ex);
-        }
+	if (!initialized) {
+		throw new IllegalStateException("The Postgres database could not be initialized.  Check logs for more information");
+	}
     }
 
-    private void initializeBaseDirectory(PropertyUtil propertyUtil) throws IOException {
-        String baseDirectoryPath = propertyUtil.extractString(KEY_DATABASE_PATH, DEFAULT_BASE_DIRECTORY);
+    private static void initializeBaseDirectory(final String baseDirectoryPath) throws IOException {
         BASE_DIRECTORY = Paths.get(baseDirectoryPath);
         LOGGER.info("Using \"{}\" as base directory for results database", baseDirectoryPath);
         Files.createDirectories(BASE_DIRECTORY);
     }
 
-    private void initializeDatabaseWiper(PropertyUtil propertyUtil) {
+    private static void initializeDatabaseWiper(PropertyUtil propertyUtil) {
         if (propertyUtil.extractBoolean(KEY_DATABASE_WIPE_ENABLED, DEFAULT_DATABASE_WIPE_ENABLED)) {
             long periodMillis = propertyUtil.extractPeriodAsMillis(KEY_DATABASE_WIPE_PERIOD, DEFAULT_DATABASE_WIPE_PERIOD);
             long thresholdMillis = propertyUtil.extractPeriodAsMillis(KEY_DATABASE_WIPE_THRESHOLD, DEFAULT_DATABASE_WIPE_THRESHOLD);
-            wipeTimer = new Timer(getClass().getSimpleName() + " Postgres Wiper", true);
+            wipeTimer = new Timer(PostgresDatabase.class.getSimpleName() + " Postgres Wiper", true);
             wipeTimer.scheduleAtFixedRate(new PostgresDatabase.WipeTimerTask(thresholdMillis), 15000, periodMillis);
             LOGGER.info("Started {} Postgres wiper timer; period {} ms, threshold {} ms",
-                    new Object[]{getDatabaseName(), periodMillis, thresholdMillis});
+                    new Object[]{DATABASE_NAME, periodMillis, thresholdMillis});
         } else {
             wipeTimer = null;
         }
     }
 
-    private void initializeConnectionHandler() throws SQLException, NamingException {
+    private static void initializeConnectionHandler() throws SQLException, NamingException {
         String jndiName = getDatabaseProperties("jndiName");
         if (null != jndiName) {
             connectionHandler = new JNDIConnectionHandler(jndiName);
         } else {
-            connectionURL = "jdbc:postgresql:" + getDatabasePath() + "/" + getDatabaseName();
+            connectionURL = "jdbc:postgresql:" + getDatabasePath() + "/" + DATABASE_NAME;
             LOGGER.debug("Database connection URL is: " + connectionURL);
             String username = getDatabaseProperties("username");
             String password = getDatabaseProperties("password");
@@ -143,8 +153,9 @@ public class PostgresDatabase extends AbstractDatabase {
         }
     }
 
-    private void initializeResultsTable() throws SQLException {
-        try (Connection connection = getConnection(); ResultSet rs = connection.getMetaData().getTables(null, null, "results", new String[]{"TABLE"})) {
+    private static void initializeResultsTable() throws SQLException {
+        try (Connection connection = connectionHandler.getConnection();
+		ResultSet rs = connection.getMetaData().getTables(null, null, "results", new String[]{"TABLE"})) {
             if (!rs.next()) {
                 LOGGER.debug("Table RESULTS does not yet exist, creating it.");
 		try (Statement st = connection.createStatement()) {
@@ -462,8 +473,17 @@ public class PostgresDatabase extends AbstractDatabase {
 
 		return filePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "");
 	}
+	
+	/**
+	 * Returns the name of the database.
+	 * @return 
+	 */
+	@Override
+	public String getDatabaseName() {
+		return DATABASE_NAME;
+	}
 
-    private class WipeTimerTask extends TimerTask {
+    private static class WipeTimerTask extends TimerTask {
 
         private final long thresholdMillis;
         private static final String DELETE_STATEMENT = "DELETE FROM RESULTS WHERE RESULTS.REQUEST_ID = ANY ( ? );";
@@ -479,22 +499,22 @@ public class PostgresDatabase extends AbstractDatabase {
 
         @Override
         public void run() {
-            LOGGER.info(getDatabaseName() + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
+            LOGGER.info(DATABASE_NAME + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
             Boolean savingResultsToDB = Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"));
             try {
                 int deletedRecordsCount = wipe(savingResultsToDB);
                 if (deletedRecordsCount > 0) {
-                    LOGGER.info(getDatabaseName() + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
+                    LOGGER.info(DATABASE_NAME + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
                 } else {
-                    LOGGER.debug(getDatabaseName() + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
+                    LOGGER.debug(DATABASE_NAME + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
                 }
             } catch (SQLException | IOException ex) {
-                LOGGER.warn(getDatabaseName() + " Postgres wiper, failed to deleted old records", ex);
+                LOGGER.warn(DATABASE_NAME + " Postgres wiper, failed to deleted old records", ex);
             }
         }
 
         private int wipe(Boolean saveResultsToDB) throws SQLException, IOException {
-            LOGGER.debug(getDatabaseName() + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
+            LOGGER.debug(DATABASE_NAME + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
             int deletedRecordsCount = 0;
             List<String> oldRecords = findOldRecords();
             if (!saveResultsToDB) {
@@ -512,7 +532,7 @@ public class PostgresDatabase extends AbstractDatabase {
 
         private int deleteRecords(List<String> recordIds) throws SQLException {
             int deletedRecordsCount = 0;
-            try (Connection connection = getConnection(); PreparedStatement deleteStatement = connection.prepareStatement(DELETE_STATEMENT)) {
+            try (Connection connection = connectionHandler.getConnection(); PreparedStatement deleteStatement = connection.prepareStatement(DELETE_STATEMENT)) {
                 deleteStatement.setArray(DELETE_STATEMENT_LIST_PARAM_INDEX, connection.createArrayOf("varchar", recordIds.toArray()));
                 deletedRecordsCount = deleteStatement.executeUpdate();
             }
@@ -521,7 +541,7 @@ public class PostgresDatabase extends AbstractDatabase {
 
         private List<String> findOldRecords() throws SQLException {
             List<String> matchingRecords = new ArrayList<>();
-            try (Connection connection = getConnection(); PreparedStatement lookupStatement = connection.prepareStatement(LOOKUP_STATEMENT)) {
+            try (Connection connection = connectionHandler.getConnection(); PreparedStatement lookupStatement = connection.prepareStatement(LOOKUP_STATEMENT)) {
                 long ageMillis = System.currentTimeMillis() - thresholdMillis;
                 lookupStatement.setLong(LOOKUP_STATEMENT_TIMESTAMP_PARAM_INDEX, ageMillis);
                 try (ResultSet rs = lookupStatement.executeQuery()) {
