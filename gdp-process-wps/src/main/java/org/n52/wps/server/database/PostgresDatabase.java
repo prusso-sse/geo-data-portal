@@ -82,7 +82,7 @@ public class PostgresDatabase extends AbstractDatabase {
 
     private static Timer wipeTimer;
 	private static final String DATABASE_NAME;
-	private static final boolean initialized;
+	private static boolean initialized = false;
 	
     private static final String CREATE_RESULTS_TABLE_PSQL
             = "CREATE TABLE RESULTS ("
@@ -103,12 +103,12 @@ public class PostgresDatabase extends AbstractDatabase {
 			initializeConnectionHandler();
 			initializeResultsTable();
 			 initializeDatabaseWiper(propertyUtil);
+			 initialized = true;
 		} catch (IOException | SQLException | NamingException ex) {
 			LOGGER.error("Error creating PostgresDatabase", ex);
 		} catch (ClassNotFoundException ex) {
 			LOGGER.error("Database class could not be loaded.", ex);
 		} 
-		initialized = true;
 	}
 	
     private PostgresDatabase() {
