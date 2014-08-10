@@ -42,6 +42,12 @@ public class RConnector {
 
     private static Logger log = LoggerFactory.getLogger(RConnector.class);
 
+	private final RStarter starter;
+
+	public RConnector(RStarter starter) {
+		this.starter = starter;
+	}
+	
     public RConnection getNewConnection(boolean enableBatchStart, String host, int port, String user, String password) throws RserveException {
         RConnection con = null;
         con = getNewConnection(enableBatchStart, host, port);
@@ -83,9 +89,7 @@ public class RConnector {
                 }
                 catch (Exception e) {
                     log.error("Attempted to start Rserve and establish a connection failed", e);
-
-                    //Throwable#addSuppressed() only supported by Java 1.7+
-//                    rse.addSuppressed(e);
+                    rse.addSuppressed(e);
                 }
             }
             else
