@@ -1,5 +1,6 @@
 package org.n52.wps.server.database;
 
+import com.google.common.base.Joiner;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -32,19 +33,18 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
-
 import org.apache.commons.io.IOUtils;
 import org.n52.wps.ServerDocument;
 import org.n52.wps.commons.PropertyUtil;
 import org.n52.wps.commons.WPSConfig;
+import org.n52.wps.server.database.connection.ConnectionHandler;
+import org.n52.wps.server.database.connection.DefaultConnectionHandler;
+import org.n52.wps.server.database.connection.JNDIConnectionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Joiner;
 
 /**
  *
@@ -442,68 +442,29 @@ public class PostgresDatabase extends AbstractDatabase {
      */
     private BufferedInputStream writeDataStreamToDiskWithGZIP(String filename, InputStream stream) throws Exception {
         Path filePath = Files.createFile(BASE_DIRECTORY.resolve(Joiner.on(".").join(filename, SUFFIX_GZIP)));
-        OutputStream outputStream = new GZIPOutputStream(Files.newOutputStream(filePath));
-        IOUtils.copy(stream, outputStream);
-        IOUtils.closeQuietly(outputStream);
+        try (OutputStream outputStream = new GZIPOutputStream(Files.newOutputStream(filePath))) {
+		IOUtils.copy(stream, outputStream);
+	}
         byte[] filePathByteArray = filePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "").getBytes();
         return new BufferedInputStream(new ByteArrayInputStream(filePathByteArray));
     }
     
-    /**
-     * 
-     * @param filename base filename
-     * @param data String of data to write to disk, compressed using gzip
-     * @return String of the file URI pointing where the data was written
-     * @throws Exception
-     */
-    private String writeDataToDiskWithGZIP(String filename, String data) throws Exception {    	
-        Path filePath = Files.createFile(BASE_DIRECTORY.resolve(Joiner.on(".").join(filename, SUFFIX_GZIP)));
-        BufferedWriter writer = null;
-        GZIPOutputStream zip = new GZIPOutputStream(new FileOutputStream(filePath.toFile()));
-        writer = new BufferedWriter(new OutputStreamWriter(zip, DEFAULT_ENCODING));
-        writer.append(data);
-        writer.close();
-        
-        return filePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "");
-    }
+	/**
+	 *
+	 * @param filename base filename
+	 * @param data String of data to write to disk, compressed using gzip
+	 * @return String of the file URI pointing where the data was written
+	 * @throws Exception
+	 */
+	private String writeDataToDiskWithGZIP(String filename, String data) throws Exception {
+		Path filePath = Files.createFile(BASE_DIRECTORY.resolve(Joiner.on(".").join(filename, SUFFIX_GZIP)));
+		GZIPOutputStream zip = new GZIPOutputStream(new FileOutputStream(filePath.toFile()));
+		try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(zip, DEFAULT_ENCODING))) {
+			writer.append(data);
+		}
 
-    private interface ConnectionHandler {
-
-        public Connection getConnection() throws SQLException;
-    }
-
-    private class JNDIConnectionHandler implements ConnectionHandler {
-
-        private final DataSource dataSource;
-
-        public JNDIConnectionHandler(String jndiName) throws NamingException {
-            InitialContext context = new InitialContext();
-            dataSource = (DataSource) context.lookup("java:comp/env/jdbc/" + jndiName);
-        }
-
-        @Override
-        public Connection getConnection() throws SQLException {
-            Connection conn = dataSource.getConnection();
-            return conn;
-        }
-    }
-
-    private class DefaultConnectionHandler implements ConnectionHandler {
-
-        private final String dbConnectionURL;
-        private final Properties dbProps;
-
-        public DefaultConnectionHandler(String dbConnectionURL, Properties dbProps) {
-            this.dbConnectionURL = dbConnectionURL;
-            this.dbProps = dbProps;
-        }
-
-        @Override
-        public Connection getConnection() throws SQLException {
-            Connection conn = DriverManager.getConnection(dbConnectionURL, dbProps);
-            return conn;
-        }
-    }
+		return filePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "");
+	}
 
     private class WipeTimerTask extends TimerTask {
 
