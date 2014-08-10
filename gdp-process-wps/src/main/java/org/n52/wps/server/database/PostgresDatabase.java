@@ -19,7 +19,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,9 +32,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.sql.DataSource;
 import org.apache.commons.io.IOUtils;
 import org.n52.wps.ServerDocument;
 import org.n52.wps.commons.PropertyUtil;
@@ -65,7 +62,6 @@ public class PostgresDatabase extends AbstractDatabase {
     private static final long DEFAULT_DATABASE_WIPE_PERIOD = 1000 * 60 * 60; // default to running once an hour
     private static final long DEFAULT_DATABASE_WIPE_THRESHOLD = 1000 * 60 * 60 * 24 * 7; // default to wipe things over a week old
 
-    private static final int DATA_BUFFER_SIZE = 8192;
     private static final String FILE_URI_PREFIX = "file://";
     private static final String SUFFIX_GZIP = "gz";
     private static final String DEFAULT_BASE_DIRECTORY
@@ -151,8 +147,9 @@ public class PostgresDatabase extends AbstractDatabase {
         try (Connection connection = getConnection(); ResultSet rs = connection.getMetaData().getTables(null, null, "results", new String[]{"TABLE"})) {
             if (!rs.next()) {
                 LOGGER.debug("Table RESULTS does not yet exist, creating it.");
-                Statement st = connection.createStatement();
-                st.executeUpdate(CREATE_RESULTS_TABLE_PSQL);
+		try (Statement st = connection.createStatement()) {
+			st.executeUpdate(CREATE_RESULTS_TABLE_PSQL);
+		}
             }
         }
     }
