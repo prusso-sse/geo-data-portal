@@ -36,11 +36,13 @@ import org.apache.commons.lang.StringUtils;
 import org.n52.wps.ServerDocument;
 import org.n52.wps.commons.PropertyUtil;
 import org.n52.wps.commons.WPSConfig;
+import static org.n52.wps.server.database.AbstractDatabase.getDatabaseProperties;
 import org.n52.wps.server.database.connection.ConnectionHandler;
 import org.n52.wps.server.database.connection.DefaultConnectionHandler;
 import org.n52.wps.server.database.connection.JNDIConnectionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
 
 /**
  *
@@ -80,7 +82,7 @@ public class PostgresDatabase extends AbstractDatabase {
 private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"));
 
     private static Timer wipeTimer;
-	private static final String DATABASE_NAME;
+	private final String DATABASE_NAME;
 	private static boolean initialized = false;
 	
     private static final String CREATE_RESULTS_TABLE_PSQL
@@ -90,8 +92,8 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
             + "RESPONSE_TYPE VARCHAR(100), "
             + "RESPONSE TEXT, "
             + "RESPONSE_MIMETYPE VARCHAR(100))";
-
-	static {
+	
+    private PostgresDatabase() {
 		PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
 		String baseDirectoryPath = propertyUtil.extractString(KEY_DATABASE_PATH, DEFAULT_BASE_DIRECTORY);
 		String dbName = getDatabaseProperties(PROPERTY_NAME_DATABASE_NAME);
@@ -102,27 +104,25 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
 			initializeConnectionHandler();
 			initializeResultsTable();
 			 initializeDatabaseWiper(propertyUtil);
-			 initialized = true;
 		} catch (IOException | SQLException | NamingException ex) {
 			LOGGER.error("Error creating PostgresDatabase", ex);
+			throw new RuntimeException("Error creating PostgresDatabase", ex);
 		} catch (ClassNotFoundException ex) {
-			LOGGER.error("Database class could not be loaded.", ex);
+			LOGGER.error("The database class could not be loaded.", ex);
+			throw new UnsupportedDatabaseException("The database class could not be loaded.", ex);
 		} 
-	}
-	
-    private PostgresDatabase() {
 	if (!initialized) {
 		throw new IllegalStateException("The Postgres database could not be initialized.  Check logs for more information");
 	}
     }
 
-    private static void initializeBaseDirectory(final String baseDirectoryPath) throws IOException {
+    private void initializeBaseDirectory(final String baseDirectoryPath) throws IOException {
         BASE_DIRECTORY = Paths.get(baseDirectoryPath);
         LOGGER.info("Using \"{}\" as base directory for results database", baseDirectoryPath);
         Files.createDirectories(BASE_DIRECTORY);
     }
 
-    private static void initializeDatabaseWiper(PropertyUtil propertyUtil) {
+    private void initializeDatabaseWiper(PropertyUtil propertyUtil) {
         if (propertyUtil.extractBoolean(KEY_DATABASE_WIPE_ENABLED, DEFAULT_DATABASE_WIPE_ENABLED)) {
             long periodMillis = propertyUtil.extractPeriodAsMillis(KEY_DATABASE_WIPE_PERIOD, DEFAULT_DATABASE_WIPE_PERIOD);
             long thresholdMillis = propertyUtil.extractPeriodAsMillis(KEY_DATABASE_WIPE_THRESHOLD, DEFAULT_DATABASE_WIPE_THRESHOLD);
@@ -135,7 +135,7 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
         }
     }
 
-    private static void initializeConnectionHandler() throws SQLException, NamingException {
+    private void initializeConnectionHandler() throws SQLException, NamingException {
         String jndiName = getDatabaseProperties("jndiName");
         if (null != jndiName) {
             connectionHandler = new JNDIConnectionHandler(jndiName);
@@ -152,7 +152,7 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
         }
     }
 
-    private static void initializeResultsTable() throws SQLException {
+    private void initializeResultsTable() throws SQLException {
         try (Connection connection = connectionHandler.getConnection();
 		ResultSet rs = connection.getMetaData().getTables(null, null, "results", new String[]{"TABLE"})) {
             if (!rs.next()) {
@@ -400,16 +400,7 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
         return null;
     }
 	
-	/**
-	 * Returns the name of the database.
-	 * @return 
-	 */
-	@Override
-	public String getDatabaseName() {
-		return DATABASE_NAME;
-	}
-
-    private static class WipeTimerTask extends TimerTask {
+    private class WipeTimerTask extends TimerTask {
 
         private final long thresholdMillis;
         private static final String DELETE_STATEMENT = "DELETE FROM RESULTS WHERE RESULTS.REQUEST_ID = ANY ( ? );";
@@ -418,6 +409,7 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
                 + "(SELECT REQUEST_ID, EXTRACT(EPOCH FROM REQUEST_DATE) * 1000 AS TIMESTAMP FROM RESULTS) items WHERE TIMESTAMP < ?";
         private static final int LOOKUP_STATEMENT_TIMESTAMP_PARAM_INDEX = 1;
         private static final int LOOKUP_STATEMENT_REQUEST_ID_COLUMN_INDEX = 1;
+	private final String databaseName = getDatabaseName();
 
         WipeTimerTask(long thresholdMillis) {
             this.thresholdMillis = thresholdMillis;
@@ -425,22 +417,22 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
 
         @Override
         public void run() {
-            LOGGER.info(DATABASE_NAME + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
+            LOGGER.info(databaseName + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
             try {
 				
                 int deletedRecordsCount = wipe();
                 if (deletedRecordsCount > 0) {
-                    LOGGER.info(DATABASE_NAME + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
+                    LOGGER.info(databaseName + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
                 } else {
-                    LOGGER.debug(DATABASE_NAME + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
+                    LOGGER.debug(databaseName + " Postgres wiper, cleaned {} records from database", deletedRecordsCount);
                 }
             } catch (SQLException | IOException ex) {
-                LOGGER.warn(DATABASE_NAME + " Postgres wiper, failed to deleted old records", ex);
+                LOGGER.warn(databaseName + " Postgres wiper, failed to deleted old records", ex);
             }
         }
 
         private int wipe() throws SQLException, IOException {
-            LOGGER.debug(DATABASE_NAME + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
+            LOGGER.debug(databaseName + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
             int deletedRecordsCount = 0;
             List<String> oldRecords = findOldRecords();
             if (!SAVE_RESULTS_TO_DB) {
