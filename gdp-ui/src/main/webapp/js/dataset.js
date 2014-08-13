@@ -29,6 +29,7 @@ var Dataset = function () {
 	var _CSW_URL_INPUT_BOX = '#csw-url-input-box';
 	var _DATASET_ID = '#datasetId';
 	var _DATASET_ID_LABEL = '#dataset-id-label';
+	var _DATASET_FILTER_BUTTON_ID = '#dataset-id-filter';
 	var _DATASET_ID_SELECTBOX = '#dataset-id-selectbox';
 	var _DATASET_ID_TOOLTIP = '#dataset-id-tooltip';
 	var _DATASET_URL_INPUT_BOX = '#dataset-url-input-box';
@@ -1255,9 +1256,169 @@ var Dataset = function () {
 			}
 		}
 
+		initDatasetFilter(data);
 		$(_DATASET_ID_TOOLTIP).fadeIn(Constant.ui.fadespeed);
 		$(_DATASET_ID).fadeIn(Constant.ui.fadespeed);
 		$(_DATASET_ID_LABEL).fadeIn(Constant.ui.fadespeed);
+	}
+
+	/**
+	 * Displays and binds the filter button if it's needed
+	 * @returns {undefined}
+	 */
+	function initDatasetFilter() {
+		var $selectBox = $(_DATASET_ID_SELECTBOX),
+			$filterButton = $(_DATASET_FILTER_BUTTON_ID);
+		// Check that the selectbox is multiselect and there's more than one option in it. Otherwise, no need to filter
+		if ($selectBox.find('option').length > 1 && $selectBox.attr('multiple')) {
+			$filterButton.
+				fadeIn(Constant.ui.fadespeed).
+				off('click', createDatasetFilterModal).
+				on('click', createDatasetFilterModal);
+		}
+	}
+
+	/**
+	 * Creates the modal window to allow for dataset filtering
+	 * @returns {undefined}
+	 */
+	function createDatasetFilterModal () {
+		var datasetFilterSelector = '#dataset-filter-',
+			$selectbox = $(_DATASET_ID_SELECTBOX),
+			// Sets up the grouped dataset columns for the user to select from
+			createColumns = function () {
+				var delim = this.value,
+					$options = $selectbox.find('option'),
+					columns = [],
+					$dialog;
+
+				$(datasetFilterSelector + 'listing').empty();
+				$(datasetFilterSelector + 'select-count').html('0 Datasets Selected');
+
+				// Create the column groupings using the options in the select box
+				$options.each(function (i, $option) {
+					var optVal = $option.value,
+						optGroups = optVal.split(delim);
+
+					// Check to make sure that the delimited split properly 
+					if (optGroups.length > 1) {
+						for (var ogIdx = 0; ogIdx < optGroups.length; ogIdx++) {
+							var group = optGroups[ogIdx];
+
+							if (columns.length === ogIdx) {
+								columns.push([]);
+							}
+
+							if (columns[ogIdx].indexOf(group) === -1) {
+								columns[ogIdx].push(group);
+							}
+						}
+					}
+				});
+
+				// Create the table using the groupings I just created
+				var $table = $('<table />').attr('id', 'dataset-filter-table'),
+					$tr = $('<tr />');
+
+				$table.append($tr);
+				
+				$.each(columns, function (i, column) {
+					var $td = $('<td />');
+					for (var colIdx = 0; colIdx < column.length; colIdx++) {
+						var group = column[colIdx],
+							$div = $('<div />'),
+							$input = $('<input />').attr({
+							type: 'checkbox',
+							name: 'dataset-filter-column-' + i,
+							value: group
+						});
+						$div.append($input, group);
+						$td.append($div);
+					}
+					$tr.append($td);
+				});
+				$(datasetFilterSelector + 'listing').append($table);
+				
+				// A small hack to get the height auto-sizing correctly
+				$dialog = $('#dataset-filter-modal');
+				$dialog.dialog("option", "height", 'auto');
+				if ($dialog.dialog().height() > $dialog.dialog("option", "maxHeight")) {
+					$dialog.dialog("option", "height", $dialog.dialog("option", "maxHeight"));
+				}
+				bindCheckboxes();
+			},
+			// Binds the click event for the checkboxes in each column
+			bindCheckboxes = function () {
+				$(datasetFilterSelector + 'table input').on('change', function (event) {
+					var $checkedBoxes = $(datasetFilterSelector + 'table input:checked'),
+						delimiter = $(datasetFilterSelector + 'delim-selector-form input:checked').val(),
+						optionsSelector = '#dataset-id-selectbox option',
+						$options = $(optionsSelector);
+
+					// Unselect everything in the datatype listbox
+					$options.prop('selected', false);
+
+					// For each checked box, go through the datatype listbox and select that option
+					$checkedBoxes.each(function (i, checkbox) {
+						var $checkbox = $(checkbox),
+							columnNum = parseInt($checkbox.attr('name').split(delimiter)[3]);
+
+						for (var optIdx = 0; optIdx < $options.length; optIdx++) {
+							var $option = $($options[optIdx]),
+								optGroups = $option.attr('name').split(delimiter);
+
+							if (optGroups[columnNum] === $checkbox.val()) {
+								$option.prop('selected', true);
+							}
+						}
+					});
+					
+					// Update the select count text
+					$(datasetFilterSelector + 'select-count').html($(optionsSelector + ':selected').length + ' Datasets Selected');
+				});
+			};
+
+		// Uncheck the radio buttons and re-bind their event handling
+		$(datasetFilterSelector + 'delim-selector-form input').
+			prop('checked', false).
+			off('change', createColumns).
+			on('change', createColumns);
+
+		// Clear the checkbox columns
+		$(datasetFilterSelector + 'listing').empty();
+		// Clear the X Datasets Selected text
+		$(datasetFilterSelector + 'select-count').html('');
+
+		// Create a modal window
+		$(datasetFilterSelector + 'modal').dialog({
+			width: Math.floor($(window).innerWidth() / 2),
+			maxHeight : Math.floor($(window).innerHeight() / 1.25),
+			position: 'top',
+			buttons: [{
+					text: 'Done',
+					click: function () {
+						$(this).dialog("close");
+					}
+				}, {
+					text: 'Select All',
+					click: function () {
+						// Select everything in the dropdown list and select all the checkboxes
+						var $checkboxes = $(this).find('input[type="checkbox"]'),
+							$selectBoxes = $selectbox.find('option');
+						$selectBoxes.prop('selected', true);
+						$checkboxes.prop('checked', true);
+						$(this).find('#dataset-filter-select-count').html($selectBoxes.length + ' Datasets Selected');
+					}
+				}, {
+					text: 'Select None',
+					click: function () {
+						// Clear the dropdown list and unselect all the checkboxes
+						$selectbox.find('option').prop('selected', false);
+						$(this).find('input[type="checkbox"]').prop('checked', false);
+						$(this).find('#dataset-filter-select-count').html('0 Datasets Selected');
+					}
+				}]
+		});
 	}
 
 	function getTimeRange(datasetURL, selectedGrid, useCache) {
@@ -1284,11 +1445,12 @@ var Dataset = function () {
 			'application/json'
 			);
 	}
-
+	
 	function initDatePickers(json) {
 		if (!json || !json.availabletimes) {
 			$(_DATASET_ID_TOOLTIP).hide();
 			$(_DATASET_ID_LABEL).hide();
+			$(_DATASET_FILTER_BUTTON_ID).hide();
 			$(_DATASET_ID).hide();
 			$(_WMS_LABEL).hide();
 			$(_WMS_TOOLTIP).hide();
