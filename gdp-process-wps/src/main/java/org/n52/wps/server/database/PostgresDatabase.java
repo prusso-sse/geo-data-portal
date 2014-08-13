@@ -154,7 +154,7 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
 
     private void initializeResultsTable() throws SQLException {
         try (Connection connection = connectionHandler.getConnection();
-		ResultSet rs = connection.getMetaData().getTables(null, null, "results", new String[]{"TABLE"})) {
+		ResultSet rs = getTables(connection)) {
             if (!rs.next()) {
                 LOGGER.debug("Table RESULTS does not yet exist, creating it.");
 		try (Statement st = connection.createStatement()) {
@@ -184,6 +184,10 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
             throw new RuntimeException("Unable to obtain connection to database!", ex);
         }
     }
+	
+	private ResultSet getTables(Connection connection) throws SQLException {
+		return connection.getMetaData().getTables(null, null, "results", new String[]{"TABLE"});
+	}
 
     @Override
     public String generateRetrieveResultURL(String id) {
