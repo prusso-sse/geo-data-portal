@@ -52,7 +52,7 @@ public class PostgresDatabase extends AbstractDatabase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PostgresDatabase.class);
     
-    private static final String DEFAULT_ENCODING = StandardCharsets.UTF_8.displayName();
+    private static final String DEFAULT_ENCODING = "UTF-8";
 
     private static final String KEY_DATABASE_ROOT = "org.n52.wps.server.database";
     private static final String KEY_DATABASE_PATH = "path";
