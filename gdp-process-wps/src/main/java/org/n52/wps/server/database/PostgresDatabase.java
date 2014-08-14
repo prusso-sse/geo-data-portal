@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,7 +41,6 @@ import org.n52.wps.server.database.connection.DefaultConnectionHandler;
 import org.n52.wps.server.database.connection.JNDIConnectionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
 
 /**
  *
@@ -80,6 +78,7 @@ public class PostgresDatabase extends AbstractDatabase {
     private static PostgresDatabase instance;
     private static ConnectionHandler connectionHandler;
 private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatabaseProperties("saveResultsToDB"));
+protected final Object storeResponseLock = new Object();
 
     private static Timer wipeTimer;
 	private final String DATABASE_NAME;
@@ -209,43 +208,43 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
 		boolean compressData = !SAVE_RESULTS_TO_DB;
 		boolean proceed = true;
 		String data = "";
-
-		if (!SAVE_RESULTS_TO_DB) {
-			try {
+		synchronized (storeResponseLock) {
+			if (!SAVE_RESULTS_TO_DB) {
+				try {
 				// The result contents won't be saved to the database, only a pointer to the file system. I am therefore
-				// going to GZip the data to save space
-				data = writeInputStreamToDisk(id, stream, compressData);
-			} catch (IOException ex) {
-				LOGGER.error("Failed to write output data to disk", ex);
-				proceed = false;
-			}
-		}
-
-		if (proceed) {
-			try (Connection connection = getConnection();
-					PreparedStatement insertStatement = connection.prepareStatement(insertionString)) {
-
-				insertStatement.setString(INSERT_COLUMN_REQUEST_ID, id);
-				insertStatement.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
-				insertStatement.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
-				insertStatement.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
-
-				if (SAVE_RESULTS_TO_DB) {
-					// This is implemented because we need to handle the case of SAVE_RESULTS_TO_DB = true. However,
-					// this should not be used if you expect results to be large. 
-					// TODO- Remove and reimplement when setAsciiStream() has been properly implemented 
-					// @ https://github.com/pgjdbc/pgjdbc/blob/master/org/postgresql/jdbc4/AbstractJdbc4Statement.java
-					insertStatement.setString(INSERT_COLUMN_RESPONSE, IOUtils.toString(stream, DEFAULT_ENCODING));
-				} else {
-					insertStatement.setString(INSERT_COLUMN_RESPONSE, data);
+					// going to GZip the data to save space
+					data = writeInputStreamToDisk(id, stream, compressData);
+				} catch (IOException ex) {
+					LOGGER.error("Failed to write output data to disk", ex);
+					proceed = false;
 				}
-				insertStatement.executeUpdate();
-				LOGGER.debug(MessageFormat.format("Inserted data into database with id of:{0}, type of: {1}, mimetype of: {2}", id, type, mimeType));
-			} catch (SQLException | IOException ex) {
-				LOGGER.error(MessageFormat.format("Failed to insert data into database with  id of:{0}, type of: {1}, mimetype of: {2}", id, type, mimeType), ex);
+			}
+
+			if (proceed) {
+				try (Connection connection = getConnection();
+						PreparedStatement insertStatement = connection.prepareStatement(insertionString)) {
+
+					insertStatement.setString(INSERT_COLUMN_REQUEST_ID, id);
+					insertStatement.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
+					insertStatement.setString(INSERT_COLUMN_RESPONSE_TYPE, type);
+					insertStatement.setString(INSERT_COLUMN_MIME_TYPE, mimeType);
+
+					if (SAVE_RESULTS_TO_DB) {
+					// This is implemented because we need to handle the case of SAVE_RESULTS_TO_DB = true. However,
+						// this should not be used if you expect results to be large. 
+						// TODO- Remove and reimplement when setAsciiStream() has been properly implemented 
+						// @ https://github.com/pgjdbc/pgjdbc/blob/master/org/postgresql/jdbc4/AbstractJdbc4Statement.java
+						insertStatement.setString(INSERT_COLUMN_RESPONSE, IOUtils.toString(stream, DEFAULT_ENCODING));
+					} else {
+						insertStatement.setString(INSERT_COLUMN_RESPONSE, data);
+					}
+					insertStatement.executeUpdate();
+					LOGGER.debug(MessageFormat.format("Inserted data into database with id of:{0}, type of: {1}, mimetype of: {2}", id, type, mimeType));
+				} catch (SQLException | IOException ex) {
+					LOGGER.error(MessageFormat.format("Failed to insert data into database with  id of:{0}, type of: {1}, mimetype of: {2}", id, type, mimeType), ex);
+				}
 			}
 		}
-
 		return generateRetrieveResultURL(id);
 	}
 
@@ -271,107 +270,112 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
 		return filePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "");
 	}
 
-    @Override
-    public void updateResponse(String id, InputStream stream) {
-	boolean compressData = !SAVE_RESULTS_TO_DB;
-	boolean proceed = true;
-	String data = "";
-	
-	if (!SAVE_RESULTS_TO_DB) {
-		try {
+	@Override
+	public void updateResponse(String id, InputStream stream) {
+		boolean compressData = !SAVE_RESULTS_TO_DB;
+		boolean proceed = true;
+		String data = "";
+
+		synchronized (storeResponseLock) {
+			if (!SAVE_RESULTS_TO_DB) {
+				try {
 			// The result contents won't be saved to the database, only a pointer to the file system. I am therefore
-			// going to GZip the data to save space
-			data = writeInputStreamToDisk(id, stream, compressData);
-		} catch (IOException ex) {
-			LOGGER.error("Failed to write output data to disk", ex);
-			proceed = false;
-		}
-	}
-
-	if (proceed) {
-		try (Connection connection = getConnection();
-					PreparedStatement updateStatement = connection.prepareStatement(updateString)) {
-			updateStatement.setString(INSERT_COLUMN_REQUEST_ID, id);
-			updateStatement.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
-
-			if (SAVE_RESULTS_TO_DB) {
-				// This is implemented because we need to handle the case of SAVE_RESULTS_TO_DB = true. However,
-				// this should not be used if you expect results to be large. 
-				// TODO- Remove and reimplement when setAsciiStream() has been properly implemented 
-				// @ https://github.com/pgjdbc/pgjdbc/blob/master/org/postgresql/jdbc4/AbstractJdbc4Statement.java
-				updateStatement.setString(INSERT_COLUMN_RESPONSE, IOUtils.toString(stream, DEFAULT_ENCODING));
-			} else {
-				updateStatement.setString(INSERT_COLUMN_RESPONSE, data);
+					// going to GZip the data to save space
+					data = writeInputStreamToDisk(id, stream, compressData);
+				} catch (IOException ex) {
+					LOGGER.error("Failed to write output data to disk", ex);
+					proceed = false;
+				}
 			}
-			updateStatement.executeUpdate();
-	        
-			LOGGER.debug("Updated data  into database with id of:" + id);
-		}  catch (SQLException | IOException ex) {
-			LOGGER.error(MessageFormat.format("Failed to update data in database with  id of:{0}", id), ex);
+
+			if (proceed) {
+				try (Connection connection = getConnection();
+						PreparedStatement updateStatement = connection.prepareStatement(updateString)) {
+					updateStatement.setString(INSERT_COLUMN_REQUEST_ID, id);
+					updateStatement.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
+
+					if (SAVE_RESULTS_TO_DB) {
+				// This is implemented because we need to handle the case of SAVE_RESULTS_TO_DB = true. However,
+						// this should not be used if you expect results to be large. 
+						// TODO- Remove and reimplement when setAsciiStream() has been properly implemented 
+						// @ https://github.com/pgjdbc/pgjdbc/blob/master/org/postgresql/jdbc4/AbstractJdbc4Statement.java
+						updateStatement.setString(INSERT_COLUMN_RESPONSE, IOUtils.toString(stream, DEFAULT_ENCODING));
+					} else {
+						updateStatement.setString(INSERT_COLUMN_RESPONSE, data);
+					}
+					updateStatement.executeUpdate();
+
+					LOGGER.debug("Updated data  into database with id of:" + id);
+				} catch (SQLException | IOException ex) {
+					LOGGER.error(MessageFormat.format("Failed to update data in database with  id of:{0}", id), ex);
+				}
+			}
 		}
 	}
-    }
 
 	@Override
 	public InputStream lookupResponse(String id) {
 		InputStream result = null;
-		
-		if (StringUtils.isNotBlank(id)) {
-			try (Connection connection = getConnection(); 
-					PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
-				selectStatement.setString(SELECTION_STRING_REQUEST_ID_PARAM_INDEX, id);
-				try (ResultSet rs = selectStatement.executeQuery()) {
-					if (null == rs || !rs.next()) {
-						LOGGER.warn("No response found for request id " + id);
-					} else {
-						result = rs.getAsciiStream(SELECTION_STRING_RESPONSE_COLUMN_INDEX);
+		synchronized (storeResponseLock) {
+			if (StringUtils.isNotBlank(id)) {
+				try (Connection connection = getConnection();
+						PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
+					selectStatement.setString(SELECTION_STRING_REQUEST_ID_PARAM_INDEX, id);
+
+					try (ResultSet rs = selectStatement.executeQuery()) {
+						if (null == rs || !rs.next()) {
+							LOGGER.warn("No response found for request id " + id);
+						} else {
+							result = rs.getAsciiStream(SELECTION_STRING_RESPONSE_COLUMN_INDEX);
 						// Copy the file to disk and create an inputstream from that because once I leave
-						// this function, result will not be accessible since the connection to the database 
-						// will be broken. I eat a bit of overhead this way, but afaik, it's the best solution
-						File tempFile = Files.createTempFile("GDP-SAFE-TO-DELETE-" + id, null).toFile();
-						
-						// Best effort, even though SelfCleaningFileInputStream should delete it
-						tempFile.deleteOnExit(); 
-						
-						// Copy the ASCII stream to file
-						IOUtils.copyLarge(result, new FileOutputStream(tempFile));
-						IOUtils.closeQuietly(result);
-						
-						// Create an InputStream (of the self-cleaning type) from this File and pass that on
-						result = new SelfCleaningFileInputStream(tempFile);
+							// this function, result will not be accessible since the connection to the database 
+							// will be broken. I eat a bit of overhead this way, but afaik, it's the best solution
+							File tempFile = Files.createTempFile("GDP-SAFE-TO-DELETE-" + id, null).toFile();
+
+							// Best effort, even though SelfCleaningFileInputStream should delete it
+							tempFile.deleteOnExit();
+
+							// Copy the ASCII stream to file
+							IOUtils.copyLarge(result, new FileOutputStream(tempFile));
+							IOUtils.closeQuietly(result);
+
+							// Create an InputStream (of the self-cleaning type) from this File and pass that on
+							result = new SelfCleaningFileInputStream(tempFile);
+						}
+					} catch (IOException ex) {
+						LOGGER.error("Could not look up response in database", ex);
 					}
-				} catch (IOException ex) {
+				} catch (SQLException ex) {
 					LOGGER.error("Could not look up response in database", ex);
 				}
-			} catch (SQLException ex) {
-				LOGGER.error("Could not look up response in database", ex);
-			}
 
-			if (null != result) {
-				if (!SAVE_RESULTS_TO_DB) {
-					try {
-						String outputFileLocation = IOUtils.toString(result);
-						LOGGER.debug("ID {} is output and saved to disk instead of database. Path = " + outputFileLocation);
-						if (Files.exists(Paths.get(outputFileLocation))) {
-							result = new GZIPInputStream(new FileInputStream(outputFileLocation));
-						} else {
-							LOGGER.warn("Response not found on disk for id " + id + " at " + outputFileLocation);
+				if (null != result) {
+					if (!SAVE_RESULTS_TO_DB) {
+						try {
+							String outputFileLocation = IOUtils.toString(result);
+							LOGGER.debug("ID {} is output and saved to disk instead of database. Path = " + outputFileLocation);
+							if (Files.exists(Paths.get(outputFileLocation))) {
+								result = new GZIPInputStream(new FileInputStream(outputFileLocation));
+							} else {
+								LOGGER.warn("Response not found on disk for id " + id + " at " + outputFileLocation);
+							}
+						} catch (FileNotFoundException ex) {
+							LOGGER.warn("Response not found on disk for id " + id, ex);
+						} catch (IOException ex) {
+							LOGGER.warn("Error processing response for id " + id, ex);
 						}
-					} catch (FileNotFoundException ex) {
-						LOGGER.warn("Response not found on disk for id " + id, ex);
-					} catch (IOException ex) {
-						LOGGER.warn("Error processing response for id " + id, ex);
 					}
+				} else {
+					LOGGER.warn("response found but returned null");
 				}
+
 			} else {
-				LOGGER.warn("response found but returned null");
+				LOGGER.warn("tried to look up response for null id, returned null");
 			}
-		} else {
-			LOGGER.warn("tried to look up response for null id, returned null");
 		}
 		return result;
 	}
-	
+
     @Override
     public String getMimeTypeForStoreResponse(String id) {
         String mimeType = null;
@@ -390,19 +394,21 @@ private final static  boolean SAVE_RESULTS_TO_DB = Boolean.parseBoolean(getDatab
         return mimeType;
     }
 
-    @Override
-    public File lookupResponseAsFile(String id) {
-        if (!SAVE_RESULTS_TO_DB) {
-            try {
-                String outputFileLocation = IOUtils.toString(lookupResponse(id));
-                return new File(new URI(outputFileLocation));
-            } catch (URISyntaxException | IOException ex) {
-                LOGGER.warn("Could not get file location for response file for id " + id, ex);
-            }
-        }
-        LOGGER.warn("requested response as file for a response stored in the database, returning null");
-        return null;
-    }
+	@Override
+	public File lookupResponseAsFile(String id) {
+		if (!SAVE_RESULTS_TO_DB) {
+			synchronized (storeResponseLock) {
+				try {
+					String outputFileLocation = IOUtils.toString(lookupResponse(id));
+					return new File(new URI(outputFileLocation));
+				} catch (URISyntaxException | IOException ex) {
+					LOGGER.warn("Could not get file location for response file for id " + id, ex);
+				}
+			}
+		}
+		LOGGER.warn("requested response as file for a response stored in the database, returning null");
+		return null;
+	}
 	
     private class WipeTimerTask extends TimerTask {
 
