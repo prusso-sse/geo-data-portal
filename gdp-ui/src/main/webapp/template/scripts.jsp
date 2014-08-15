@@ -58,6 +58,7 @@
 <script type="text/javascript" src="js/root.js"></script>
 <script type="text/javascript" src="js/sciencebase.js"></script>
 <script type="text/javascript" src="js/area_of_interest.js"></script>
+<script type="text/javascript" src="js/widget/DatasetFilter.js"></script>
 <script type="text/javascript" src="js/dataset.js"></script>
 <script type="text/javascript" src="js/map.js"></script>
 <script type="text/javascript" src="js/tiptip/jquery.tipTip.js"></script>
