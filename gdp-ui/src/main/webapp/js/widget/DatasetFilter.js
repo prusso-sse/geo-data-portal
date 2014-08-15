@@ -39,6 +39,7 @@ GDP.widget.DatasetFilter = (function () {
 				width: Math.floor($(window).innerWidth() / 2),
 				maxHeight: Math.floor($(window).innerHeight() / 1.25),
 				position: 'top',
+				title: 'Beta',
 				buttons: [{
 						text: 'Done',
 						click: function () {
@@ -130,9 +131,11 @@ GDP.widget.DatasetFilter = (function () {
 		bindCheckboxes = function () {
 			$(DATASET_FILTER_SELECTOR_PREPEND + 'table input').on('change', function () {
 				var $checkboxTable = $(DATASET_FILTER_SELECTOR_PREPEND + 'table'),
+					delim = $(DATASET_FILTER_SELECTOR_PREPEND + 'delim-selector-form input:checked').val(),
 					columnCount = $checkboxTable.find('td').length,
 					columnGroups = [],
 					optionsSelector = '#dataset-id-selectbox option',
+					$table = $('#dataset-filter-table'),
 					$options = $(optionsSelector),
 					regexStr = '',
 					regex,
@@ -141,34 +144,35 @@ GDP.widget.DatasetFilter = (function () {
 				// Unselect everything in the datatype listbox
 				$options.prop('selected', false);
 
-				for (ccIdx = 0; ccIdx < columnCount; ccIdx++) {
-					var $checkedColumnBoxes = $('#dataset-filter-table td:nth-child(' + (ccIdx + 1) + ') input:checked');
+				if ($table.find('input:checked').length) {
+					for (ccIdx = 0; ccIdx < columnCount; ccIdx++) {
+						var $checkedColumnBoxes = $('#dataset-filter-table td:nth-child(' + (ccIdx + 1) + ') input:checked');
 
-					if ($checkedColumnBoxes.length === 0) {
-						regexStr += '(.*)-?';
-						columnGroups.push(['(.*)']);
-					} else {
-						var cbVals = [];
-						$checkedColumnBoxes.each(function () {
-							cbVals.push($(this).val());
-						});
-						regexStr += '(' + cbVals.join('|') + ')-?';
-						columnGroups.push(['(.*)']);
+						if ($checkedColumnBoxes.length === 0) {
+							regexStr += '(.*)-?';
+							columnGroups.push(['(.*)']);
+						} else {
+							var cbVals = [];
+							$checkedColumnBoxes.each(function () {
+								cbVals.push($(this).val());
+							});
+							regexStr += '(' + cbVals.join('|') + ')' + delim + '?';
+							columnGroups.push(['(.*)']);
+						}
+					}
+
+					regexStr = regexStr.substring(0, regexStr.length - 2);
+					regex = new RegExp(regexStr);
+
+					for (var optIdx = 0; optIdx < $options.length; optIdx++) {
+						var $option = $($options[optIdx]),
+							name = $option.attr('name');
+
+						if (regex.test(name)) {
+							$option.prop('selected', true);
+						}
 					}
 				}
-
-				regexStr = regexStr.substring(0, regexStr.length - 2);
-				regex = new RegExp(regexStr);
-
-				for (var optIdx = 0; optIdx < $options.length; optIdx++) {
-					var $option = $($options[optIdx]),
-						name = $option.attr('name');
-
-					if (regex.test(name)) {
-						$option.prop('selected', true);
-					}
-				}
-
 				// Update the select count text
 				$(DATASET_FILTER_SELECTOR_PREPEND + 'select-count').html($(optionsSelector + ':selected').length + ' Datasets Selected');
 			});
