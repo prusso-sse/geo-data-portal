@@ -13,7 +13,7 @@ GDP.widget.DatasetFilter = (function () {
 
 			var selectControlSelector = args.selectControlSelector,
 				$selectbox = $(selectControlSelector),
-				createColumnsBind = function() {
+				createColumnsBind = function () {
 					createColumns(selectControlSelector);
 				};
 
@@ -21,7 +21,7 @@ GDP.widget.DatasetFilter = (function () {
 				throw "Missing argument selectControlSelector";
 			}
 
-			
+
 
 			// Uncheck the radio buttons and re-bind their event handling
 			$(DATASET_FILTER_SELECTOR_PREPEND + 'delim-selector-form input').
@@ -66,7 +66,7 @@ GDP.widget.DatasetFilter = (function () {
 			});
 		},
 		createColumns = function (selectControlSelector) {
-			var delim = $(DATASET_FILTER_SELECTOR_PREPEND +  'delim-selector-form input:checked').val(),
+			var delim = $(DATASET_FILTER_SELECTOR_PREPEND + 'delim-selector-form input:checked').val(),
 				$selectbox = $(selectControlSelector),
 				$options = $selectbox.find('option'),
 				columns = [],
@@ -128,29 +128,46 @@ GDP.widget.DatasetFilter = (function () {
 			bindCheckboxes();
 		},
 		bindCheckboxes = function () {
-			$(DATASET_FILTER_SELECTOR_PREPEND + 'table input').on('change', function (event) {
-				var $checkedBoxes = $(DATASET_FILTER_SELECTOR_PREPEND + 'table input:checked'),
-					delimiter = $(DATASET_FILTER_SELECTOR_PREPEND + 'delim-selector-form input:checked').val(),
+			$(DATASET_FILTER_SELECTOR_PREPEND + 'table input').on('change', function () {
+				var $checkboxTable = $(DATASET_FILTER_SELECTOR_PREPEND + 'table'),
+					columnCount = $checkboxTable.find('td').length,
+					columnGroups = [],
 					optionsSelector = '#dataset-id-selectbox option',
-					$options = $(optionsSelector);
+					$options = $(optionsSelector),
+					regexStr = '',
+					regex,
+					ccIdx;
 
 				// Unselect everything in the datatype listbox
 				$options.prop('selected', false);
 
-				// For each checked box, go through the datatype listbox and select that option
-				$checkedBoxes.each(function (i, checkbox) {
-					var $checkbox = $(checkbox),
-						columnNum = parseInt($checkbox.attr('name').split(delimiter)[3]);
+				for (ccIdx = 0; ccIdx < columnCount; ccIdx++) {
+					var $checkedColumnBoxes = $('#dataset-filter-table td:nth-child(' + (ccIdx + 1) + ') input:checked');
 
-					for (var optIdx = 0; optIdx < $options.length; optIdx++) {
-						var $option = $($options[optIdx]),
-							optGroups = $option.attr('name').split(delimiter);
-
-						if (optGroups[columnNum] === $checkbox.val()) {
-							$option.prop('selected', true);
-						}
+					if ($checkedColumnBoxes.length === 0) {
+						regexStr += '(.*)-?';
+						columnGroups.push(['(.*)']);
+					} else {
+						var cbVals = [];
+						$checkedColumnBoxes.each(function () {
+							cbVals.push($(this).val());
+						});
+						regexStr += '(' + cbVals.join('|') + ')-?';
+						columnGroups.push(['(.*)']);
 					}
-				});
+				}
+
+				regexStr = regexStr.substring(0, regexStr.length - 2);
+				regex = new RegExp(regexStr);
+
+				for (var optIdx = 0; optIdx < $options.length; optIdx++) {
+					var $option = $($options[optIdx]),
+						name = $option.attr('name');
+
+					if (regex.test(name)) {
+						$option.prop('selected', true);
+					}
+				}
 
 				// Update the select count text
 				$(DATASET_FILTER_SELECTOR_PREPEND + 'select-count').html($(optionsSelector + ':selected').length + ' Datasets Selected');
