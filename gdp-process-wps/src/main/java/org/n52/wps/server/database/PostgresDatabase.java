@@ -102,18 +102,18 @@ protected final Object storeResponseLock = new Object();
 			initializeBaseDirectory(baseDirectoryPath);
 			initializeConnectionHandler();
 			initializeResultsTable();
-			 initializeDatabaseWiper(propertyUtil);
+			initializeDatabaseWiper(propertyUtil);
 		} catch (IOException | SQLException | NamingException ex) {
 			LOGGER.error("Error creating PostgresDatabase", ex);
 			throw new RuntimeException("Error creating PostgresDatabase", ex);
 		} catch (ClassNotFoundException ex) {
 			LOGGER.error("The database class could not be loaded.", ex);
 			throw new UnsupportedDatabaseException("The database class could not be loaded.", ex);
-		} 
+		}
 	if (!initialized) {
 		throw new IllegalStateException("The Postgres database could not be initialized.  Check logs for more information");
 	}
-    }
+	}
 
     private void initializeBaseDirectory(final String baseDirectoryPath) throws IOException {
         BASE_DIRECTORY = Paths.get(baseDirectoryPath);
@@ -151,17 +151,17 @@ protected final Object storeResponseLock = new Object();
         }
     }
 
-    private void initializeResultsTable() throws SQLException {
-        try (Connection connection = connectionHandler.getConnection();
-		ResultSet rs = getTables(connection)) {
-            if (!rs.next()) {
-                LOGGER.debug("Table RESULTS does not yet exist, creating it.");
-		try (Statement st = connection.createStatement()) {
-			st.executeUpdate(CREATE_RESULTS_TABLE_PSQL);
+	private void initializeResultsTable() throws SQLException {
+		try (Connection connection = connectionHandler.getConnection();
+			ResultSet rs = getTables(connection)) {
+			if (!rs.next()) {
+				LOGGER.debug("Table RESULTS does not yet exist, creating it.");
+				try (Statement st = connection.createStatement()) {
+					st.executeUpdate(CREATE_RESULTS_TABLE_PSQL);
+				}
+			}
 		}
-            }
-        }
-    }
+	}
 
     public static synchronized PostgresDatabase getInstance() {
         if (instance == null) {
@@ -258,16 +258,19 @@ protected final Object storeResponseLock = new Object();
 	 * @throws Exception
 	 */
 	private String writeInputStreamToDisk(String filename, InputStream data, boolean compress) throws IOException {
-		Path filePath = Files.createFile(BASE_DIRECTORY.resolve(Joiner.on(".").join(filename, SUFFIX_GZIP)));
+		Path filePath = BASE_DIRECTORY.resolve(Joiner.on(".").join(filename, SUFFIX_GZIP));
+		Files.deleteIfExists(filePath);
+		Path createdFilePath = Files.createFile(filePath);
 		
-		OutputStream os = new FileOutputStream(filePath.toFile());
+		OutputStream os = new FileOutputStream(createdFilePath.toFile());
 		
 		if (compress) {
 			os = new GZIPOutputStream(os);
 		}
 		
 		IOUtils.copyLarge(data, os);
-		return filePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "");
+		IOUtils.closeQuietly(os);
+		return createdFilePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "");
 	}
 
 	@Override
@@ -295,7 +298,7 @@ protected final Object storeResponseLock = new Object();
 					updateStatement.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
 
 					if (SAVE_RESULTS_TO_DB) {
-				// This is implemented because we need to handle the case of SAVE_RESULTS_TO_DB = true. However,
+						// This is implemented because we need to handle the case of SAVE_RESULTS_TO_DB = true. However,
 						// this should not be used if you expect results to be large. 
 						// TODO- Remove and reimplement when setAsciiStream() has been properly implemented 
 						// @ https://github.com/pgjdbc/pgjdbc/blob/master/org/postgresql/jdbc4/AbstractJdbc4Statement.java
