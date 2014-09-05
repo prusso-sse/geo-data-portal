@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
-* @author abramhall
+* @author abramhall, isuftin@usgs.gov (Ivan Suftin)
 */
 public abstract class BaseProcessServlet extends HttpServlet {
     protected static final String WPS_NAMESPACE = "net.opengis.wps.v_1_0_0";
@@ -36,6 +36,7 @@ public abstract class BaseProcessServlet extends HttpServlet {
     private static final int LIMIT_PARAM_INDEX = 1;
     private static final int OFFSET_PARAM_INDEX = 2;
     private static final String REQUESTS_QUERY = "select request_id from results where response_type = 'ExecuteRequest' order by request_date desc limit ? offset ?;";
+	private static final long serialVersionUID = -149568144765889031L;
     private ConnectionHandler connectionHandler;
 
     public BaseProcessServlet() {
@@ -53,16 +54,19 @@ public abstract class BaseProcessServlet extends HttpServlet {
         }
     }
     
-    private String getDatabaseProperty(String propertyName) {
-        Database database = WPSConfig.getInstance().getWPSConfig().getServer().getDatabase();
-        Property[] dbProperties = database.getPropertyArray();
-        for (Property property : dbProperties) {
-            if (property.getName().equalsIgnoreCase(propertyName)) {
-                return property.getStringValue();
-            }
-        }
-        return null;
-    }
+	private String getDatabaseProperty(String propertyName) {
+		Database database = WPSConfig.getInstance().getWPSConfig().getServer().getDatabase();
+		String property = null;
+		if (null != database) {
+			Property[] dbProperties = database.getPropertyArray();
+			for (Property dbProperty : dbProperties) {
+				if (property == null && dbProperty.getName().equalsIgnoreCase(propertyName)) {
+					property = dbProperty.getStringValue();
+				}
+			}
+		}
+		return property;
+	}
     
     protected final Connection getConnection() throws SQLException {
         return connectionHandler.getConnection();
@@ -112,10 +116,11 @@ public abstract class BaseProcessServlet extends HttpServlet {
         return identifier.substring(identifier.lastIndexOf(".") + 1);
     }
        
-    protected final String removeUTF8BOM(String s) {
-        if (s.startsWith(UTF8_BOM)) {
-            s = s.substring(1);
-        }
-        return s;
-    }
+	protected final String removeUTF8BOM(String s) {
+		String result = s;
+		if (s.startsWith(UTF8_BOM)) {
+			result = s.substring(1);
+		}
+		return result;
+	}
 }

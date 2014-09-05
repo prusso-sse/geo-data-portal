@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import net.opengis.wps.x100.ProcessDescriptionType;
 import net.opengis.wps.x100.ProcessDescriptionsDocument;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -14,13 +13,13 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlValidationError;
+import static org.hamcrest.Matchers.*;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
 
 /**
  *
@@ -28,9 +27,9 @@ import static org.junit.Assert.assertThat;
  */
 public class AlgorithmTestIT {
 	
-	private String testPort = System.getProperty("jetty.http.port");
-	private String finalName = System.getProperty("project.build.finalName");
-	private String describeProcessPrepend = "http://localhost:" + testPort + "/" + finalName + "/WebProcessingService?Service=WPS&Version=1.0.0&Request=DescribeProcess&Identifier=";
+	private final String testPort = System.getProperty("jetty.http.port");
+	private final String finalName = System.getProperty("project.build.finalName");
+	private final String describeProcessPrepend = "http://localhost:" + testPort + "/" + finalName + "/WebProcessingService?Service=WPS&Version=1.0.0&Request=DescribeProcess&Identifier=";
 
     public AlgorithmTestIT() {
     }
@@ -54,7 +53,6 @@ public class AlgorithmTestIT {
     @Test
     public void validateFeatureCoverageIntersectionAlgorithmDescribeProcess() throws IOException, XmlException {
         String url = describeProcessPrepend + "gov.usgs.cida.gdp.wps.algorithm.FeatureCoverageIntersectionAlgorithm";
-		System.out.println(describeProcessPrepend);
         HttpClient httpclient = new DefaultHttpClient();
         HttpGet httpget = new HttpGet(url);
         HttpResponse response = httpclient.execute(httpget);
@@ -62,7 +60,7 @@ public class AlgorithmTestIT {
 
         if (entity != null) {
             InputStream instream = entity.getContent();
-            List<XmlValidationError> xmlValidationErrorList = new ArrayList<XmlValidationError>();
+            List<XmlValidationError> xmlValidationErrorList = new ArrayList<>();
             ProcessDescriptionsDocument pdt = null;
             XmlOptions xmlOptions = new XmlOptions();
             xmlOptions.setErrorListener(xmlValidationErrorList);

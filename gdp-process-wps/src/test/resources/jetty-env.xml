@@ -1,0 +1,14 @@
+<Configure id='DSTest' class="org.eclipse.jetty.webapp.WebAppContext">
+	<New id="DSTest" class="org.eclipse.jetty.plus.jndi.Resource">
+		<Arg>jdbc/gdp</Arg>
+		<Arg>
+			<New class="org.postgresql.ds.PGSimpleDataSource">
+				<Set name="User">user</Set>
+				<Set name="Password">pass</Set>
+				<Set name="DatabaseName">dbname</Set>
+				<Set name="ServerName">localhost</Set>
+				<Set name="PortNumber">5432</Set>
+			</New>
+		</Arg>
+	</New>
+</Configure>

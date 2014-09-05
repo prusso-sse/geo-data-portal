@@ -11,6 +11,12 @@
         <url-pattern>/WebProcessingService</url-pattern>
         <url-pattern>/RetrieveResultServlet</url-pattern>
     </filter-mapping>
+<resource-ref>
+    <description>postgreSQL Datasource</description>
+    <res-ref-name>jdbc/gdp</res-ref-name>
+    <res-type>javax.sql.DataSource</res-type>
+    <res-auth>Container</res-auth>
+</resource-ref>
     <listener>
         <description>Allows dynamic Log4J log level changes via JMX</description>
         <listener-class>gov.usgs.cida.jmx.log4j.JMXLog4JLoggerServletContextListener</listener-class>
