@@ -135,6 +135,10 @@
 					Select a dataset and processing type to use with the Geo Data Portal
 				</button>
 			</div>
+			
+			<div id="row-incoming-caller-info" class="row text-center">
+				<%-- If user is coming through an external caller (like ScienceBase), this will have content --%>
+			</div>
 
 			<div class="row spacer">
 				<div class="well">
@@ -162,9 +166,6 @@
 						<a href="<%= props.getProperty("gdp.endpoint.gdp", "/gdp/client/")%>?development=true" target="_blank">Geo Data Portal interface for developers and advanced users. Most users should select a dataset and processing type above.</a>
 					</p>
 				</div>
-			</div>
-			<div id="row-incoming-caller-info" class="row text-center">
-				<%-- If user is coming through an external caller (like ScienceBase), this will have content --%>
 			</div>
 
 			<div class="row">
