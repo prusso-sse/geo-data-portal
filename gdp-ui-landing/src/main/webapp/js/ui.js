@@ -640,8 +640,41 @@ GDP.UI = function (args) {
 		var $incomingCallerDiv = $('#row-incoming-caller-info');
 		var incomingParams = GDP.CONFIG.incomingParams;
 		if (incomingParams['caller'] && incomingParams['item_id']) {
-			var callerMsg = 'Areas of interest ' + incomingParams['item_id'] +  ' from ' + incomingParams['caller'] + ' already selected.';
-			$incomingCallerDiv.append(callerMsg);
+			// JIRA GDP-830 - This JIRA seems specific to sciencebase and yet this
+			// code is pretty generic.  I am going to make a change to this just
+			// for sciencebase as that is what is requested.
+			if(incomingParams['caller'].toLowerCase() == 'sciencebase' ) {
+				// 
+				// https://www.sciencebase.gov/catalog/gdp/callGdp?item_id=54296bf0e4b0ad29004c2fbb&owsurl=https%3A%2F%2Fwww.sciencebase.gov%2FcatalogMaps%2Fmapping%2Fows%2F54296bf0e4b0ad29004c2fbb&wmsurl=https%3A%2F%2Fwww.sciencebase.gov%2FcatalogMaps%2Fmapping%2Fows%2F54296bf0e4b0ad29004c2fbb&wfsurl=https%3A%2F%2Fwww.sciencebase.gov%2FcatalogMaps%2Fmapping%2Fows%2F54296bf0e4b0ad29004c2fbb&wcsurl=
+				// 
+				//
+				// We need to build the sciencebase url since its not included in the
+				// request params.  Params passed in via ScienceBase look like:
+				// 				caller: "sciencebase"
+				//		 		development: "false"
+				//		 		feature_wfs: "https://www.sciencebase.gov/catalogMaps/mapping/ows/54296bf0e4b0ad29004c2fbb"
+				//		 		feature_wms: "https://www.sciencebase.gov/catalogMaps/mapping/ows/54296bf0e4b0ad29004c2fbb"
+				//		 		item_id: "54296bf0e4b0ad29004c2fbb"
+				//		 		ows: "https://www.sciencebase.gov/catalogMaps/mapping/ows/54296bf0e4b0ad29004c2fbb"
+				//		 		redirect_url: "https://www.sciencebase.gov/catalog/gdp/landing/54296bf0e4b0ad29004c2fbb"
+				//
+				//		URL to sciencebase looks like:
+				//				https://www.sciencebase.gov/catalog/item/54296bf0e4b0ad29004c2fbb
+				//
+				// So first thing is to get the request host
+				var parser = document.createElement('a');
+			    parser.href = incomingParams['redirect_url'];  
+			    
+			    var host = parser.hostname;
+			    var proto = parser.protocol;
+			    var url = proto + "//" + host + "/catalog/item/" + incomingParams['item_id'];
+			    
+			    var callerMsg = '<a href="' + url + '" target="_blank">Areas of interest from ScienceBase already selected.</a>';
+			    $incomingCallerDiv.append(callerMsg);
+			} else {
+				var callerMsg = 'Areas of interest ' + incomingParams['item_id'] +  ' from ' + incomingParams['caller'] + ' already selected.';
+				$incomingCallerDiv.append(callerMsg);
+			}
 		} else {
 			$incomingCallerDiv.remove();
 		}
