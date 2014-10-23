@@ -40,6 +40,16 @@
 			<jsp:param name="expires" value="never" />
 			<jsp:param name="development" value="<%= development%>" />
 		</jsp:include>
+		
+		<script type="text/javascript">
+			var datasetMapPreview = null;
+		</script>
+		<style>
+			div.olMap {
+				height:300px;
+				width: 300px;
+			}
+		</style>
 	</head>
 	<body>
 		<div class="container">
@@ -124,6 +134,9 @@
 					<div id="col-csw-information-content" class="col-md-12">
 						<p id="p-csw-information-content"></p>
 					</div>
+				</div>
+				<div id="dataset-map-container" class="row" style="margin: auto;">
+						<div id="dataset-map-preview" style="margin: auto !important;"></div>
 				</div>
 			</div>
 

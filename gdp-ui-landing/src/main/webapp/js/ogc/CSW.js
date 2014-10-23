@@ -353,6 +353,68 @@ GDP.CSW = function (args) {
 			}
 			return algorithmArray;
 		},
+		getGeographicElementFromRecord = function (args) {
+			args = args || {};
+			if (!args.record) {
+				throw "undefined record passed in";
+			}
+			var record = args.record,
+				geographicElement = null,
+				idInfoIdx,
+				idInfoElement,
+				idExtentIdx,
+				idExtentElement;
+
+			// record->identificationInfo[0]->extent[1]->geographicElement[0]->{eastBoundLongitude, northBoundLatitude, southBoundLatitude, westBoundLongitude}
+			if (record.hasOwnProperty('identificationInfo')) {
+				for (idInfoIdx = 0; idInfoIdx < record.identificationInfo.length && geographicElement == null; idInfoIdx++) {
+					idInfoElement = record.identificationInfo[idInfoIdx];
+					if (idInfoElement.hasOwnProperty('extent')) {
+						for (idExtentIdx = 0; idExtentIdx < idInfoElement.extent.length && geographicElement == null; idExtentIdx++) {
+							idExtentElement = idInfoElement.extent[idExtentIdx];
+							if (idExtentElement.hasOwnProperty('geographicElement')) {
+								geographicElement = idExtentElement.geographicElement[0];
+							}
+						}
+					}
+				}
+			}
+			
+			/**
+			 * 	Openlayers Bounds is constructed as:
+			 * 
+			 *  	OpenLayers.Bounds(left, bottom, right, top);
+			 *  
+			 *  So we will map the geographicElement values to this structure.
+			 *  
+			 *  	{
+			 *  		eastBoundLongitude = right
+			 *  		northBoundLatitude = top
+			 *  		southBoundLatitude = bottom
+			 *  		westBoundLongitude = left
+			 *  	}
+			 */
+			var geoInfo = {left: 0, bottom: 0, right: 0, top: 0};
+			if(geographicElement != null) {				
+				if (geographicElement.hasOwnProperty('eastBoundLongitude')) {
+					geoInfo.right = geographicElement.eastBoundLongitude.Decimal;				
+				}
+				
+				if (geographicElement.hasOwnProperty('northBoundLatitude')) {
+					geoInfo.top = geographicElement.northBoundLatitude.Decimal;				
+				}
+				
+				if (geographicElement.hasOwnProperty('southBoundLatitude')) {
+					geoInfo.bottom = geographicElement.southBoundLatitude.Decimal;				
+				}
+				
+				if (geographicElement.hasOwnProperty('westBoundLongitude')) {
+					geoInfo.left = geographicElement.westBoundLongitude.Decimal;				
+				}
+			}
+
+			return geoInfo;
+		},
 		getTitleFromRecord = function (args) {
 			args = args || {};
 			if (!args.record) {
@@ -684,6 +746,7 @@ GDP.CSW = function (args) {
 		getRecordsByKeywords: getRecordsByKeywords,
 		getDomain: getDomain,
 		getAlgorithmArrayFromRecord: getAlgorithmArrayFromRecord,
+		getGeographicElementFromRecord: getGeographicElementFromRecord,
 		getTitleFromRecord: getTitleFromRecord,
 		getAbstractFromRecord: getAbstractFromRecord,
 		getEndpointFromRecord: getEndpointFromRecord,
