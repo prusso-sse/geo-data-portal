@@ -6,6 +6,11 @@ var GDP = GDP || {};
 /*global document */
 /*jslint plusplus: true */
 
+/* All of these values come from GDP-UI map.js as standard for this app */
+var _NUM_ZOOM_LEVELS = 18;
+var _MAX_RESOLUTION = 1.40625/2;
+var _MAX_EXTENT = [-20037508.34, -20037508.34,20037508.34, 20037508.34];
+
 GDP.UI = function (args) {
 	"use strict";
 	args = args || {};
@@ -268,13 +273,28 @@ GDP.UI = function (args) {
 			/**
 			 * Whenever a dataset button is selected we need to make sure that
 			 * the dataset map preview is reset (if it exists)
+			 * 
+			 * Since this is a variable declared in a different file.  Best
+			 * practice is to make sure its actually defined before messing with
+			 * it so we dont throw unrecoverable exceptions
 			 */
-			if(datasetMapPreview !== 'undefined') {
-				if(datasetMapPreview != null) {
-					datasetMapPreview.destroy();
-					datasetMapPreview = null;
-				}
+			if((typeof datasetMapPreview != 'undefined') && (datasetMapPreview != null)) {
+				/**
+				 * We need to remove the olMap class completely from the map div
+				 * prior to destroying it so that the height of the div goes back
+				 * to what we originally wanted.
+				 */
+				$('#dataset-map-preview').removeClass('olMap');
+				datasetMapPreview.destroy();
+				
+				/**
+				 * Explicitly set this to null so that we dont depend on the openlayers
+				 * destroy() method doing what it needs to do and we can rely on
+				 * javascript garbage collection.
+				 */ 
+				datasetMapPreview = null;
 			}
+			
 			
 			var eventTarget = event.target,
 				value = eventTarget.value,
@@ -346,9 +366,9 @@ GDP.UI = function (args) {
 					}
 					
 					datasetMapPreview = new OpenLayers.Map('dataset-map-preview', {
-						numZoomLevels: 18,
-						maxResolution: 1.40625/2,
-					    maxExtent: new OpenLayers.Bounds(-20037508.34, -20037508.34,20037508.34, 20037508.34)
+						numZoomLevels: _NUM_ZOOM_LEVELS,
+						maxResolution: _MAX_RESOLUTION,
+					    maxExtent: new OpenLayers.Bounds(_MAX_EXTENT)
 					});
 					
 					var layerOb = {

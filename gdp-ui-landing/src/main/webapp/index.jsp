@@ -42,9 +42,15 @@
 		</jsp:include>
 		
 		<script type="text/javascript">
+			/* We need this to be global for all js methods in this file to see*/
 			var datasetMapPreview = null;
 		</script>
 		<style>
+			/*	Openlayers automatically creates a div tag with a class of
+				olMap.  It does this for EVERY map object it creates.  The 
+				reason we put this css here is so that only our map gets these
+				settings and not every map that might include a css file this
+				is declared in. */
 			div.olMap {
 				height:300px;
 				width: 300px;
