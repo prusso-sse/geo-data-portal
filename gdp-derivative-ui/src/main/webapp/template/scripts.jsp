@@ -25,6 +25,7 @@
   ga('create', 'UA-34380265-2', 'auto');
   ga('send', 'pageview');
 
+  
 </script>
 
 <%-- Base EXT modules & Extensions --%>
