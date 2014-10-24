@@ -6,6 +6,11 @@ var GDP = GDP || {};
 /*global document */
 /*jslint plusplus: true */
 
+/* All of these values come from GDP-UI map.js as standard for this app */
+var _NUM_ZOOM_LEVELS = 18;
+var _MAX_RESOLUTION = 1.40625/2;
+var _MAX_EXTENT = [-20037508.34, -20037508.34,20037508.34, 20037508.34];
+
 GDP.UI = function (args) {
 	"use strict";
 	args = args || {};
@@ -265,6 +270,32 @@ GDP.UI = function (args) {
 		 * @returns {undefined}
 		 */
 		this.cswDropdownChanged = function (event) {
+			/**
+			 * Whenever a dataset button is selected we need to make sure that
+			 * the dataset map preview is reset (if it exists)
+			 * 
+			 * Since this is a variable declared in a different file.  Best
+			 * practice is to make sure its actually defined before messing with
+			 * it so we dont throw unrecoverable exceptions
+			 */
+			if((typeof datasetMapPreview != 'undefined') && (datasetMapPreview != null)) {
+				/**
+				 * We need to remove the olMap class completely from the map div
+				 * prior to destroying it so that the height of the div goes back
+				 * to what we originally wanted.
+				 */
+				$('#dataset-map-preview').removeClass('olMap');
+				datasetMapPreview.destroy();
+				
+				/**
+				 * Explicitly set this to null so that we dont depend on the openlayers
+				 * destroy() method doing what it needs to do and we can rely on
+				 * javascript garbage collection.
+				 */ 
+				datasetMapPreview = null;
+			}
+			
+			
 			var eventTarget = event.target,
 				value = eventTarget.value,
 				ident,
@@ -288,6 +319,9 @@ GDP.UI = function (args) {
 						subtitle = $target.find('option[value="' + value + '"]').html(),
 						content = GDP.CONFIG.cswClient.getAbstractFromRecord({
 							record: record
+						}),
+						geoInfo = GDP.CONFIG.cswClient.getGeographicElementFromRecord({
+							record: record
 						});
 
 					if (subtitle !== title) {
@@ -296,9 +330,14 @@ GDP.UI = function (args) {
 
 					return {
 						title: title,
-						content: content
+						content: content,
+						geoInfo: geoInfo
 					};
 				},
+				/**
+				 * UPDATE THIS METHOD (updateContent) to show and display a map with the info
+				 * for this selection.
+				 */
 				updateContent = function (descriptionObject, ident, titleContainer, contentContainer) {
 					titleContainer.html(descriptionObject.title);
 					contentContainer.html(window.replaceURLWithHTMLLinks(descriptionObject.content));
@@ -310,6 +349,92 @@ GDP.UI = function (args) {
 						})
 						.html('View Full Record')
 						);
+					
+					/** Now lets create a map with the info we have and place it into the
+					 *  dataset-map-preview div.
+					 *  
+					 *  Openlayers Bounds is constructed as:
+					 *  
+					 *  	OpenLayers.Bounds(left, bottom, right, top)
+					 */
+					var geoInfo = descriptionObject.geoInfo;
+					var boundingBox = [geoInfo.left.value, geoInfo.bottom.value, geoInfo.right.value, geoInfo.top.value];
+					
+					if(datasetMapPreview != null) {
+						datasetMapPreview.destroy();
+						datasetMapPreview = null;
+					}
+					
+					datasetMapPreview = new OpenLayers.Map('dataset-map-preview', {
+						numZoomLevels: _NUM_ZOOM_LEVELS,
+						maxResolution: _MAX_RESOLUTION,
+					    maxExtent: new OpenLayers.Bounds(_MAX_EXTENT)
+					});
+					
+					var layerOb = {
+				            id: "shaded_relief",
+				            name: "Shaded Relief",
+				            url: "http://server.arcgisonline.com/ArcGIS/rest/services/ESRI_StreetMap_World_2D/MapServer/tile/${z}/${y}/${x}",
+				            params: {
+				            	isBaseLayer: "true",
+				            	layers: "0",
+				            	projection: "EPSG:4326",
+				            	transitionEffect: "resize"},
+				            OLparams: {} // parameters passed to OpenLayers, such as opacity
+				        };
+					
+		            var layer = new OpenLayers.Layer.XYZ(
+		            		layerOb.name,
+		                    layerOb.url,
+		                    layerOb.params,
+		                    layerOb.OLparams
+		                    );
+		            layer.setVisibility(true);
+		            datasetMapPreview.addLayer(layer);
+		            
+		            datasetMapPreview.zoomTo(3);
+		            
+		            var centerLon = parseFloat(geoInfo.left.value) + (parseFloat(geoInfo.right.value) - parseFloat(geoInfo.left.value));
+		            var centerLat = parseFloat(geoInfo.bottom.value) + (parseFloat(geoInfo.top.value) - parseFloat(geoInfo.bottom.value));
+		            var center = new OpenLayers.LonLat(centerLon, centerLat);
+		            datasetMapPreview.setCenter(center);
+
+		            /**
+		             * Now create our bounding box of where this data comes from
+		             */
+					var vectorLayer = new OpenLayers.Layer.Vector("Vector Layer");
+					
+					var proj = new OpenLayers.Projection("EPSG:4326");
+					var style_green = {strokeColor: "#ff3300",strokeOpacity: 1,strokeWidth: 2,fillColor: "#FF9966",fillOpacity: 0.1};
+					var p1 = new OpenLayers.Geometry.Point(geoInfo.left.value,geoInfo.top.value)
+					p1.transform(proj, datasetMapPreview.getProjectionObject());
+					var p2 = new OpenLayers.Geometry.Point(geoInfo.right.value,geoInfo.top.value)
+					p2.transform(proj, datasetMapPreview.getProjectionObject());
+					var p3 = new OpenLayers.Geometry.Point(geoInfo.left.value,geoInfo.bottom.value)
+					p3.transform(proj, datasetMapPreview.getProjectionObject());
+					var p4 = new OpenLayers.Geometry.Point(geoInfo.right.value,geoInfo.bottom.value)
+					p4.transform(proj, datasetMapPreview.getProjectionObject());
+					var points = [];
+					points.push(p1);
+					points.push(p2);
+					points.push(p4);
+					points.push(p3);
+					
+					var poly = new OpenLayers.Geometry.LinearRing(points);
+					var polygonFeature = new OpenLayers.Feature.Vector(poly, null, style_green);
+					vectorLayer.addFeatures([polygonFeature]);
+					
+					datasetMapPreview.addLayer(vectorLayer);
+					
+					/**
+					 * Lets force its visibility to ON
+					 */
+					vectorLayer.setVisibility(true);
+					
+					/**
+					 * Now, using the bounding box we got for this dataset lets zoom the map to it as well
+					 */
+					datasetMapPreview.zoomToExtent(new OpenLayers.Bounds(geoInfo.left.value, geoInfo.bottom.value, geoInfo.right.value, geoInfo.top.value));
 				},
 				bindInfoLink = function () {
 					$('#view-full-info-link').on('click', function () {
