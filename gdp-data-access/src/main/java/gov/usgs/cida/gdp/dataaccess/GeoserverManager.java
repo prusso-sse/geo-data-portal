@@ -175,20 +175,25 @@ public class GeoserverManager {
         deleteDataStore(workspace, dataStore);
 
         // Get the location of the file from GeoServer
+        // This code may be redundant because Geoserver is deleting the files for us.
         File diskLocationFileObject = new File(diskLocation);
-        if (diskLocationFileObject.isDirectory() && diskLocationFileObject.listFiles().length == 0) {
+        if (diskLocationFileObject.exists() && diskLocationFileObject.isFile()) {
+            if (!FileUtils.deleteQuietly(new File(diskLocationFileObject.getParent()))) {
+                LOG.warn("Could not fully remove the directory: "
+                        + diskLocationFileObject.getParent() + "\nPossibly files left over.");
+            }
+            LOG.debug("Removed: "
+                    + diskLocationFileObject.getParent());
+        } else if (diskLocationFileObject.exists() && diskLocationFileObject.isDirectory()) {
             // The location is a directory. Delete it
-            try { FileUtils.deleteDirectory(diskLocationFileObject); }
-            catch (IOException e) { 
-                LOG.warn("An error occurred while trying to delete directory" + 
-                         diskLocationFileObject.getPath() + ". This may need to " +
-                         "be deleted manually. \nError: "+e.getMessage()+"\nContinuing."); 
+            if (!FileUtils.deleteQuietly(diskLocationFileObject)) {
+                LOG.warn("Could not fully remove the directory: "
+                        + diskLocationFileObject.getPath() + "\nPossibly files left over.");
             }
+            LOG.debug("Removed workspace directory: "
+                    + diskLocationFileObject.getPath());
         } else {
-            if(!FileUtils.deleteQuietly(new File(diskLocationFileObject.getParent()))) {
-                LOG.warn("Could not fully remove the directory: " + 
-                         diskLocationFileObject.getParent() + "\nPossibly files left over.");
-            }
+            LOG.debug(diskLocationFileObject.getPath() + " Doesn't exist.");
         }
     }
 
