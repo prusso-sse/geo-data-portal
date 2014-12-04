@@ -1,6 +1,8 @@
 package gov.usgs.cida.gdp.wps.service;
 
 import com.google.gson.Gson;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.Connection;
@@ -11,14 +13,13 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import net.opengis.wps.v_1_0_0.ExecuteResponse;
 import net.opengis.wps.v_1_0_0.StatusType;
@@ -36,6 +37,7 @@ public class ProcessListService extends BaseProcessServlet {
     private static final int DATA_QUERY_REQUEST_DATE_COLUMN_INDEX = 2;
     private static final int DATA_QUERY_RESPONSE_COLUMN_INDEX = 3;
     private static final String REQUEST_PREFIX = "REQ_";
+	private static final long serialVersionUID = 1L;
     
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -74,12 +76,13 @@ public class ProcessListService extends BaseProcessServlet {
                 while (rs.next()) {
                     String requestId = rs.getString(DATA_QUERY_REQUEST_ID_COLUMN_INDEX);
                     String requestDate = rs.getString(DATA_QUERY_REQUEST_DATE_COLUMN_INDEX);
-                    String xml = removeUTF8BOM(rs.getString(DATA_QUERY_RESPONSE_COLUMN_INDEX));
+                    String xml = rs.getString(DATA_QUERY_RESPONSE_COLUMN_INDEX);
                     if (requestId.toUpperCase().endsWith("OUTPUT")) {
                         endTime = Timestamp.valueOf(requestDate).getTime();
                         data.setOutput(xml);
                     } else if (requestId.startsWith(REQUEST_PREFIX)) {
-                        String identifier = getIdentifier(xml);
+                        String identifier;
+						identifier = getIdentifier(xml);
                         data.setIdentifier(identifier);
                     } else {
                         String status = getStatus(xml);
@@ -91,14 +94,14 @@ public class ProcessListService extends BaseProcessServlet {
                 if (startTime != -1) {
                     data.setElapsedTime(endTime - startTime);
                 }
-            } catch (JAXBException ex) {
+            } catch (JAXBException | IOException ex) {
                 data.setErrorMessage("Unmarshalling error for request [" + baseRequestId + "] " + ex.toString());
-            }
+			}
         }
         return data;
     }
     
-    private String getStatus(String xml) throws JAXBException {
+    private String getStatus(String xml) throws JAXBException, IOException {
         StringBuilder status = new StringBuilder();
         StatusType statusElement = getStatusElement(xml);
         if (statusElement.isSetProcessAccepted()) {
@@ -115,16 +118,20 @@ public class ProcessListService extends BaseProcessServlet {
         return status.toString();
     }
     
-    private StatusType getStatusElement(String xml) throws JAXBException {
-        JAXBContext context = JAXBContext.newInstance(WPS_NAMESPACE);
-        Unmarshaller unmarshaller = context.createUnmarshaller();
-        StreamSource source = new StreamSource(new StringReader(xml));
-        JAXBElement<ExecuteResponse> executeResponseElement = unmarshaller.unmarshal(source, ExecuteResponse.class);
+    private StatusType getStatusElement(String xml) throws JAXBException, IOException {
+        StreamSource source;
+		
+		if (xml.toLowerCase().endsWith(".gz")) {
+			source = new StreamSource(new GZIPInputStream(new FileInputStream(new File(xml))));
+		} else {
+			source = new StreamSource(new StringReader(xml));
+		}
+        JAXBElement<ExecuteResponse> executeResponseElement = wpsUnmarshaller.unmarshal(source, ExecuteResponse.class);
         ExecuteResponse executeResponse = executeResponseElement.getValue();
         return executeResponse.getStatus();
     }
     
-    private long getStartTime(String xml) throws JAXBException {
+    private long getStartTime(String xml) throws JAXBException, IOException {
         final StatusType statusElement = getStatusElement(xml);
         Calendar start = DatatypeConverter.parseDateTime(statusElement.getCreationTime().toString());
         return start.getTimeInMillis();
