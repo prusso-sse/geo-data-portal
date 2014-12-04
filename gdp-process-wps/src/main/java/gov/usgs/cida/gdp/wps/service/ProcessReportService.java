@@ -41,7 +41,7 @@ public class ProcessReportService extends BaseProcessServlet {
 			try (ResultSet rs = pst.executeQuery()) {
 				while (rs.next()) {
 					String dataSetURI = null;
-					String xml = removeUTF8BOM(rs.getString(RESPONSE_QUERY_RESPONSE_COLUMN_INDEX));
+					String xml = rs.getString(RESPONSE_QUERY_RESPONSE_COLUMN_INDEX);
 					StreamSource source;
 
 					if (xml.toLowerCase().endsWith(".gz")) {

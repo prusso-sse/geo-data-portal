@@ -76,7 +76,7 @@ public class ProcessListService extends BaseProcessServlet {
                 while (rs.next()) {
                     String requestId = rs.getString(DATA_QUERY_REQUEST_ID_COLUMN_INDEX);
                     String requestDate = rs.getString(DATA_QUERY_REQUEST_DATE_COLUMN_INDEX);
-                    String xml = removeUTF8BOM(rs.getString(DATA_QUERY_RESPONSE_COLUMN_INDEX));
+                    String xml = rs.getString(DATA_QUERY_RESPONSE_COLUMN_INDEX);
                     if (requestId.toUpperCase().endsWith("OUTPUT")) {
                         endTime = Timestamp.valueOf(requestDate).getTime();
                         data.setOutput(xml);
