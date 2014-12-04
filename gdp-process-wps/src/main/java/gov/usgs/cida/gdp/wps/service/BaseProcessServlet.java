@@ -1,5 +1,8 @@
 package gov.usgs.cida.gdp.wps.service;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -7,6 +10,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.zip.GZIPInputStream;
 import javax.naming.NamingException;
 import javax.servlet.http.HttpServlet;
 import javax.xml.bind.JAXBContext;
@@ -38,6 +43,7 @@ public abstract class BaseProcessServlet extends HttpServlet {
     private static final String REQUESTS_QUERY = "select request_id from results where response_type = 'ExecuteRequest' order by request_date desc limit ? offset ?;";
 	private static final long serialVersionUID = -149568144765889031L;
     private ConnectionHandler connectionHandler;
+	static Unmarshaller wpsUnmarshaller;
 
     public BaseProcessServlet() {
         String jndiName = getDatabaseProperty("jndiName");
@@ -52,6 +58,13 @@ public abstract class BaseProcessServlet extends HttpServlet {
             LOGGER.error("Error creating database connection handler. No jndiName provided.");
             throw new RuntimeException("Must configure a Postgres JNDI datasource");
         }
+		
+		try {
+			wpsUnmarshaller = JAXBContext.newInstance(WPS_NAMESPACE).createUnmarshaller();
+		} catch (JAXBException ex) {
+			 LOGGER.error("Error creating WPS parsing context.");
+            throw new RuntimeException("JAXBContext for " + WPS_NAMESPACE + " could not be created", ex);
+		}
     }
     
 	private String getDatabaseProperty(String propertyName) {
@@ -106,11 +119,15 @@ public abstract class BaseProcessServlet extends HttpServlet {
         return request_ids;
     }
     
-    protected final String getIdentifier(String xml) throws JAXBException {
-        JAXBContext context = JAXBContext.newInstance(WPS_NAMESPACE);
-        Unmarshaller unmarshaller = context.createUnmarshaller();
-        StreamSource source = new StreamSource(new StringReader(xml));
-        JAXBElement<Execute> wpsExecuteElement = unmarshaller.unmarshal(source, Execute.class);
+    protected final String getIdentifier(String xml) throws JAXBException, IOException {
+        StreamSource source;
+		
+		if (xml.toLowerCase().endsWith(".gz")) {
+			source = new StreamSource(new GZIPInputStream(new FileInputStream(new File(xml))));
+		} else {
+			source = new StreamSource(new StringReader(xml));
+		}
+        JAXBElement<Execute> wpsExecuteElement = wpsUnmarshaller.unmarshal(source, Execute.class);
         Execute execute = wpsExecuteElement.getValue();
         String identifier = execute.getIdentifier().getValue();
         return identifier.substring(identifier.lastIndexOf(".") + 1);
