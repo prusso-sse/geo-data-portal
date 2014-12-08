@@ -11,6 +11,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.opengis.feature.Feature;
 import org.opengis.feature.simple.SimpleFeature;
@@ -63,7 +64,11 @@ public class GMLStreamingFeatureCollectionTest {
         }
     }
 
+	// Ignoring this test for the time being while it has an external dependency to 
+	// science base. The plan is to make a separate tests with external dependencies
+	// into an integration testing module
     @Test
+	@Ignore
     public void testArcGISWFSParse() {
         GMLStreamingFeatureCollection fc = new GMLStreamingFeatureCollection(arcGis);
         assertThat(fc, notNullValue());
