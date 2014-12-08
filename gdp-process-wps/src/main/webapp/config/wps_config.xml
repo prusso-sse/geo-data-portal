@@ -212,7 +212,8 @@
 	<RemoteRepositoryList />
     <!-- @hostname@, @hostport@ and @webappPath@ are filtered and replaced by values derived from
     HttpServelRequest instance of getRequestURL() in response using a Filter -->
-    <Server hostname="@hostname@" hostport="@hostport@" webappPath="@webappPath@" includeDataInputsInResponse="true" computationTimeoutMilliSeconds="5" cacheCapabilites="false">
+    <Server hostname="@hostname@" hostport="@hostport@" webappPath="@webappPath@" includeDataInputsInResponse="true" computationTimeoutMilliSeconds="5" cacheCapabilites="false"
+	repoReloadInterval="0" maxPoolSize="20" keepAliveSeconds="1000" maxQueuedTasks="100" minPoolSize="10">
         <Property active="true" name="responseURLFilterEnabled">true</Property>
         <!-- 
             POSTGRES Connector 
