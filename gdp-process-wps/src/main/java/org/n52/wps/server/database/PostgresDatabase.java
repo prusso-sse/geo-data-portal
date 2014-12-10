@@ -95,7 +95,7 @@ protected final Object storeResponseLock = new Object();
 		PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
 		String baseDirectoryPath = propertyUtil.extractString(KEY_DATABASE_PATH, DEFAULT_BASE_DIRECTORY);
 		String dbName = getDatabaseProperties(PROPERTY_NAME_DATABASE_NAME);
-		DATABASE_NAME = (dbName == null || dbName.equals("")) ? "wps" : dbName;
+		DATABASE_NAME = (StringUtils.isBlank(dbName)) ? "wps" : dbName;
 		try {	
 			Class.forName("org.postgresql.Driver");
 			initializeBaseDirectory(baseDirectoryPath);
@@ -412,7 +412,7 @@ protected final Object storeResponseLock = new Object();
     private class WipeTimerTask extends TimerTask {
 
         private final long thresholdMillis;
-        private static final String DELETE_STATEMENT = "DELETE FROM RESULTS WHERE RESULTS.REQUEST_ID = ANY ( ? );";
+        private static final String DELETE_STATEMENT = "DELETE FROM RESULTS WHERE RESULTS.REQUEST_ID = ANY ( ? ) AND RESULTS.REQUESTS_ID NOT LIKE 'REQ%_';";
         private static final int DELETE_STATEMENT_LIST_PARAM_INDEX = 1;
         private static final String LOOKUP_STATEMENT = "SELECT * FROM "
                 + "(SELECT REQUEST_ID, EXTRACT(EPOCH FROM REQUEST_DATE) * 1000 AS TIMESTAMP FROM RESULTS) items WHERE TIMESTAMP < ?";
