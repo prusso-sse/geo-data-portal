@@ -1,6 +1,7 @@
 package gov.usgs.cida.gdp.wps.service;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -56,9 +57,10 @@ public class ProcessListService extends BaseProcessServlet {
 				}
 			}
 			
-			String json = new Gson().toJson(getDashboardData(offset));
+			String json = new GsonBuilder().disableHtmlEscaping().create().toJson(getDashboardData(offset, req));
 			resp.setContentType("application/json");
 			resp.getWriter().write(json);
+			resp.flushBuffer();
 		} catch (SQLException ex) {
 			LOGGER.error("Failed to retrieve data", ex);
 			resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to retrieve data: " + ex);
@@ -70,11 +72,15 @@ public class ProcessListService extends BaseProcessServlet {
 		resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "This servlet is read only. Try using Get.");
 	}
 
-	private List<DashboardData> getDashboardData(int offset) throws SQLException {
+	private List<DashboardData> getDashboardData(int offset, HttpServletRequest req) throws SQLException {
 		List<DashboardData> dataset = new ArrayList<>();
+		String requestUrl = req.getRequestURL().toString();
+		String cleanedUrl = requestUrl.substring(0, requestUrl.indexOf("/list"));
 		for (String request : getRequestIds(DEFAULT_LIMIT, offset)) {
 			String baseRequestId = request.substring(REQUEST_PREFIX.length());
 			DashboardData dashboardData = buildDashboardData(baseRequestId);
+			dashboardData.setRequestId(baseRequestId);
+			dashboardData.setRequestLink(cleanedUrl + "/request?id=" + baseRequestId);
 			dataset.add(dashboardData);
 		}
 		return dataset;
