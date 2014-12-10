@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipOutputStream;
 import javax.naming.NamingException;
 import javax.servlet.http.HttpServlet;
 import javax.xml.bind.JAXBContext;
