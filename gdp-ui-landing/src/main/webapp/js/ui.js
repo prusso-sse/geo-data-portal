@@ -486,11 +486,11 @@ GDP.UI = function (args) {
 						// User chose an option which has children
 						subOptions = $chosenOption.data('suboptions');
 						$childSelectControl.empty();
-						$childSelectControl.append($('<option />').attr({
+						var emptyOption = $('<option />').attr({
 							'value': '',
 							'disabled': true,
 							'selected': true
-						}).html(GDP.CONFIG.constants.DATASET_SELECT));
+						}).html(GDP.CONFIG.constants.DATASET_SELECT);
 
 						for (subOptionsChild in subOptions) {
 							if (subOptions.hasOwnProperty(subOptionsChild) && subOptionsChild !== 'ident') {
@@ -503,7 +503,13 @@ GDP.UI = function (args) {
 									);
 							}
 						}
-
+						var sel = $childSelectControl;
+						var opts_list = sel.find('option');
+						opts_list.sort(function(a, b) {
+						    return $(a).text() > $(b).text(); 
+						});
+						$childSelectControl.append(emptyOption);
+						$childSelectControl.append(opts_list);
 						$childSelectRow.fadeIn();
 					} else {
 						// Chosen option has no children
@@ -540,13 +546,11 @@ GDP.UI = function (args) {
 				'value': '',
 				'disabled': true,
 				'selected': true
-			}).html(GDP.CONFIG.constants.DATASET_SELECT),
+				}).html(GDP.CONFIG.constants.DATASET_SELECT),
 				currentlySelectedOption = $datasetDropDown.val(),
 				currentlySelectedChildOption = $datasetDropDownChild.val();
 
 			$datasetDropDown.empty();
-			$datasetDropDown.append(emptyOption);
-
 			$childSelectRow.fadeOut();
 			$datasetDropDownChild.empty();
 
@@ -558,14 +562,20 @@ GDP.UI = function (args) {
 					$datasetDropDown.append(option);
 				}
 			}
-
+			var sel = $datasetDropDown;
+			var opts_list = sel.find('option');
+			opts_list.sort(function(a, b) {
+			    return $(a).text() > $(b).text(); 
+			});
+			
+			$datasetDropDown.append(emptyOption);
+			$datasetDropDown.append(opts_list);
 			$datasetDropDown.val(currentlySelectedOption);
 			$datasetDropDown.trigger('change');
 			if (currentlySelectedChildOption && $datasetDropDownChild.children().length > 0) {
 				$datasetDropDownChild.val(currentlySelectedChildOption);
 				$datasetDropDownChild.trigger('change');
 			}
-
 
 			if ($cswGroupRow.css('display') === 'none') {
 				$cswGroupRow.fadeIn();
