@@ -565,7 +565,7 @@ GDP.UI = function (args) {
 			var sel = $datasetDropDown;
 			var opts_list = sel.find('option');
 			opts_list.sort(function(a, b) {
-			    return $(a).text() > $(b).text(); 
+			    return $(a).text() > $(b).text() ? 1 : -1; 
 			});
 			
 			$datasetDropDown.append(emptyOption);
