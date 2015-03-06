@@ -4,7 +4,7 @@
 	<parent>
 		<artifactId>gdp</artifactId>
 		<groupId>gov.usgs.cida.gdp</groupId>
-		<version>37</version>
+		<version>38-SNAPSHOT</version>
 	</parent>
 	<artifactId>gdp-utility-wps</artifactId>
 	<packaging>war</packaging>
