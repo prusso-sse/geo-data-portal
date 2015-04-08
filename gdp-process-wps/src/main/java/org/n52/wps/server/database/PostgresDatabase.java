@@ -306,7 +306,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			preparedStatement.setString(4, input.getValue());
 			preparedStatement.addBatch();
 		}
-		preparedStatement.execute();
+		preparedStatement.executeBatch();
 	}
 	
 	private void insertOutputDefs(List<WpsOutputDefinition> outputs, PreparedStatement preparedStatement) throws SQLException {
@@ -316,7 +316,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			preparedStatement.setString(3, output.getOutputIdentifier());
 			preparedStatement.addBatch();
 		}
-		preparedStatement.execute();
+		preparedStatement.executeBatch();
 	}
 
 	@Override
