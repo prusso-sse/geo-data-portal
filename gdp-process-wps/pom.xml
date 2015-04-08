@@ -278,6 +278,13 @@
 			<artifactId>jquery</artifactId>
 			<version>${version.jquery}-2</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.jvnet.ogc</groupId>
 			<artifactId>wps-v_1_0_0-schema</artifactId>

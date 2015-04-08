@@ -1,6 +1,5 @@
 package org.n52.wps.server.database;
 
-import com.google.common.base.Joiner;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -29,18 +28,21 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
 import javax.naming.NamingException;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.n52.wps.ServerDocument;
 import org.n52.wps.commons.PropertyUtil;
 import org.n52.wps.commons.WPSConfig;
-import static org.n52.wps.server.database.AbstractDatabase.getDatabaseProperties;
 import org.n52.wps.server.database.connection.ConnectionHandler;
 import org.n52.wps.server.database.connection.DefaultConnectionHandler;
 import org.n52.wps.server.database.connection.JNDIConnectionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Joiner;
 
 /**
  *
