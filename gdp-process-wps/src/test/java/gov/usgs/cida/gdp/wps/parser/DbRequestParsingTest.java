@@ -10,7 +10,6 @@ import static org.hamcrest.Matchers.not;
 import java.io.InputStream;
 import java.util.UUID;
 
-import net.opengis.wps.x100.ExecuteDocument;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -18,9 +17,6 @@ import org.n52.wps.server.database.domain.WpsInput;
 import org.n52.wps.server.database.domain.WpsRequest;
 import org.n52.wps.server.database.domain.WpsOutputDefinition;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 public class DbRequestParsingTest {
 	
