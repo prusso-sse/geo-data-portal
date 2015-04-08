@@ -4,16 +4,16 @@ import java.util.UUID;
 
 import net.opengis.wps.x100.DocumentOutputDefinitionType;
 
-public class WpsRequestedOutput {
+public class WpsOutputDefinition {
 	
 	private final String id;
 	private final String wpsRequestId;
-	private String value;
+	private final String outputIdentifer;
 
-	public WpsRequestedOutput(String inWpsRequestId, DocumentOutputDefinitionType outputDefinitionType) {
+	public WpsOutputDefinition(String inWpsRequestId, DocumentOutputDefinitionType outputDefinitionType) {
 		id = UUID.randomUUID().toString();
 		wpsRequestId = inWpsRequestId;
-		value = outputDefinitionType.getIdentifier().getStringValue();
+		outputIdentifer = outputDefinitionType.getIdentifier().getStringValue();
 	}
 	
 	public String getId() {
@@ -24,8 +24,8 @@ public class WpsRequestedOutput {
 		return wpsRequestId;
 	}
 	
-	public String getValue() {
-		return value;
+	public String getOutputIdentifier() {
+		return outputIdentifer;
 	}
 
 

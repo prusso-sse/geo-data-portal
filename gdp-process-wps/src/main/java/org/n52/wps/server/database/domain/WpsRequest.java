@@ -24,7 +24,7 @@ public class WpsRequest {
 
 	private final List<WpsInput> wpsInputs;
 
-	private final List<WpsRequestedOutput> wpsRequestedOutputs;
+	private final List<WpsOutputDefinition> wpsRequestedOutputs;
 
 	private final ExecuteDocument executeDoc;
 	
@@ -42,16 +42,16 @@ public class WpsRequest {
 		wpsRequestedOutputs = constructOutputs(execute.getResponseForm().getResponseDocument());
 	}
 
-	private List<WpsRequestedOutput> constructOutputs(ResponseDocumentType responseDocumentType) {
-		ArrayList<WpsRequestedOutput> ret = new ArrayList<>();
+	private List<WpsOutputDefinition> constructOutputs(ResponseDocumentType responseDocumentType) {
+		ArrayList<WpsOutputDefinition> ret = new ArrayList<>();
 		if (responseDocumentType != null) {
 			for (DocumentOutputDefinitionType outputDefinitionType : responseDocumentType.getOutputArray()) {
 				if (!outputDefinitionType.getIdentifier().isNil()) {
-					ret.add(new WpsRequestedOutput(id, outputDefinitionType));
+					ret.add(new WpsOutputDefinition(id, outputDefinitionType));
 				}
 			}
 		}
-		return ImmutableList.copyOf(ret.toArray(new WpsRequestedOutput[0]));
+		return ImmutableList.copyOf(ret.toArray(new WpsOutputDefinition[0]));
 	}
 	
 	private static ExecuteDocument constructExecuteFromStream(InputStream stream) {
@@ -93,7 +93,7 @@ public class WpsRequest {
 		return wpsInputs;
 	}
 	
-	public List<WpsRequestedOutput> getWpsRequestedOutputs() {
+	public List<WpsOutputDefinition> getWpsRequestedOutputs() {
 		return wpsRequestedOutputs;
 	}
 	
