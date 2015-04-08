@@ -44,6 +44,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
+import java.sql.Savepoint;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import org.n52.wps.server.database.domain.WpsInput;
+import org.n52.wps.server.database.domain.WpsOutputDefinition;
 
 /**
  *
@@ -86,14 +94,51 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static Timer wipeTimer;
 	private final String DATABASE_NAME;
 
+	// SQL DATABASE CREATION
+	private static final String RESULT_TABLE_NAME = "results";
+	private static final String REQUEST_TABLE_NAME = "request";
+	private static final String INPUT_TABLE_NAME = "input";
+	private static final String OUTPUT_DEF_TABLE_NAME = "output_definition";
+	
 	private static final String CREATE_RESULTS_TABLE_PSQL
-	= "CREATE TABLE RESULTS ("
+	= "CREATE TABLE " + RESULT_TABLE_NAME +" ("
 			+ "REQUEST_ID VARCHAR(100) NOT NULL PRIMARY KEY, "
 			+ "REQUEST_DATE TIMESTAMP, "
 			+ "RESPONSE_TYPE VARCHAR(100), "
 			+ "RESPONSE TEXT, "
 			+ "RESPONSE_MIMETYPE VARCHAR(100))";
+	
+	private static final String CREATE_REQUEST_TABLE_PSQL
+		= "CREATE TABLE " + REQUEST_TABLE_NAME + " ("
+			+ "REQUEST_ID VARCHAR(100) NOT NULL PRIMARY KEY,"
+			+ "WPS_ALGORITHM_IDENTIFIER VARCHAR(200),"
+			+ "REQUEST_XML TEXT)";
+	
+	private static final String CREATE_INPUT_TABLE_PSQL
+		= "CREATE TABLE " + INPUT_TABLE_NAME + " ("
+			+ "ID VARCHAR(100) NOT NULL PRIMARY KEY,"
+			+ "REQUEST_ID VARCHAR(100),"
+			+ "INPUT_IDENTIFIER VARCHAR(200),"
+			+ "INPUT_VALUE VARCHAR(500))";
+			
+	private static final String CREATE_OUTPUT_DEF_TABLE_PSQL
+		= "CREATE TABLE " + OUTPUT_DEF_TABLE_NAME + " ("
+			+ "ID VARCHAR(100) NOT NULL PRIMARY KEY,"
+			+ "REQUEST_ID VARCHAR(100),"
+			+ "OUTPUT_IDENTIFIER VARCHAR(200))";
 
+	private static final ImmutableMap<String, String> CREATE_TABLE_MAP = ImmutableMap.of(
+		RESULT_TABLE_NAME, CREATE_RESULTS_TABLE_PSQL,
+		REQUEST_TABLE_NAME, CREATE_REQUEST_TABLE_PSQL,
+		INPUT_TABLE_NAME, CREATE_INPUT_TABLE_PSQL,
+		OUTPUT_DEF_TABLE_NAME, CREATE_OUTPUT_DEF_TABLE_PSQL
+	);
+	
+	// SQL STATEMENTS
+	private static final String INSERT_REQUEST_STATEMENT = "INSERT INTO " + REQUEST_TABLE_NAME + " VALUES(?, ?, ?)";
+	private static final String INSERT_INPUT_STATEMENT = "INSERT INTO " + INPUT_TABLE_NAME + " VALUES (?, ?, ?, ?)";
+	private static final String INSERT_OUTPUT_DEF_STATEMENT = "INSERT INTO " + OUTPUT_DEF_TABLE_NAME + " VALUES (?, ?, ?)";
+	
 	private PostgresDatabase() {
 		PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
 		String baseDirectoryPath = propertyUtil.extractString(KEY_DATABASE_PATH, DEFAULT_BASE_DIRECTORY);
@@ -103,7 +148,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			Class.forName("org.postgresql.Driver");
 			initializeBaseDirectory(baseDirectoryPath);
 			initializeConnectionHandler();
-			initializeResultsTable();
+			initializeTables();
 			initializeDatabaseWiper(propertyUtil);
 		} catch (IOException | SQLException | NamingException ex) {
 			LOGGER.error("Error creating PostgresDatabase", ex);
@@ -150,13 +195,19 @@ public class PostgresDatabase extends AbstractDatabase {
 		}
 	}
 
-	private void initializeResultsTable() throws SQLException {
+	private void initializeTables() throws SQLException {
 		try (Connection connection = connectionHandler.getConnection();
 				ResultSet rs = getTables(connection)) {
-			if (!rs.next()) {
-				LOGGER.debug("Table RESULTS does not yet exist, creating it.");
-				try (Statement st = connection.createStatement()) {
-					st.executeUpdate(CREATE_RESULTS_TABLE_PSQL);
+			Set<String> tableNames = new HashSet<>();
+			while (rs.next()) {
+				tableNames.add(rs.getString("table_name"));
+			}
+			for (String expectedTableName : CREATE_TABLE_MAP.keySet()) {
+				if (!tableNames.contains(expectedTableName)) {
+					try (Statement st = connection.createStatement()) {
+						LOGGER.debug("Table" + expectedTableName + "does not yet exist, creating it.");
+						st.executeUpdate(CREATE_TABLE_MAP.get(expectedTableName));
+					}
 				}
 			}
 		}
@@ -184,7 +235,7 @@ public class PostgresDatabase extends AbstractDatabase {
 	}
 
 	private ResultSet getTables(Connection connection) throws SQLException {
-		return connection.getMetaData().getTables(null, null, "results", new String[]{"TABLE"});
+		return connection.getMetaData().getTables(null, null, null, new String[]{"TABLE"});
 	}
 
 	@Override
@@ -196,7 +247,7 @@ public class PostgresDatabase extends AbstractDatabase {
 	public void insertRequest(String id, InputStream inputStream, boolean xml) {
 		if (xml) {
 			WpsRequest wpsReq = new WpsRequest(id, inputStream);
-			insertWpsRequsest(wpsReq);
+			insertWpsRequest(wpsReq);
 			
 		} else{
 			//TODO eventually we may need to support KVP (non xml) execution
@@ -209,13 +260,63 @@ public class PostgresDatabase extends AbstractDatabase {
 		
 	}
 
-	private void insertWpsRequsest(WpsRequest wpsReq) {
-		try (Connection connection = getConnection();
-				PreparedStatement insertStatement = connection.prepareStatement(insertionString)) {
+	private void insertWpsRequest(WpsRequest wpsReq) {
+		Connection connection = null;
+		Savepoint transaction = null;
+		try {
+			connection = getConnection();
+			connection.setAutoCommit(false);
+			PreparedStatement insertRequestStatement = connection.prepareStatement(INSERT_REQUEST_STATEMENT);
+			PreparedStatement insertInputStatement = connection.prepareStatement(INSERT_INPUT_STATEMENT);
+			PreparedStatement insertOutputStatement = connection.prepareStatement(INSERT_OUTPUT_DEF_STATEMENT);
 			
+			transaction = connection.setSavepoint();
+			
+			insertRequest(insertRequestStatement, wpsReq);
+			insertInputs(wpsReq.getWpsInputs(), insertInputStatement);
+			insertOutputDefs(wpsReq.getWpsRequestedOutputs(), insertOutputStatement);
+			
+			connection.commit();
 		} catch (Exception e) {
-//			LOGGER.error(MessageFormat.format("Failed to insert data into database with  id of:{0}, type of: {1}, mimetype of: {2}", id, type, mimeType), ex);
+			try {
+				if (connection != null) {
+					connection.rollback(transaction);
+				}
+			} catch (SQLException e2) {
+				// I don't really care any more
+			}
+			String msg = "Failed to insert request into database";
+			LOGGER.error(msg, e);
+			throw new RuntimeException(msg, e);
 		}
+	}
+
+	private void insertRequest(PreparedStatement insertRequestStatement, WpsRequest wpsReq) throws SQLException {
+		insertRequestStatement.setString(1, wpsReq.getId());
+		insertRequestStatement.setString(2, wpsReq.getWpsAlgoIdentifer());
+		insertRequestStatement.setString(3, wpsReq.getExecuteDoc().xmlText());
+		insertRequestStatement.execute();
+	}
+	
+	private void insertInputs(List<WpsInput> inputs, PreparedStatement preparedStatement) throws SQLException {
+		for (WpsInput input : inputs) {
+			preparedStatement.setString(1, input.getId());
+			preparedStatement.setString(2, input.getWpsRequestId());
+			preparedStatement.setString(3, input.getInputId());
+			preparedStatement.setString(4, input.getValue());
+			preparedStatement.addBatch();
+		}
+		preparedStatement.executeBatch();
+	}
+	
+	private void insertOutputDefs(List<WpsOutputDefinition> outputs, PreparedStatement preparedStatement) throws SQLException {
+		for (WpsOutputDefinition output : outputs) {
+			preparedStatement.setString(1, output.getId());
+			preparedStatement.setString(2, output.getWpsRequestId());
+			preparedStatement.setString(3, output.getOutputIdentifier());
+			preparedStatement.addBatch();
+		}
+		preparedStatement.executeBatch();
 	}
 
 	@Override

@@ -16,7 +16,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.n52.wps.server.database.domain.WpsInput;
 import org.n52.wps.server.database.domain.WpsRequest;
-import org.n52.wps.server.database.domain.WpsRequestedOutput;
+import org.n52.wps.server.database.domain.WpsOutputDefinition;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
@@ -58,10 +58,10 @@ public class DbRequestParsingTest {
 		
 		assertThat("outputs shouldn't be empty", req.getWpsRequestedOutputs(), is(not(empty())));
 		assertThat("outputs should have 1", req.getWpsRequestedOutputs().size(), is(1));
-		WpsRequestedOutput wpsRequestedOutput = req.getWpsRequestedOutputs().get(0);
+		WpsOutputDefinition wpsRequestedOutput = req.getWpsRequestedOutputs().get(0);
 		assertThat("wps req id should match passed in value", wpsRequestedOutput.getWpsRequestId(), is(requestId));
-		assertThat("output should have values", wpsRequestedOutput.getValue(), is(notNullValue()));
-		assertThat("output should have values", wpsRequestedOutput.getValue(), equalTo("OUTPUT"));
+		assertThat("output should have values", wpsRequestedOutput.getOutputIdentifier(), is(notNullValue()));
+		assertThat("output should have values", wpsRequestedOutput.getOutputIdentifier(), equalTo("OUTPUT"));
 	}
 	
 
