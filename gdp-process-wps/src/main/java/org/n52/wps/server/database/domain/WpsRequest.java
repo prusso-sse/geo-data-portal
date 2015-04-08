@@ -11,9 +11,6 @@ import net.opengis.wps.x100.ExecuteDocument.Execute;
 import net.opengis.wps.x100.InputType;
 import net.opengis.wps.x100.ResponseDocumentType;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.collect.ImmutableList;
 
 public class WpsRequest {
@@ -55,17 +52,12 @@ public class WpsRequest {
 	}
 	
 	private static ExecuteDocument constructExecuteFromStream(InputStream stream) {
-		JacksonXmlModule module = new JacksonXmlModule();
-		// and then configure, for example:
-		module.setDefaultUseWrapper(false);
 		ExecuteDocument executeDoc;
 		try {
 			executeDoc = ExecuteDocument.Factory.parse(stream);
 		} catch (Exception e) {
 			throw new RuntimeException("issue constructing ExecuteDocument from xml request", e);
 		}
-		XmlMapper xmlMapper = new XmlMapper(module);
-		xmlMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		return executeDoc;
 	}
 
