@@ -9,6 +9,8 @@ import static org.hamcrest.Matchers.not;
 
 import java.io.InputStream;
 import java.util.UUID;
+import org.apache.commons.io.IOUtils;
+import org.junit.AfterClass;
 
 
 import org.junit.BeforeClass;
@@ -25,6 +27,11 @@ public class DbRequestParsingTest {
 	@BeforeClass
 	public static void initTest() {
 		reqXML = DbRequestParsingTest.class.getClassLoader().getResourceAsStream("request.xml");
+	}
+	
+	@AfterClass
+	public static void cleanupTest() {
+		IOUtils.closeQuietly(reqXML);
 	}
 	
 	@Test
