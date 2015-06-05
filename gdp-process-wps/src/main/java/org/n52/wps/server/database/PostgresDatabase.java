@@ -145,7 +145,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			+ "REQUEST_ID VARCHAR(100),"
 			+ "WPS_ALGORITHM_IDENTIFIER VARCHAR(200),"
 			+ "STATUS VARCHAR(50),"
-			+ "PERCENT_COMPLETE INTEGER(100),"
+			+ "PERCENT_COMPLETE INTEGER,"
 			+ "CREATION_TIME TIMESTAMP with time zone,"
 			+ "START_TIME TIMESTAMP with time zone,"
 			+ "END_TIME TIMESTAMP with time zone)";
@@ -244,7 +244,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			for (String expectedTableName : CREATE_TABLE_MAP.keySet()) {
 				if (!tableNames.contains(expectedTableName)) {
 					try (Statement st = connection.createStatement()) {
-						LOGGER.debug("Table" + expectedTableName + "does not yet exist, creating it.");
+						LOGGER.debug("Table: " + expectedTableName + " does not yet exist, creating it.");
 						st.executeUpdate(CREATE_TABLE_MAP.get(expectedTableName));
 					}
 				}
@@ -382,7 +382,7 @@ public class PostgresDatabase extends AbstractDatabase {
 				if (connection != null) {
 					connection.rollback(transaction);
 				}
-			} catch (SQLException e2) {
+			} catch (Exception e2) {
 				// I don't really care any more
 			}
 			String msg = "Failed to insert request into database";
@@ -396,7 +396,7 @@ public class PostgresDatabase extends AbstractDatabase {
 		insertResponseStatement.setString(2, wpsResp.getWpsRequestId());
 		insertResponseStatement.setString(3, wpsResp.getWpsAlgoIdentifer());
 		insertResponseStatement.setString(4, wpsResp.getStatus().toString());
-		insertResponseStatement.setInt(5, wpsResp.getPercentComplete());
+		insertResponseStatement.setInt(5, wpsResp.getPercentComplete() == null ? 0 : wpsResp.getPercentComplete());
 		insertResponseStatement.setDate(6, toSQLDate(wpsResp.getCreationTime()));
 		insertResponseStatement.setDate(7, toSQLDate(wpsResp.getStartTime()));
 		insertResponseStatement.setDate(8, toSQLDate(wpsResp.getEndTime()));
