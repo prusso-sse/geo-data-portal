@@ -16,13 +16,9 @@ import com.google.common.collect.ImmutableList;
 public class WpsRequest {
 	
 	private final String id;
-	
 	private final String wpsAlgoIdentifer;
-
 	private final List<WpsInput> wpsInputs;
-
 	private final List<WpsOutputDefinition> wpsRequestedOutputs;
-
 	private final ExecuteDocument executeDoc;
 	
 	public WpsRequest(String requeistId, InputStream stream) {

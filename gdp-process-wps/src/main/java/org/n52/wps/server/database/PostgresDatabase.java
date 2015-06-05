@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,8 +32,11 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.naming.NamingException;
 
+import net.opengis.wps.x100.ExecuteResponseDocument;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
 import org.n52.wps.ServerDocument;
 import org.n52.wps.commons.PropertyUtil;
 import org.n52.wps.commons.WPSConfig;
@@ -45,13 +49,18 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
+
 import java.sql.Savepoint;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
+
 import org.n52.wps.server.database.domain.WpsInput;
+import org.n52.wps.server.database.domain.WpsOutput;
 import org.n52.wps.server.database.domain.WpsOutputDefinition;
+import org.n52.wps.server.database.domain.WpsResponse;
+import org.n52.wps.server.database.domain.WpsStatus;
 
 /**
  *
@@ -99,6 +108,9 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String REQUEST_TABLE_NAME = "request";
 	private static final String INPUT_TABLE_NAME = "input";
 	private static final String OUTPUT_DEF_TABLE_NAME = "output_definition";
+	private static final String OUTPUT_TABLE_NAME = "output";
+	private static final String RESPONSE_TABLE_NAME = "response";
+	
 	
 	private static final String CREATE_RESULTS_TABLE_PSQL
 	= "CREATE TABLE " + RESULT_TABLE_NAME +" ("
@@ -127,17 +139,44 @@ public class PostgresDatabase extends AbstractDatabase {
 			+ "REQUEST_ID VARCHAR(100),"
 			+ "OUTPUT_IDENTIFIER VARCHAR(200))";
 
-	private static final ImmutableMap<String, String> CREATE_TABLE_MAP = ImmutableMap.of(
-		RESULT_TABLE_NAME, CREATE_RESULTS_TABLE_PSQL,
-		REQUEST_TABLE_NAME, CREATE_REQUEST_TABLE_PSQL,
-		INPUT_TABLE_NAME, CREATE_INPUT_TABLE_PSQL,
-		OUTPUT_DEF_TABLE_NAME, CREATE_OUTPUT_DEF_TABLE_PSQL
-	);
+	private static final String CREATE_RESPONSE_TABLE_PSQL
+		= "CREATE TABLE " + RESPONSE_TABLE_NAME + " ("
+			+ "ID VARCHAR(100) NOT NULL PRIMARY KEY,"
+			+ "REQUEST_ID VARCHAR(100),"
+			+ "WPS_ALGORITHM_IDENTIFIER VARCHAR(200),"
+			+ "STATUS VARCHAR(50),"
+			+ "PERCENT_COMPLETE INTEGER(100),"
+			+ "CREATION_TIME TIMESTAMP with time zone,"
+			+ "START_TIME TIMESTAMP with time zone,"
+			+ "END_TIME TIMESTAMP with time zone)";
+	
+	
+	private static final String CREATE_OUTPUT_TABLE_PSQL
+		= "CREATE TABLE " + OUTPUT_TABLE_NAME + " ("
+			+ "ID VARCHAR(100) NOT NULL PRIMARY KEY,"
+			+ "OUTPUT_ID VARCHAR(100),"
+			+ "RESPONSE_ID VARCHAR(100),"
+			+ "INLINE_RESPONSE TEXT,"
+			+ "MIME_TYPE VARCHAR(100),"
+			+ "RESPONSE_LENGTH BIGINT,"
+			+ "LOCATION VARCHAR(200))";
+
+	private static final ImmutableMap<String, String> CREATE_TABLE_MAP = ImmutableMap.<String, String>builder()
+		.put(RESULT_TABLE_NAME, CREATE_RESULTS_TABLE_PSQL)
+		.put(REQUEST_TABLE_NAME, CREATE_REQUEST_TABLE_PSQL)
+		.put(INPUT_TABLE_NAME, CREATE_INPUT_TABLE_PSQL)
+		.put(OUTPUT_DEF_TABLE_NAME, CREATE_OUTPUT_DEF_TABLE_PSQL)
+		.put(OUTPUT_TABLE_NAME, CREATE_OUTPUT_TABLE_PSQL)
+		.put(RESPONSE_TABLE_NAME, CREATE_RESPONSE_TABLE_PSQL).build();
 	
 	// SQL STATEMENTS
 	private static final String INSERT_REQUEST_STATEMENT = "INSERT INTO " + REQUEST_TABLE_NAME + " VALUES(?, ?, ?)";
 	private static final String INSERT_INPUT_STATEMENT = "INSERT INTO " + INPUT_TABLE_NAME + " VALUES (?, ?, ?, ?)";
 	private static final String INSERT_OUTPUT_DEF_STATEMENT = "INSERT INTO " + OUTPUT_DEF_TABLE_NAME + " VALUES (?, ?, ?)";
+	private static final String INSERT_RESPONSE_STATEMENT = "INSERT INTO " + RESPONSE_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+	private static final String INSERT_OUTPUT_STATEMENT = "INSERT INTO " + OUTPUT_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?)";
+	private static final String SELECT_RESPONSE_STATEMENT = "SELECT * FROM " + RESPONSE_TABLE_NAME + " WHERE REQUEST_ID = ?";
+	private static final String SELECT_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + " WHERE OUTPUT_ID = ?";
 	
 	private PostgresDatabase() {
 		PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
@@ -248,16 +287,12 @@ public class PostgresDatabase extends AbstractDatabase {
 		if (xml) {
 			WpsRequest wpsReq = new WpsRequest(id, inputStream);
 			insertWpsRequest(wpsReq);
-			
 		} else{
 			//TODO eventually we may need to support KVP (non xml) execution
 			String msg = "PostgreseDatabase does not support persisting non xml";
 			LOGGER.error(msg);
 			throw new UnsupportedOperationException(msg);
 		}
-		
-		//insertResultEntity(inputStream, "REQ_" + id, "ExecuteRequest", xml ? "text/xml" : "text/plain");
-		
 	}
 
 	private void insertWpsRequest(WpsRequest wpsReq) {
@@ -321,26 +356,169 @@ public class PostgresDatabase extends AbstractDatabase {
 
 	@Override
 	public String insertResponse(String id, InputStream inputStream) {
-		return insertResultEntity(inputStream, id, "ExecuteResponse", "text/xml");
+		WpsResponse wpsResponse = new WpsResponse(id, inputStream);
+		wpsResponse.setStartTime(new DateTime());
+		insertWpsResponse(wpsResponse);
+		return generateRetrieveResultURL(id);
+	}
+	
+
+	private void insertWpsResponse(WpsResponse wpsResp) {
+		Connection connection = null;
+		Savepoint transaction = null;
+		try {
+			connection = getConnection();
+			connection.setAutoCommit(false);
+			connection.setSavepoint();
+			PreparedStatement insertRequestStatement = connection.prepareStatement(INSERT_RESPONSE_STATEMENT);
+			PreparedStatement insertOutputStatement = connection.prepareStatement(INSERT_OUTPUT_STATEMENT);
+			
+			insertResponseToDb(insertRequestStatement, wpsResp);
+			persistOutput(wpsResp.getOutputs(), insertOutputStatement);
+			
+			connection.commit();
+		} catch (Exception e) {
+			try {
+				if (connection != null) {
+					connection.rollback(transaction);
+				}
+			} catch (SQLException e2) {
+				// I don't really care any more
+			}
+			String msg = "Failed to insert request into database";
+			LOGGER.error(msg, e);
+			throw new RuntimeException(msg, e);
+		}
+	}
+
+	private void insertResponseToDb(PreparedStatement insertResponseStatement, WpsResponse wpsResp) throws SQLException {	
+		insertResponseStatement.setString(1, wpsResp.getId());
+		insertResponseStatement.setString(2, wpsResp.getWpsRequestId());
+		insertResponseStatement.setString(3, wpsResp.getWpsAlgoIdentifer());
+		insertResponseStatement.setString(4, wpsResp.getStatus().toString());
+		insertResponseStatement.setInt(5, wpsResp.getPercentComplete());
+		insertResponseStatement.setDate(6, toSQLDate(wpsResp.getCreationTime()));
+		insertResponseStatement.setDate(7, toSQLDate(wpsResp.getStartTime()));
+		insertResponseStatement.setDate(8, toSQLDate(wpsResp.getEndTime()));
+		insertResponseStatement.execute();
+	}
+	
+
+	private void persistOutput(List<WpsOutput> outputs, PreparedStatement insertOutputStatement) throws SQLException {
+		if (outputs != null) {
+			boolean processedOne = false;
+			for (WpsOutput output : outputs) {
+				if (!output.isReference()) {
+					processedOne = true;
+					insertOutputStatement.setString(1, output.getId());
+					insertOutputStatement.setString(2, output.getWpsResponseId());
+					insertOutputStatement.setString(3, output.getOutputId());
+					String content = output.getContent();
+					insertOutputStatement.setString(4, content);
+					insertOutputStatement.setString(5, output.getMimeType());
+					insertOutputStatement.setLong(6, output.getResponseLength());
+					insertOutputStatement.setString(7, output.getLocation());
+					insertOutputStatement.addBatch();
+				}
+			}
+			if (processedOne) {
+				insertOutputStatement.executeBatch();
+			}
+		}
+	}
+	
+	private Date toSQLDate(DateTime dateTime) {
+		return dateTime == null ? null : new Date(dateTime.getMillis());
+	}
+	
+	@Override
+	public synchronized String storeComplexValue(String requestid, String outputId, InputStream stream, String type, String mimeType) {
+		String wpsResponseId = readWpsResponseFromDB(requestid).getId(); 
+		WpsOutput output = new WpsOutput(wpsResponseId, outputId, mimeType);
+		
+		if (SAVE_RESULTS_TO_DB) {
+			output.setInline(stream);
+		} else{
+			try {
+				// The result contents won't be saved to the database, only a pointer to the file system. I am therefore
+				// going to GZip the data to save space
+				String referenceLocation = writeInputStreamToDisk(requestid, stream, true);
+				output.setLocation(referenceLocation);
+			} catch (IOException ex) {
+				LOGGER.error("Failed to write output data to disk", ex);
+			}
+		}
+		return generateRetrieveResultURL(requestid + outputId);
+	}
+	
+	
+	private WpsResponse readWpsResponseFromDB(String requestid) {
+		Connection connection = null;
+		try {
+			connection = getConnection();
+			PreparedStatement selectRequestStatement = connection.prepareStatement(SELECT_RESPONSE_STATEMENT);
+			selectRequestStatement.setString(1, requestid);
+			
+			ResultSet rs = selectRequestStatement.executeQuery();
+			WpsResponse ret = null;
+			if (rs != null && rs.next()) {
+				ret = constructResponseFromRs(rs);
+			}
+			return ret; 
+		} catch (Exception e) {
+			String msg = "Failed to select request from database";
+			LOGGER.error(msg, e);
+			throw new RuntimeException(msg, e);
+		}
+	}
+	
+	private WpsResponse constructResponseFromRs(ResultSet rs) {
+		if (rs != null) {
+			try {
+				WpsResponse ret = new WpsResponse(rs.getString("ID"), rs.getString("REQUEST_ID"), rs.getString("WPS_ALGORITHM_IDENTIFIER"), WpsStatus.valueOf(rs.getString("STATUS")), rs.getInt("PERCENT_COMPLETE"), new DateTime(rs.getTimestamp("CREATION_TIME")));
+				return ret;
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return null;
+	}
+
+	private WpsOutput readOutputFromDB(String outputId) {
+		Connection connection = null;
+		try {
+			connection = getConnection();
+			PreparedStatement selectRequestStatement = connection.prepareStatement(SELECT_OUTPUT_STATEMENT);
+			selectRequestStatement.setString(1, outputId);
+			
+			ResultSet rs = selectRequestStatement.executeQuery();
+			WpsOutput ret = null;
+			if (rs != null && rs.next()) {
+				ret = constructOutputFromRs(rs);
+			}
+			return ret; 
+		} catch (Exception e) {
+			String msg = "Failed to select request from database";
+			LOGGER.error(msg, e);
+			throw new RuntimeException(msg, e);
+		}
+	}
+
+	private WpsOutput constructOutputFromRs(ResultSet rs) {
+	}
+
+	@Override
+	public long getContentLengthForStoreResponse(String id) {
+		// TODO Auto-generated method stub
+		return super.getContentLengthForStoreResponse(id);
 	}
 
 	@Override
 	protected String insertResultEntity(InputStream stream, String id, String type, String mimeType) {
-		boolean compressData = !SAVE_RESULTS_TO_DB;
-		boolean proceed = true;
+		
 		String data = "";
 		synchronized (storeResponseLock) {
-			if (!SAVE_RESULTS_TO_DB) {
-				try {
-					// The result contents won't be saved to the database, only a pointer to the file system. I am therefore
-					// going to GZip the data to save space
-					data = writeInputStreamToDisk(id, stream, compressData);
-				} catch (IOException ex) {
-					LOGGER.error("Failed to write output data to disk", ex);
-					proceed = false;
-				}
-			}
-
 			if (proceed) {
 				try (Connection connection = getConnection();
 					PreparedStatement insertStatement = connection.prepareStatement(insertionString)) {
@@ -439,9 +617,16 @@ public class PostgresDatabase extends AbstractDatabase {
 
 	@Override
 	public InputStream lookupResponse(String id) {
+		
 		InputStream result = null;
 		synchronized (storeResponseLock) {
 			if (StringUtils.isNotBlank(id)) {
+				
+				//first select to see if what we are looking up is in the Response Table
+				WpsResponse responseFromDb = readWpsResponseFromDB(id);
+				//next select to see if what we are looking up is in the output Table
+				WpsOutput outputFromDb = readOutputFromDB(id);
+				
 				try (Connection connection = getConnection();
 						PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
 					selectStatement.setString(SELECTION_STRING_REQUEST_ID_PARAM_INDEX, id);
@@ -606,3 +791,4 @@ public class PostgresDatabase extends AbstractDatabase {
 		}
 	}
 }
+

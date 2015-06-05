@@ -44,10 +44,27 @@ public class WpsResponseTest {
 		assertThat("id is not null", wpsResponse.getId(), is(not(nullValue())));
 		assertThat("request id is the same as passed into constructor", wpsResponse.getWpsRequestId(), is(equalTo(id)));
 		assertThat("creation time is same as in document", wpsResponse.getCreationTime().compareTo(new DateTime("2015-04-08T16:16:34.177-05:00")), is(equalTo(0)));
-		assertThat("process id is the algorithm identifier", wpsResponse.getWpsProcessId(), is(equalTo("gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm")));
+		assertThat("process id is the algorithm identifier", wpsResponse.getWpsAlgoIdentifer(), is(equalTo("gov.usgs.cida.gdp.wps.algorithm.FeatureGridStatisticsAlgorithm")));
 		assertThat("process status is accepted", wpsResponse.getStatus(), is(equalTo(WpsStatus.ACCEPTED)));
 		
 		assertThat("process outputs are empty", wpsResponse.getOutputs(), is(empty()));
+		assertThat("process endtime is null", wpsResponse.getEndTime(), is(nullValue()));
+		assertThat("process percent complete is null", wpsResponse.getPercentComplete(), is(nullValue()));
+	}
+	
+	@Test
+	public void testSucceeded() throws XmlException, IOException {
+		String id = UUID.randomUUID().toString();
+		WpsResponse wpsResponse = new WpsResponse(id, ExecuteResponseDocument.Factory.parse(succeededXML));
+		
+		assertThat("id is not null", wpsResponse.getId(), is(not(nullValue())));
+		assertThat("request id is the same as passed into constructor", wpsResponse.getWpsRequestId(), is(equalTo(id)));
+		assertThat("creation time is same as in document", wpsResponse.getCreationTime().compareTo(new DateTime("2014-09-03T15:09:09.334-05:00")), is(equalTo(0)));
+		assertThat("creation time is same as in document", wpsResponse.getStartTime(), is(nullValue()));
+		assertThat("process id is the algorithm identifier", wpsResponse.getWpsAlgoIdentifer(), is(equalTo("gov.usgs.cida.gdp.wps.algorithm.FeatureWeightedGridStatisticsAlgorithm")));
+		assertThat("process status is accepted", wpsResponse.getStatus(), is(equalTo(WpsStatus.SUCCEEDED)));
+		
+		assertThat("process outputs are empty", wpsResponse.getOutputs().size(), is(1));
 		assertThat("process endtime is null", wpsResponse.getEndTime(), is(nullValue()));
 		assertThat("process percent complete is null", wpsResponse.getPercentComplete(), is(nullValue()));
 	}
