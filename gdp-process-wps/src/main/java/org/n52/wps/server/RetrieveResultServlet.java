@@ -63,7 +63,8 @@ public class RetrieveResultServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		// id of result to retrieve.
-		String id = request.getParameter("id");
+		String requestId = request.getParameter("requestId");
+		String outputId = request.getParameter("outputId");
 
 		// optional alternate name for filename (rename the file when retrieving
 		// if requested)
@@ -75,24 +76,43 @@ public class RetrieveResultServlet extends HttpServlet {
 
         // return result as attachment (instructs browser to offer user "Save" dialog)
         String attachment = request.getParameter("attachment");
+        
+        InputStream inputStream = null;
+        OutputStream outputStream = null;
+        IDatabase db = DatabaseFactory.getDatabase();
 
-        if (StringUtils.isEmpty(id)) {
+        if (StringUtils.isEmpty(requestId) ) {
             errorResponse("id parameter missing", response);
+        } else if (StringUtils.isEmpty(outputId)) {
+        	//this is a status request
+        	inputStream = db.lookupResponse(requestId);
+        	 String mimeType = db.getMimeTypeForStoreResponse(requestId);
+             long contentLength = db.getContentLengthForStoreResponse(requestId);
+        	
         } else {
+        	//this is an output request...do fanciness
+        	
+        	
+        	
+        	
+        	
+        	
+        	
+        	
+//        	
 
-            IDatabase db = DatabaseFactory.getDatabase();
-            String mimeType = db.getMimeTypeForStoreResponse(id);
-            long contentLength = db.getContentLengthForStoreResponse(id);
+            
+           
 
             InputStream inputStream = null;
             OutputStream outputStream = null;
             try {
-                inputStream = db.lookupResponse(id);
+            	
+                inputStream = db.lookupResponse(requestId);
+                //read input stream looking for output?
 
                 if (inputStream == null) {
-                    errorResponse("id " + id + " is unknown to server", response);
-                } else if (mimeType == null) {
-                    errorResponse("Unable to determine mime-type for id " + id, response);
+                    errorResponse("id " + requestId + " is unknown to server", response);
                 } else {
                     String suffix = MIMEUtil.getSuffixFromMIMEType(mimeType).toLowerCase();
 
@@ -141,6 +161,10 @@ public class RetrieveResultServlet extends HttpServlet {
                         }
                         copyResponseStream(inputStream, outputStream, id, contentLength);
                     }
+                }
+                if (mimeType == null) {
+                	//TODO, can we get it from the actual output (updated with the algo's default)?
+                	errorResponse("Unable to determine mime-type for id " + requestId, response);
                 }
             } catch (Exception e) {
                 logException(e);

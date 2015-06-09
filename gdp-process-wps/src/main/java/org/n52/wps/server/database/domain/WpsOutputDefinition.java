@@ -9,11 +9,13 @@ public class WpsOutputDefinition {
 	private final String id;
 	private final String wpsRequestId;
 	private final String outputIdentifer;
+	private final String mimeType;
 
 	public WpsOutputDefinition(String inWpsRequestId, DocumentOutputDefinitionType outputDefinitionType) {
 		id = UUID.randomUUID().toString();
 		wpsRequestId = inWpsRequestId;
 		outputIdentifer = outputDefinitionType.getIdentifier().getStringValue();
+		this.mimeType = outputDefinitionType.getMimeType();
 	}
 	
 	public String getId() {
@@ -27,6 +29,8 @@ public class WpsOutputDefinition {
 	public String getOutputIdentifier() {
 		return outputIdentifer;
 	}
-
-
+	
+	public String getMimeType() {
+		return mimeType;
+	}
 }
