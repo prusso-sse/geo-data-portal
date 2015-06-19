@@ -584,7 +584,7 @@ public class PostgresDatabase extends AbstractDatabase {
 	}
 
 	@Override
-	public InputStream lookupResponse(String id) {
+	public InputStream lookupResponse(String requestId, String outputId) {
 		
 		InputStream result = null;
 		synchronized (storeResponseLock) {
@@ -598,7 +598,7 @@ public class PostgresDatabase extends AbstractDatabase {
 				result = responseFromDb.toXML(); //serialize to XML 
 				
 				try (Connection connection = getConnection();
-						PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
+					PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
 					selectStatement.setString(SELECTION_STRING_REQUEST_ID_PARAM_INDEX, id);
 
 					try (ResultSet rs = selectStatement.executeQuery()) {
@@ -659,7 +659,7 @@ public class PostgresDatabase extends AbstractDatabase {
 //	TODO switch *all* selectionString to something else (it goes against the Results table which is now not in use for postgres)
 	
 	@Override
-	public String getMimeTypeForStoreResponse(String id) {
+	public String getMimeTypeForStoreResponse(String requestId, String outputId) {
 		
 		String mimeType = null;
 		try (Connection connection = getConnection(); PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
@@ -678,14 +678,14 @@ public class PostgresDatabase extends AbstractDatabase {
 	}
 
 	@Override
-	public File lookupResponseAsFile(String id) {
+	public File lookupResponseAsFile(String requestId, String outputId) {
 		if (!SAVE_RESULTS_TO_DB) {
 			synchronized (storeResponseLock) {
 				try {
-					String outputFileLocation = IOUtils.toString(lookupResponse(id));
+					String outputFileLocation = IOUtils.toString(lookupResponse(requestId, outputId)); // Query for location or data
 					return new File(new URI(outputFileLocation));
 				} catch (URISyntaxException | IOException ex) {
-					LOGGER.warn("Could not get file location for response file for id " + id, ex);
+					LOGGER.warn("Could not get file location for response file for id " + requestId, ex);
 				}
 			}
 		}

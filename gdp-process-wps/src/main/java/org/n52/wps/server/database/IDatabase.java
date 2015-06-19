@@ -60,13 +60,13 @@ public interface IDatabase {
 	
     // Retrieve the Request on a previous Request, based on an unique
 	// identifier, which was already given to the client for reference.
-	public InputStream lookupRequest(String request_id);
+	public InputStream lookupRequest(String requestId);
     
 	// Retrieve the Response on a previous Request, based on an unique
 	// identifier, which was already given to the client for reference.
-	public InputStream lookupResponse(String request_id);
+	public InputStream lookupResponse(String requestId, String outputId);
 	
-	public String storeComplexValue(String request_Id, String output_id, InputStream stream, String type, String mimeType);
+	public String storeComplexValue(String requestId, String outputId, InputStream stream, String type, String mimeType);
 	
 	// The URL referencing the location from which the ExecuteResponse can be retrieved. 
 	// If "status" is "true" in the Execute request, the ExecuteResponse should also be 
@@ -80,16 +80,16 @@ public interface IDatabase {
 	// optionally contain the inputs and any ProcessStartedType interim results. When the 
 	// process has succeeded, the ExecuteResponse found at this URL shall contain the output 
 	// values or references to them.
-	public String generateRetrieveResultURL(String id);
+	public String generateRetrieveResultURL(String requestId, String outputId);
 	
-	public String getMimeTypeForStoreResponse(String id);
+	public String getMimeTypeForStoreResponse(String requestId, String outputId);
 	
-	public long getContentLengthForStoreResponse(String id);
+	public long getContentLengthForStoreResponse(String requestId, String outputId);
 	
-	public boolean deleteStoredResponse(String id);
+	public boolean deleteStoredResponse(String requestId, String outputId);
     
     public File lookupRequestAsFile(String id);
 
-	public File lookupResponseAsFile(String id);
+	public File lookupResponseAsFile(String requestId, String outputId);
 	
 }

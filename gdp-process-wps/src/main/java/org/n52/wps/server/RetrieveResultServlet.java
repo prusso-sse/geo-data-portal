@@ -78,84 +78,84 @@ public class RetrieveResultServlet extends HttpServlet {
 
 		InputStream inputStream = null;
 		OutputStream outputStream = null;
+		String mimeType = null;
+		long contentLength = -1;
 		IDatabase db = DatabaseFactory.getDatabase();
 
 		if (StringUtils.isEmpty(requestId)) {
 			errorResponse("id parameter missing", response);
 		} else if (StringUtils.isEmpty(outputId)) {
 			//this is a status request
-			inputStream = db.lookupResponse(requestId);
-			String mimeType = db.getMimeTypeForStoreResponse(requestId);
-			long contentLength = db.getContentLengthForStoreResponse(requestId);
-
+			inputStream = db.lookupResponse(requestId, null);
+			mimeType = "text/xml";
 		} else {
-			//this is an output request...do fanciness
+			//this is an output request
+			inputStream = db.lookupResponse(requestId, outputId);
+			//read input stream looking for output?
+			mimeType = db.getMimeTypeForStoreResponse(requestId, outputId);
+			contentLength = db.getContentLengthForStoreResponse(requestId, outputId);
+		}
+		
+		try {
+			if (inputStream == null) {
+				errorResponse("id " + requestId + " for output " + outputId + " is unknown to server", response);
+			} else {
+				String suffix = MIMEUtil.getSuffixFromMIMEType(mimeType).toLowerCase();
 
-			try {
+				// if attachment parameter unset, default to true
+				boolean useAttachment = (StringUtils.isEmpty(attachment) || Boolean.parseBoolean(attachment));
+				if (useAttachment) {
+					String attachmentName = (new StringBuilder(requestId)).append(outputId).append('.').append(suffix).toString();
 
-				inputStream = db.lookupResponse(requestId);
-				//read input stream looking for output?
+					if (altName) {
+						attachmentName = (new StringBuilder(alternateFilename)).append('.').append(suffix).toString();
+					}
+					response.addHeader("Content-Disposition", "attachment; filename=\"" + attachmentName + "\"");
+				}
 
-				if (inputStream == null) {
-					errorResponse("id " + requestId + " is unknown to server", response);
+				response.setContentType(mimeType);
+
+				if ("xml".equals(suffix)) {
+
+					// NOTE:  We don't set "Content-Length" header, xml may be modified
+					// need these to work around aggressive IE 8 caching.
+					response.addHeader("Cache-Control", "no-cache, no-store");
+					response.addHeader("Pragma", "no-cache");
+					response.addHeader("Expires", "-1");
+
+					try {
+						outputStream = response.getOutputStream();
+					} catch (IOException e) {
+						throw new IOException("Error obtaining output stream for response", e);
+					}
+					copyResponseAsXML(inputStream, outputStream, useAttachment || indentXML, requestId);
 				} else {
-					String suffix = MIMEUtil.getSuffixFromMIMEType(mimeType).toLowerCase();
 
-					// if attachment parameter unset, default to false for mime-type of 'xml' and true for everything else.
-					boolean useAttachment = (StringUtils.isEmpty(attachment) && !"xml".equals(suffix)) || Boolean.parseBoolean(attachment);
-					if (useAttachment) {
-						String attachmentName = (new StringBuilder(id)).append('.').append(suffix).toString();
-
-						if (altName) {
-							attachmentName = (new StringBuilder(alternateFilename)).append('.').append(suffix).toString();
-						}
-						response.addHeader("Content-Disposition", "attachment; filename=\"" + attachmentName + "\"");
-					}
-
-					response.setContentType(mimeType);
-
-					if ("xml".equals(suffix)) {
-
-						// NOTE:  We don't set "Content-Length" header, xml may be modified
-						// need these to work around aggressive IE 8 caching.
-						response.addHeader("Cache-Control", "no-cache, no-store");
-						response.addHeader("Pragma", "no-cache");
-						response.addHeader("Expires", "-1");
-
-						try {
-							outputStream = response.getOutputStream();
-						} catch (IOException e) {
-							throw new IOException("Error obtaining output stream for response", e);
-						}
-						copyResponseAsXML(inputStream, outputStream, useAttachment || indentXML, id);
+					if (contentLength > -1) {
+						// Can't use response.setContentLength(...) as it accepts an int (max of 2^31 - 1) ?!
+						// response.setContentLength(contentLength);
+						response.setHeader("Content-Length", Long.toString(contentLength));
 					} else {
-
-						if (contentLength > -1) {
-							// Can't use response.setContentLength(...) as it accepts an int (max of 2^31 - 1) ?!
-							// response.setContentLength(contentLength);
-							response.setHeader("Content-Length", Long.toString(contentLength));
-						} else {
-							LOGGER.warn("Content-Length unknown for response to id {}", id);
-						}
-
-						try {
-							outputStream = response.getOutputStream();
-						} catch (IOException e) {
-							throw new IOException("Error obtaining output stream for response", e);
-						}
-						copyResponseStream(inputStream, outputStream, id, contentLength);
+						LOGGER.warn("Content-Length unknown for response to id {}", requestId);
 					}
+
+					try {
+						outputStream = response.getOutputStream();
+					} catch (IOException e) {
+						throw new IOException("Error obtaining output stream for response", e);
+					}
+					copyResponseStream(inputStream, outputStream, requestId, contentLength);
 				}
 				if (mimeType == null) {
 					//TODO, can we get it from the actual output (updated with the algo's default)?
 					errorResponse("Unable to determine mime-type for id " + requestId, response);
 				}
-			} catch (Exception e) {
-				logException(e);
-			} finally {
-				IOUtils.closeQuietly(inputStream);
-				IOUtils.closeQuietly(outputStream);
 			}
+		} catch (Exception e) {
+			logException(e);
+		} finally {
+			IOUtils.closeQuietly(inputStream);
+			IOUtils.closeQuietly(outputStream);
 		}
 	}
 
