@@ -235,28 +235,26 @@ public abstract class AbstractDatabase implements IDatabase{
 	 * Retrieve the Response on a previous Request, based on an unique
 	 * identifier, which was already given to the client for reference.
 	 * 
-	 * @param requestId
+	 * @param id
 	 *            The identifier of the Request
-	 * @param outputId
-	 *            Output identifier requested
 	 * @return null, if an SQLException occurred, else an InputStream with the
 	 *         Response
 	 */
     @Override
-	public synchronized InputStream lookupResponse(String requestId, String outputId) {
+	public synchronized InputStream lookupResponse(String id) {
 		try {
-			AbstractDatabase.selectSQL.setString(SELECT_COLUMN_RESPONSE, requestId);
+			AbstractDatabase.selectSQL.setString(SELECT_COLUMN_RESPONSE, id);
 			ResultSet res = AbstractDatabase.selectSQL.executeQuery();
 			if (res == null || !res.next()) {
 				LOGGER.warn("Query did not return a valid result.");
 				return null;
 			} else {
 				LOGGER.info("Successfully retrieved the Response of Request: "
-						+ requestId);
+						+ id);
 				return res.getAsciiStream(1);
 			}
 		} catch (SQLException e) {
-			LOGGER.error("SQLException with request_id: " + requestId
+			LOGGER.error("SQLException with request id: " + id
 					+ "and message: " + e.getMessage());
 			return null;
 		}
@@ -284,12 +282,12 @@ public abstract class AbstractDatabase implements IDatabase{
 	 * @return
 	 */	
     @Override
-	public String generateRetrieveResultURL(String requestId, String outputId) {
+	public String generateRetrieveResultURL(String id) {
 		return WPSConfig.getInstance().getWPSConfig().getServer().getProtocol() + "://"
                 + WPSConfig.getInstance().getWPSConfig().getServer().getHostname() + ":"
                 + WPSConfig.getInstance().getWPSConfig().getServer().getHostport() + "/"
                 + WPSConfig.getInstance().getWPSConfig().getServer().getWebappPath() + "/"
-                + "RetrieveResultServlet?requestId=";   // TODO:  Parameterize this... Execution Context..?
+                + "RetrieveResultServlet?id=";   // TODO:  Parameterize this... Execution Context..?
 	}
 	
 	public abstract Connection getConnection();

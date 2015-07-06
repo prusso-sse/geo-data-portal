@@ -7,8 +7,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,10 +28,8 @@ import java.util.TimerTask;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import javax.management.RuntimeErrorException;
 import javax.naming.NamingException;
 
-import net.opengis.wps.x100.ExecuteResponseDocument;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -49,15 +45,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.sleepycat.je.rep.utilint.ServiceDispatcher.Response;
 
 import java.sql.Savepoint;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 
 import org.n52.wps.server.database.domain.WpsInput;
 import org.n52.wps.server.database.domain.WpsOutput;
@@ -72,7 +64,7 @@ import org.n52.wps.server.database.domain.WpsStatus;
 public class PostgresDatabase extends AbstractDatabase {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PostgresDatabase.class);
-
+	
 	private static final String DEFAULT_ENCODING = "UTF-8";
 
 	private static final String KEY_DATABASE_ROOT = "org.n52.wps.server.database";
@@ -89,8 +81,8 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String DEFAULT_BASE_DIRECTORY
 	= Joiner.on(File.separator).join(System.getProperty("java.io.tmpdir", "."), "Database", "Results");
 	private static final ServerDocument.Server server = WPSConfig.getInstance().getWPSConfig().getServer();
-	private static final String baseResultURL = String.format("http://%s:%s/%s/RetrieveResultServlet?id=",
-			server.getHostname(), server.getHostport(), server.getWebappPath());
+	private static final String baseResultURL = String.format("%s://%s:%s/%s/RetrieveResultServlet?id=",
+			server.getProtocol(), server.getHostname(), server.getHostport(), server.getWebappPath());
 
 	private static final int SELECTION_STRING_REQUEST_ID_PARAM_INDEX = 1;
 	private static final int SELECTION_STRING_RESPONSE_COLUMN_INDEX = 1;
@@ -199,7 +191,7 @@ public class PostgresDatabase extends AbstractDatabase {
 		} catch (ClassNotFoundException ex) {
 			LOGGER.error("The database class could not be loaded.", ex);
 			throw new UnsupportedDatabaseException("The database class could not be loaded.", ex);
-		} 
+		}
 	}
 
 	private void initializeBaseDirectory(final String baseDirectoryPath) throws IOException {
@@ -584,7 +576,7 @@ public class PostgresDatabase extends AbstractDatabase {
 	}
 
 	@Override
-	public InputStream lookupResponse(String requestId, String outputId) {
+	public InputStream lookupResponse(String id) {
 		
 		InputStream result = null;
 		synchronized (storeResponseLock) {
@@ -659,8 +651,8 @@ public class PostgresDatabase extends AbstractDatabase {
 //	TODO switch *all* selectionString to something else (it goes against the Results table which is now not in use for postgres)
 	
 	@Override
-	public String getMimeTypeForStoreResponse(String requestId, String outputId) {
-		
+	public String getMimeTypeForStoreResponse(String id) {
+		// TODO check if this is status or output
 		String mimeType = null;
 		try (Connection connection = getConnection(); PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
 			selectStatement.setString(SELECTION_STRING_REQUEST_ID_PARAM_INDEX, id);
@@ -678,19 +670,8 @@ public class PostgresDatabase extends AbstractDatabase {
 	}
 
 	@Override
-	public File lookupResponseAsFile(String requestId, String outputId) {
-		if (!SAVE_RESULTS_TO_DB) {
-			synchronized (storeResponseLock) {
-				try {
-					String outputFileLocation = IOUtils.toString(lookupResponse(requestId, outputId)); // Query for location or data
-					return new File(new URI(outputFileLocation));
-				} catch (URISyntaxException | IOException ex) {
-					LOGGER.warn("Could not get file location for response file for id " + requestId, ex);
-				}
-			}
-		}
-		LOGGER.warn("requested response as file for a response stored in the database, returning null");
-		return null;
+	public File lookupResponseAsFile(String id) {
+		throw new UnsupportedOperationException("This is only supported in FlatFileDatabase");
 	}
 
 	private class WipeTimerTask extends TimerTask {

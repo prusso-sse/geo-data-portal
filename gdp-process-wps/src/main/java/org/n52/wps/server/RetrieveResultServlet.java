@@ -62,8 +62,7 @@ public class RetrieveResultServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		// id of result to retrieve.
-		String requestId = request.getParameter("requestId");
-		String outputId = request.getParameter("outputId");
+		String id = request.getParameter("id");
 
 		// optional alternate name for filename (rename the file when retrieving
 		// if requested)
@@ -82,30 +81,25 @@ public class RetrieveResultServlet extends HttpServlet {
 		long contentLength = -1;
 		IDatabase db = DatabaseFactory.getDatabase();
 
-		if (StringUtils.isEmpty(requestId)) {
+		if (StringUtils.isEmpty(id)) {
 			errorResponse("id parameter missing", response);
-		} else if (StringUtils.isEmpty(outputId)) {
-			//this is a status request
-			inputStream = db.lookupResponse(requestId, null);
-			mimeType = "text/xml";
-		} else {
 			//this is an output request
-			inputStream = db.lookupResponse(requestId, outputId);
+			inputStream = db.lookupResponse(id);
 			//read input stream looking for output?
-			mimeType = db.getMimeTypeForStoreResponse(requestId, outputId);
-			contentLength = db.getContentLengthForStoreResponse(requestId, outputId);
+			mimeType = db.getMimeTypeForStoreResponse(id);
+			contentLength = db.getContentLengthForStoreResponse(id);
 		}
 		
 		try {
 			if (inputStream == null) {
-				errorResponse("id " + requestId + " for output " + outputId + " is unknown to server", response);
+				errorResponse("id " + id + " is unknown to server", response);
 			} else {
 				String suffix = MIMEUtil.getSuffixFromMIMEType(mimeType).toLowerCase();
 
-				// if attachment parameter unset, default to true
+				// if attachment parameter unset, default to true TODO fix this
 				boolean useAttachment = (StringUtils.isEmpty(attachment) || Boolean.parseBoolean(attachment));
 				if (useAttachment) {
-					String attachmentName = (new StringBuilder(requestId)).append(outputId).append('.').append(suffix).toString();
+					String attachmentName = (new StringBuilder(id)).append('.').append(suffix).toString();
 
 					if (altName) {
 						attachmentName = (new StringBuilder(alternateFilename)).append('.').append(suffix).toString();
@@ -128,7 +122,7 @@ public class RetrieveResultServlet extends HttpServlet {
 					} catch (IOException e) {
 						throw new IOException("Error obtaining output stream for response", e);
 					}
-					copyResponseAsXML(inputStream, outputStream, useAttachment || indentXML, requestId);
+					copyResponseAsXML(inputStream, outputStream, useAttachment || indentXML, id);
 				} else {
 
 					if (contentLength > -1) {
@@ -136,7 +130,7 @@ public class RetrieveResultServlet extends HttpServlet {
 						// response.setContentLength(contentLength);
 						response.setHeader("Content-Length", Long.toString(contentLength));
 					} else {
-						LOGGER.warn("Content-Length unknown for response to id {}", requestId);
+						LOGGER.warn("Content-Length unknown for response to id {}", id);
 					}
 
 					try {
@@ -144,11 +138,11 @@ public class RetrieveResultServlet extends HttpServlet {
 					} catch (IOException e) {
 						throw new IOException("Error obtaining output stream for response", e);
 					}
-					copyResponseStream(inputStream, outputStream, requestId, contentLength);
+					copyResponseStream(inputStream, outputStream, id, contentLength);
 				}
 				if (mimeType == null) {
 					//TODO, can we get it from the actual output (updated with the algo's default)?
-					errorResponse("Unable to determine mime-type for id " + requestId, response);
+					errorResponse("Unable to determine mime-type for id " + id, response);
 				}
 			}
 		} catch (Exception e) {
