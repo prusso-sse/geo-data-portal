@@ -34,8 +34,7 @@ import ucar.nc2.dt.GridDatatype;
 public class ResultSizeAlgorithmHeuristic implements AlgorithmHeuristic {
 	static private org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ResultSizeAlgorithmHeuristic.class);
 	
-	//public static final long MAXIMUM_DATA_SET_SIZE = 524288000;		// 500MB
-	public static final long MAXIMUM_DATA_SET_SIZE = 1000;
+	public static final long MAXIMUM_DATA_SET_SIZE = 524288000;		// 500MB
 	private long maximumSizeConfigured = MAXIMUM_DATA_SET_SIZE;
 	
 	private GridDataset gridDataset;
