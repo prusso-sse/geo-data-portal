@@ -16,10 +16,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -46,10 +44,19 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
+import java.io.ByteArrayInputStream;
 
 import java.sql.Savepoint;
 import java.util.HashSet;
 import java.util.Set;
+import net.opengis.ows.v_1_1_0.ExceptionReport;
+import net.opengis.ows.x11.LanguageStringType;
+import net.opengis.wps.v_1_0_0.ProcessFailedType;
+import net.opengis.wps.x100.ExecuteResponseDocument;
+import net.opengis.wps.x100.ProcessBriefType;
+import net.opengis.wps.x100.ProcessStartedType;
+import net.opengis.wps.x100.StatusType;
+import org.n52.wps.server.RepositoryManager;
 
 import org.n52.wps.server.database.domain.WpsInput;
 import org.n52.wps.server.database.domain.WpsOutput;
@@ -84,10 +91,6 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String baseResultURL = String.format("%s://%s:%s/%s/RetrieveResultServlet?id=",
 			server.getProtocol(), server.getHostname(), server.getHostport(), server.getWebappPath());
 
-	private static final int SELECTION_STRING_REQUEST_ID_PARAM_INDEX = 1;
-	private static final int SELECTION_STRING_RESPONSE_COLUMN_INDEX = 1;
-	private static final int SELECTION_STRING_RESPONSE_MIMETYPE_COLUMN_INDEX = 2;
-
 	private static String connectionURL;
 	private static Path BASE_DIRECTORY;
 	private static PostgresDatabase instance;
@@ -104,16 +107,7 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String OUTPUT_DEF_TABLE_NAME = "output_definition";
 	private static final String OUTPUT_TABLE_NAME = "output";
 	private static final String RESPONSE_TABLE_NAME = "response";
-	
-	
-//	private static final String CREATE_RESULTS_TABLE_PSQL
-//	= "CREATE TABLE " + RESULT_TABLE_NAME +" ("
-//			+ "REQUEST_ID VARCHAR(100) NOT NULL PRIMARY KEY, "
-//			+ "REQUEST_DATE TIMESTAMP, "
-//			+ "RESPONSE_TYPE VARCHAR(100), "
-//			+ "RESPONSE TEXT, "
-//			+ "RESPONSE_MIMETYPE VARCHAR(100))";
-	
+
 	private static final String CREATE_REQUEST_TABLE_PSQL
 		= "CREATE TABLE " + REQUEST_TABLE_NAME + " ("
 			+ "REQUEST_ID VARCHAR(100) NOT NULL PRIMARY KEY,"
@@ -160,7 +154,6 @@ public class PostgresDatabase extends AbstractDatabase {
 			+ "LOCATION VARCHAR(200))";
 
 	private static final ImmutableMap<String, String> CREATE_TABLE_MAP = ImmutableMap.<String, String>builder()
-//		.put(RESULT_TABLE_NAME, CREATE_RESULTS_TABLE_PSQL)
 		.put(REQUEST_TABLE_NAME, CREATE_REQUEST_TABLE_PSQL)
 		.put(INPUT_TABLE_NAME, CREATE_INPUT_TABLE_PSQL)
 		.put(OUTPUT_DEF_TABLE_NAME, CREATE_OUTPUT_DEF_TABLE_PSQL)
@@ -172,8 +165,11 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String INSERT_INPUT_STATEMENT = "INSERT INTO " + INPUT_TABLE_NAME + " VALUES (?, ?, ?, ?)";
 	private static final String INSERT_OUTPUT_DEF_STATEMENT = "INSERT INTO " + OUTPUT_DEF_TABLE_NAME + " VALUES (?, ?, ?, ?)";
 	private static final String INSERT_RESPONSE_STATEMENT = "INSERT INTO " + RESPONSE_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-	private static final String UPDATE_RESPONSE_STATEMENT = "UPDATE " + RESPONSE_TABLE_NAME + " SET STATUS=?,PERCENT_COMPLETE=?,END_TIME=? WHERE REQUEST_ID = ?";
 	private static final String INSERT_OUTPUT_STATEMENT = "INSERT INTO " + OUTPUT_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?)";
+	
+	private static final String UPDATE_RESPONSE_STATEMENT = "UPDATE " + RESPONSE_TABLE_NAME + " SET STATUS=?,PERCENT_COMPLETE=?,END_TIME=? WHERE REQUEST_ID = ?";
+	
+	private static final String SELECT_REQUEST_STATEMENT = "SELECT * FROM " + REQUEST_TABLE_NAME + " WHERE REQUEST_ID = ?";
 	private static final String SELECT_RESPONSE_STATEMENT = "SELECT * FROM " + RESPONSE_TABLE_NAME + " WHERE REQUEST_ID = ?";
 	private static final String SELECT_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + " WHERE OUTPUT_ID = ?";
 	
@@ -470,14 +466,48 @@ public class PostgresDatabase extends AbstractDatabase {
 		return createdFilePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "");
 	}
 	
-	private WpsResponse readWpsResponseFromDB(String requestid) {
-		WpsResponse ret = null;
+	private WpsRequest readWpsRequestFromDB(String requestId) {
+		WpsRequest ret = null;
 		try (Connection connection = getConnection();
-				PreparedStatement selectRequestStatement = connection.prepareStatement(SELECT_RESPONSE_STATEMENT)) {
-			
-			selectRequestStatement.setString(1, requestid);
+				PreparedStatement selectRequestStatement = connection.prepareStatement(SELECT_REQUEST_STATEMENT)) {
+			selectRequestStatement.setString(1, requestId);
 			
 			ResultSet rs = selectRequestStatement.executeQuery();
+			
+			if (rs != nul && rs.next()) {
+				ret = constructRequestFromRs(rs);
+			}
+		} catch (Exception e) {
+			String msg = "Faild to get request from database";
+			LOGGER.error(msg, e);
+			throw new RuntimeException(msg, e);
+		}
+		return ret;
+	}
+	
+	private WpsRequest constructRequestFromRs(ResultSet rs) {
+		WpsRequest ret = null;
+		if (rs != null) {
+			try {
+				InputStream xml = new ByteArrayInputStream(rs.getString("REQUEST_XML").getBytes());
+				ret = new WpsRequest(rs.getString("REQUEST_ID"), xml);
+			} catch (SQLException e) {
+				String msg = "Failed to build response from database";
+				LOGGER.error(msg, e);
+				throw new RuntimeException(msg, e);
+			}
+		}
+		return ret;
+	}
+	
+	private WpsResponse readWpsResponseFromDB(String requestId) {
+		WpsResponse ret = null;
+		try (Connection connection = getConnection();
+				PreparedStatement selectResponseStatement = connection.prepareStatement(SELECT_RESPONSE_STATEMENT)) {
+			
+			selectResponseStatement.setString(1, requestId);
+			
+			ResultSet rs = selectResponseStatement.executeQuery();
 			
 			if (rs != null && rs.next()) {
 				ret = constructResponseFromRs(rs);
@@ -510,7 +540,7 @@ public class PostgresDatabase extends AbstractDatabase {
 		WpsOutput ret = null;
 		
 		try (Connection connection = getConnection();
-				PreparedStatement selectRequestStatement = connection.prepareStatement(SELECT_OUTPUT_STATEMENT);) {
+				PreparedStatement selectRequestStatement = connection.prepareStatement(SELECT_OUTPUT_STATEMENT)) {
 			selectRequestStatement.setString(1, outputId);
 			
 			ResultSet rs = selectRequestStatement.executeQuery();
@@ -541,26 +571,61 @@ public class PostgresDatabase extends AbstractDatabase {
 		}
 		return ret;
 	}
-
-	@Override
-	public long getContentLengthForStoreResponse(String id) {
-		long contentLength = -1;
-		WpsResponse response = readWpsResponseFromDB(id);
-		if (response == null) {
-			WpsOutput output = readOutputFromDB(id);
-			contentLength = output.getResponseLength();
+	
+	private InputStream buildExecuteResponse(String id) {
+		InputStream is = null;
+		
+		WpsResponse responseObj = readWpsResponseFromDB(id);
+		WpsRequest request = readWpsRequestFromDB(id);
+		//List<WpsOutput> outputs = readOutputFromDB(id) TODO get outputs
+		
+		ExecuteResponseDocument.ExecuteResponse response = ExecuteResponseDocument.Factory.newInstance()
+				.addNewExecuteResponse();
+		
+		ProcessBriefType process = response.addNewProcess();
+		process.setProcessVersion("1.0.0"); // TODO include versioning in database
+		process.addNewIdentifier().setStringValue(responseObj.getWpsAlgoIdentifer());
+		LanguageStringType title = RepositoryManager.getInstance().getProcessDescription(responseObj.getWpsAlgoIdentifer()).getTitle();
+		process.addNewTitle().setStringValue(title.getStringValue());
+		
+		StatusType status = response.addNewStatus();
+		status.setCreationTime(responseObj.getCreationTime().toCalendar(Locale.getDefault()));
+		switch (responseObj.getStatus()) {
+			case ACCEPTED:
+				status.setProcessAccepted("Process Accepted");
+				break;
+			case PAUSED:
+				ProcessStartedType paused = ProcessStartedType.Factory.newInstance();
+				paused.setPercentCompleted(responseObj.getPercentComplete());
+				paused.setStringValue("Process Paused");
+				status.setProcessPaused(paused);
+				break;
+			case STARTED:
+				ProcessStartedType started = ProcessStartedType.Factory.newInstance();
+				started.setPercentCompleted(responseObj.getPercentComplete());
+				started.setStringValue("Process Started");
+				status.setProcessStarted(paused);
+				break;
+			case SUCCEEDED:
+				status.setProcessSucceeded("Process successful");
+				break;
+			case FAILED:
+			default:
+				// TODO need to add exceptions to the database?
+				ProcessFailedType failed = new ProcessFailedType().setExceptionReport(new ExceptionReport());
+				status.setProcessFailed(failed);
+				break;
 		}
-		return contentLength;
+				
+		if (responseObj.getStatus() == WpsStatus.SUCCEEDED) {
+			response.addNewDataInputs().setInputArray(request.getExecuteDoc().getExecute().getDataInputs().getInputArray());
+		}
+		
+		ExecuteResponseDocument.ExecuteResponse.ProcessOutputs processOutputs = response.addNewProcessOutputs();
+		
+		
 	}
 
-	"ID VARCHAR(100) NOT NULL PRIMARY KEY,"
-			+ "REQUEST_ID VARCHAR(100),"
-			+ "WPS_ALGORITHM_IDENTIFIER VARCHAR(200),"
-			+ "STATUS VARCHAR(50),"
-			+ "PERCENT_COMPLETE INTEGER,"
-			+ "CREATION_TIME TIMESTAMP with time zone,"
-			+ "START_TIME TIMESTAMP with time zone,"
-			+ "END_TIME TIMESTAMP with time zone)";
 	/**
 	 * This is called when response already exists and just needs status or other updates set
 	 * @param id
@@ -589,6 +654,11 @@ public class PostgresDatabase extends AbstractDatabase {
 		}
 	}
 
+	/**
+	 * TODO stop pointing at old table.
+	 * @param id
+	 * @return 
+	 */
 	@Override
 	public InputStream lookupResponse(String id) {
 		
@@ -660,34 +730,41 @@ public class PostgresDatabase extends AbstractDatabase {
 		}
 		return result;
 	}
-
-	aa
-//	TODO switch *all* selectionString to something else (it goes against the Results table which is now not in use for postgres)
 	
 	@Override
 	public String getMimeTypeForStoreResponse(String id) {
-		// TODO check if this is status or output
 		String mimeType = null;
-		try (Connection connection = getConnection(); PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
-			selectStatement.setString(SELECTION_STRING_REQUEST_ID_PARAM_INDEX, id);
-			try (ResultSet rs = selectStatement.executeQuery()) {
-				if (null == rs || !rs.next()) {
-					LOGGER.warn("No response found for request id " + id);
-				} else {
-					mimeType = rs.getString(SELECTION_STRING_RESPONSE_MIMETYPE_COLUMN_INDEX);
-				}
+		WpsResponse response = readWpsResponseFromDB(id);
+		if (response == null) {
+			WpsOutput output = readOutputFromDB(id);
+			if (output != null) {
+				mimeType = output.getMimeType();
 			}
-		} catch (SQLException ex) {
-			LOGGER.error("Could not look up response in database", ex);
+		} else {
+			mimeType = "text/xml";
 		}
 		return mimeType;
 	}
-
+	
+	@Override
+	public long getContentLengthForStoreResponse(String id) {
+		long contentLength = -1;
+		WpsResponse response = readWpsResponseFromDB(id);
+		if (response == null) {
+			WpsOutput output = readOutputFromDB(id);
+			contentLength = output.getResponseLength();
+		}
+		return contentLength;
+	}
+	
 	@Override
 	public File lookupResponseAsFile(String id) {
 		throw new UnsupportedOperationException("This is only supported in FlatFileDatabase");
 	}
 
+	/**
+	 * TODO fix this to clean up files and do whatever in database needs doing
+	 */
 	private class WipeTimerTask extends TimerTask {
 
 		private final long thresholdMillis;
