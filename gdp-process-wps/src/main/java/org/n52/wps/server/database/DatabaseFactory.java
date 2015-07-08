@@ -232,8 +232,8 @@ public class DatabaseFactory implements IDatabase
 	}
 
     @Override
-	public File lookupResponseAsFile(String requestId, String outputId) {
-		return DatabaseFactory.database.lookupResponseAsFile(requestId, outputId);
+	public File lookupResponseAsFile(String requestId) {
+		return DatabaseFactory.database.lookupResponseAsFile(requestId);
 	}
 	
 }
