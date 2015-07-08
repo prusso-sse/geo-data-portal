@@ -21,13 +21,13 @@ public class WpsRequest {
 	private final List<WpsOutputDefinition> wpsRequestedOutputs;
 	private final ExecuteDocument executeDoc;
 	
-	public WpsRequest(String requeistId, InputStream stream) {
-		this(requeistId, constructExecuteFromStream(stream));
+	public WpsRequest(String requestId, InputStream stream) {
+		this(requestId, constructExecuteFromStream(stream));
 	}
 	
 
-	public WpsRequest(String requtestId, ExecuteDocument inExecuteDoc) {
-		id = requtestId;
+	public WpsRequest(String requestId, ExecuteDocument inExecuteDoc) {
+		id = requestId;
 		executeDoc = inExecuteDoc;
 		Execute execute = inExecuteDoc.getExecute();
 		wpsAlgoIdentifer = execute.getIdentifier().getStringValue();

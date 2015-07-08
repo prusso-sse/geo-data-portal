@@ -56,7 +56,6 @@ public class WpsResponse {
 			throw new RuntimeException("issue constructing ExecuteDocument from xml request", e);
 		}
 	}
-
 	
 	public String getId() {
 		return id;
