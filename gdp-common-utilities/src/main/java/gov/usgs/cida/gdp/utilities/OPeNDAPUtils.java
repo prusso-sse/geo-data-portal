@@ -1,12 +1,18 @@
 package gov.usgs.cida.gdp.utilities;
 
+import gov.usgs.cida.gdp.utilities.exception.OPeNDAPUtilException;
+import gov.usgs.cida.gdp.utilities.exception.OPeNDAPUtilExceptionID;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import ucar.ma2.Array;
 import ucar.ma2.Range;
 import ucar.nc2.Attribute;
+import ucar.nc2.Dimension;
 import ucar.nc2.dataset.CoordinateAxis1D;
 import ucar.nc2.dataset.VariableDS;
 
@@ -60,6 +66,7 @@ public class OPeNDAPUtils {
 	}
 	
 	public static final int RANGE_STRIDE = 1;
+	public static final String PARAMETER_DECLARITOR = "?";
 	public static final String RANGE_DELIMETER = ":";
 	public static final String URI_DELIMETER = ",";
 	public static final String OPENDAP_PROTO = "dods:";
@@ -67,50 +74,37 @@ public class OPeNDAPUtils {
 	public static final List<String> REQUIRED_ATTRIBUTES = Arrays.asList("grid_mapping");
 	
 	/**
-	 * With the given information, will return an OPeNDAP http request.
-	 * 
-	 * http://cida.usgs.gov/thredds/dodsC/new_gmo.ascii?longitude[400:1:406],latitude[20:1:22],time[2854:1:2941],pr[2854:1:2941][20:1:22][400:1:406],tas[2854:1:2941][20:1:22][400:1:406],tasmax[2854:1:2941][20:1:22][400:1:406],tasmin[2854:1:2941][20:1:22][400:1:406],wind[2854:1:2941][20:1:22][400:1:406]
-	 * Range works like:
-	 * 		[start, stride, last]
-	 * 		where last is INCLUSIVE!
-	 * 
-	 * This method always assumes a range stride of 1.
+	 * Will return an OPeNDAP URI based on the NetCDF information passed in.
 	 * 
 	 * @param datasetURI
+	 * @param requestedVariableList
 	 * @param gridVariableList
 	 * @param timeRange
 	 * @param yRange
 	 * @param xRange
 	 * @return
+	 * @throws OPeNDAPUtilException
 	 */
-	public static String generateOpenDapURL(String datasetURI, List<String> requestedVariableList, List<?> gridVariableList, Range timeRange, Range yRange, Range xRange) {
+	public static String generateOpenDapURL(String datasetURI, List<String> requestedVariableList, List<?> gridVariableList, Range timeRange, Range yRange, Range xRange) throws OPeNDAPUtilException {
 		return generateOpenDapURL(datasetURI, requestedVariableList, gridVariableList, timeRange, yRange, xRange, OPeNDAPContentType.NONE);
 	}
 	
 	/**
-	 * With the given information, will return an OPeNDAP http request.
-	 * 
-	 * http://cida.usgs.gov/thredds/dodsC/new_gmo.ascii?longitude[400:1:406],latitude[20:1:22],time[2854:1:2941],pr[2854:1:2941][20:1:22][400:1:406],tas[2854:1:2941][20:1:22][400:1:406],tasmax[2854:1:2941][20:1:22][400:1:406],tasmin[2854:1:2941][20:1:22][400:1:406],wind[2854:1:2941][20:1:22][400:1:406]
-	 * Range works like:
-	 * 		[start, stride, last]
-	 * 		where last is INCLUSIVE!
-	 * 
-	 * This method always assumes a range stride of 1.
+	 * Will return an OPeNDAP URI based on the NetCDF information passed in.
 	 * 
 	 * @param datasetURI
+	 * @param requestedVariableList
 	 * @param gridVariableList
-	 * @param timeName
 	 * @param timeRange
-	 * @param latitudeName
 	 * @param yRange
-	 * @param longitudeName
 	 * @param xRange
 	 * @param contentType
 	 * @return
+	 * @throws OPeNDAPUtilException
 	 */
 	public static String generateOpenDapURL(String datasetURI, List<String> requestedVariableList, List<?> gridVariableList, Range timeRange, Range yRange, 
-			Range xRange, OPeNDAPContentType contentType) {
-		StringBuffer result = new StringBuffer();
+			Range xRange, OPeNDAPContentType contentType) throws OPeNDAPUtilException {
+		StringBuffer uriString = new StringBuffer();
 		
 		/*
 		 * Need Data Set URI (variable datasetURI)
@@ -119,13 +113,13 @@ public class OPeNDAPUtils {
 		 * Need Set Variable List (variable datasetId)
 		 * 		Example:	[pr, tas, tasmax, tasmin, wind]
 		 * 
-		 * Need Time Dimension
+		 * Need Time Range
 		 * 		Example:	 [0,22644]
 		 * 
-		 * Need Latitude Dimension
+		 * Need Latitude Range
 		 * 		Example:	[0,221]
 		 * 
-		 * Need Longitude Dimension
+		 * Need Longitude Range
 		 * 		Example:	[0,461]
 		 * 
 		 */
@@ -135,7 +129,7 @@ public class OPeNDAPUtils {
 		 * protocol descriptor and replace with http.
 		 */
 		String requestURL = datasetURI.replace(OPENDAP_PROTO, REQUEST_PROTO);
-		result.append(requestURL);
+		uriString.append(requestURL);
 		
 		/*
 		 * Determine the response type for the data
@@ -145,10 +139,10 @@ public class OPeNDAPUtils {
 		 * 		client URI.  Keeping this in here in case we ever want to offer
 		 * 		a workable URL.
 		 */
-		result.append(OPeNDAPContentType.getContentTypeString(contentType));
+		uriString.append(OPeNDAPContentType.getContentTypeString(contentType));
 		
 		// Append parameter declarator
-		result.append("?");
+		uriString.append(PARAMETER_DECLARITOR);
 		
 		/*
 		 * Create longitude range
@@ -166,15 +160,36 @@ public class OPeNDAPUtils {
 		String timeRangeString = "[" + timeRange.first() + RANGE_DELIMETER + RANGE_STRIDE + RANGE_DELIMETER + timeRange.last() + "]";
 		
 		/*
+		 * Now, retrieve the Dimension variable name->Range mapping from the variable list
+		 */
+		Map<String, String> dimensionVariableMapping = OPeNDAPUtils.getDimensionVariableNameRangeMapping(gridVariableList, xRangeString, yRangeString, timeRangeString);
+		
+		/*
+		 * Loop through the dimensionMapping and place each on the URI string
+		 */
+		for (Map.Entry<String, String> entry : dimensionVariableMapping.entrySet()) {
+		    String dimension = entry.getKey();
+		    String range = entry.getValue();
+		    uriString.append(dimension + range + URI_DELIMETER);
+		}
+		
+		/*
+		 * We also need the raw dimension name to range mapping for our other variables
+		 */
+		Map<String, String> dimensionRawMapping = OPeNDAPUtils.getDimensionRawNameRangeMapping(gridVariableList, xRangeString, yRangeString, timeRangeString);
+		
+		/*
 		 * Loop through the request variables and append them to the URL.
 		 * 
 		 * Variable ranges include all 3 dimension ranges:
-		 * 		variable[z][y][x]
+		 * 		variable[dim1][dim2][dim3] - must determine order!
 		 * 
 		 * 
 		 * 		1.	Loop through requestedVariableList
 		 * 		2.	For each variable, look up VariableDS in gridVariableList
-		 * 		3.	If VariableDS has associated variable, include that variable as well
+		 * 		3.	If VariableDS has associated variable, include that variable in URI string
+		 * 		4.  Get dimensions for variable and determine order
+		 * 		5.	Include variable with dimensions in URI string
 		 * 		
 		 */
 		int size = gridVariableList.size();
@@ -186,43 +201,9 @@ public class OPeNDAPUtils {
 			Object variable = gridVariableList.get(i);
 			
 			/*
-			 * First check to see if this is a dimension.  If so, which axis
+			 * First check to see if this is indeed a VariableDS object.
 			 */
-			if(variable instanceof CoordinateAxis1D) {
-				String varName = ((VariableDS) variable).getShortName();
-							
-				switch(((CoordinateAxis1D) variable).getAxisType()) {
-					case GeoX:
-					case Lon: {
-						/*
-						 * This is the x axis which corresponds to the Longitude
-						 */
-						result.append(varName + timeRangeString + yRangeString + xRangeString);
-						variableUsed = true;
-						break;
-					}
-					case GeoY:
-					case Lat: {
-						/*
-						 * This is the y axis which corresponds to the Latitude
-						 */
-						result.append(varName + timeRangeString + yRangeString + xRangeString);
-						variableUsed = true;
-						break;
-					}
-					case Time: {
-						/*
-						 * This is the time axis
-						 */
-						result.append(varName + timeRangeString + yRangeString + xRangeString);
-						variableUsed = true;
-						break;
-					}
-					default: {
-						// do nothing
-					}
-				}
-			} else if(variable instanceof VariableDS ) {
+			if(variable instanceof VariableDS ) {
 				String varName = ((VariableDS) variable).getShortName();
 				
 				/*
@@ -255,7 +236,7 @@ public class OPeNDAPUtils {
 									 */
 									if(!attributeVariablesUsed.contains(stringValue)) {
 										attributeVariablesUsed.add(stringValue);
-										result.append(stringValue + URI_DELIMETER);
+										uriString.append(stringValue + URI_DELIMETER);
 									}
 								}
 							}
@@ -263,9 +244,35 @@ public class OPeNDAPUtils {
 					}
 					
 					/*
-					 * Finally, append the main variable
+					 * Append the main variable
 					 */
-					result.append(varName + timeRangeString + yRangeString + xRangeString);
+					uriString.append(varName);
+					
+					/*
+					 * We now need to figure out the order of the dimensions.  As
+					 * far as I can tell there is NO documentation that explicitly
+					 * states how to retrieve the order.  I can only go by the 
+					 * coincidence that the List returned by getDimensions() has 
+					 * so far been accurate in the order required.  Again, nowhere
+					 * is this order explicitly stated as THE order required.
+					 */
+					for(Dimension dimension : ((VariableDS) variable).getDimensions()) {
+						/*
+						 * The Dimension.getShortName() *should* match the dimension
+						 * key we have in our dimensionMapping map.
+						 */
+						String dimensionName = dimension.getShortName();
+						if(dimensionRawMapping.containsKey(dimensionName)) {
+							uriString.append(dimensionRawMapping.get(dimensionName));
+						} else {
+							/*
+							 * We got an error... this variable's dimension does not
+							 * exist in our mapping.
+							 */
+							throw new OPeNDAPUtilException(OPeNDAPUtilExceptionID.NETCDF_UNKNOWN_DIMENSION_EXCEPTION, "OPeNDAPUtils", "generateOpenDapURL", "Variable dimension [" +
+							 dimensionName + "] has no corresponding dimension in mapping [" + dimensionRawMapping + "]");
+						}
+					}
 					
 					variableUsed = true;
 				}
@@ -276,7 +283,7 @@ public class OPeNDAPUtils {
 			 */
 			if(variableUsed) {
 				if(i < lastIndex) {
-					result.append(URI_DELIMETER);
+					uriString.append(URI_DELIMETER);
 				}
 			}
 		}
@@ -289,11 +296,136 @@ public class OPeNDAPUtils {
 		 * use all the variables in the variable list or not.  Lets just check here and
 		 * remove it.
 		 */
-		String uri = result.toString();
+		String uri = uriString.toString();
 		if(uri.indexOf(URI_DELIMETER, (uri.length() - 1)) != -1) {
 			uri = uri.substring(0, uri.length() - 1);
 		}
 		
 		return uri;
+	}
+	
+	public static Map<String, String> getDimensionRawNameRangeMapping(List<?> gridVariableList, String xRangeString, String yRangeString, String timeRangeString) {
+		Map<String, String> results = new HashMap<String, String>();
+		
+		for (int i = 0; i < gridVariableList.size(); i++) {			
+			Object variable = gridVariableList.get(i);
+			
+			/*
+			 * Check to see if this is a dimension.  If so, which axis
+			 */
+			if(variable instanceof CoordinateAxis1D) {
+				switch(((CoordinateAxis1D) variable).getAxisType()) {
+					case GeoX:
+					case Lon: {
+						/*
+						 * This is the x axis which corresponds to the Longitude
+						 * or GeoX dimension.
+						 * 
+						 * Since we need the raw name, we need to get the actual
+						 * dimension object.
+						 * 
+						 * If the dimension list for this variable is greater than
+						 * 1 then we have an issue and this is NOT a CordinateAxis1D
+						 * variable (the test is for sanity's sake)
+						 */
+						if(((CoordinateAxis1D) variable).getDimensions().size() == 1) {
+							Dimension dimension = ((CoordinateAxis1D) variable).getDimensions().get(0);
+							results.put(dimension.getShortName(), xRangeString);
+						}
+						break;
+					}
+					case GeoY:
+					case Lat: {
+						/*
+						 * This is the y axis which corresponds to the Latitude
+						 * or GeoY dimension.
+						 * 
+						 * Since we need the raw name, we need to get the actual
+						 * dimension object.
+						 * 
+						 * If the dimension list for this variable is greater than
+						 * 1 then we have an issue and this is NOT a CordinateAxis1D
+						 * variable (the test is for sanity's sake)
+						 */
+						if(((CoordinateAxis1D) variable).getDimensions().size() == 1) {
+							Dimension dimension = ((CoordinateAxis1D) variable).getDimensions().get(0);
+							results.put(dimension.getShortName(), yRangeString);
+						}
+						break;
+					}
+					case Time: {
+						/*
+						 * This is the time axis
+						 *  
+						 * Since we need the raw name, we need to get the actual
+						 * dimension object.
+						 * 
+						 * If the dimension list for this variable is greater than
+						 * 1 then we have an issue and this is NOT a CordinateAxis1D
+						 * variable (the test is for sanity's sake)
+						 */
+						if(((CoordinateAxis1D) variable).getDimensions().size() == 1) {
+							Dimension dimension = ((CoordinateAxis1D) variable).getDimensions().get(0);
+							results.put(dimension.getShortName(), timeRangeString);
+						}
+						break;
+					}
+					default: {
+						// do nothing
+					}
+				}
+			}
+		}
+		
+		return results;
+	}
+	
+	public static Map<String, String> getDimensionVariableNameRangeMapping(List<?> gridVariableList, String xRangeString, String yRangeString, String timeRangeString) {
+		Map<String, String> results = new HashMap<String, String>();
+		
+		for (int i = 0; i < gridVariableList.size(); i++) {			
+			Object variable = gridVariableList.get(i);
+			
+			/*
+			 * Check to see if this is a dimension.  If so, which axis
+			 */
+			if(variable instanceof CoordinateAxis1D) {
+				String varName = ((VariableDS) variable).getShortName();
+							
+				switch(((CoordinateAxis1D) variable).getAxisType()) {
+					case GeoX:
+					case Lon: {
+						/*
+						 * This is the x axis which corresponds to the Longitude
+						 * or GeoX dimension.
+						 * 
+						 */
+						results.put(varName, xRangeString);
+						break;
+					}
+					case GeoY:
+					case Lat: {
+						/*
+						 * This is the y axis which corresponds to the Latitude
+						 * or GeoY dimension.
+						 */
+						results.put(varName, yRangeString);
+						break;
+					}
+					case Time: {
+						/*
+						 * This is the time axis
+						 */
+						results.put(varName, timeRangeString);
+						break;
+					}
+					default: {
+						// do nothing
+					}
+				}
+			}
+		}
+		
+		return results;
 	}
 }
