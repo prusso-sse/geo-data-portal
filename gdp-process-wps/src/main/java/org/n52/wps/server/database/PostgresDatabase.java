@@ -145,11 +145,14 @@ public class PostgresDatabase extends AbstractDatabase {
 			+ "START_TIME TIMESTAMP with time zone,"
 			+ "END_TIME TIMESTAMP with time zone)";
 	
-	
+	/*
+	 * OUTPUT_ID is request_id concattenated with wps output identifier (ex. OUTPUT)
+	 * Not to be confused with OUTPUT_IDENTIFER which is just the identifier
+	 */
 	private static final String CREATE_OUTPUT_TABLE_PSQL
 		= "CREATE TABLE " + OUTPUT_TABLE_NAME + " ("
 			+ "ID VARCHAR(100) NOT NULL PRIMARY KEY,"
-			+ "OUTPUT_IDENTIFIER VARCHAR(100),"
+			+ "OUTPUT_ID VARCHAR(100),"
 			+ "RESPONSE_ID VARCHAR(100),"
 			+ "INLINE_RESPONSE TEXT,"
 			+ "MIME_TYPE VARCHAR(100),"
@@ -169,17 +172,17 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String INSERT_INPUT_STATEMENT = "INSERT INTO " + INPUT_TABLE_NAME + " VALUES (?, ?, ?, ?)";
 	private static final String INSERT_OUTPUT_DEF_STATEMENT = "INSERT INTO " + OUTPUT_DEF_TABLE_NAME + " VALUES (?, ?, ?, ?)";
 	private static final String INSERT_RESPONSE_STATEMENT = "INSERT INTO " + RESPONSE_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-	private static final String UPDATE_RESPONSE_STATEMENT = "UPDATE " + RESPONSE_TABLE_NAME + "COLUMNS( VALUES (?, ?, ?, ?, ?, ?, ?, ?) WHERE REQUEST_ID = ? AND WPS_ALGORITHM_IDENTIFIER = ?";
+	private static final String UPDATE_RESPONSE_STATEMENT = "UPDATE " + RESPONSE_TABLE_NAME + " SET STATUS=?,PERCENT_COMPLETE=?,END_TIME=? WHERE REQUEST_ID = ?";
 	private static final String INSERT_OUTPUT_STATEMENT = "INSERT INTO " + OUTPUT_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?)";
 	private static final String SELECT_RESPONSE_STATEMENT = "SELECT * FROM " + RESPONSE_TABLE_NAME + " WHERE REQUEST_ID = ?";
-	private static final String SELECT_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + " WHERE OUTPUT_IDENTIFIER = ?";
+	private static final String SELECT_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + " WHERE OUTPUT_ID = ?";
 	
 	private PostgresDatabase() {
 		PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
 		String baseDirectoryPath = propertyUtil.extractString(KEY_DATABASE_PATH, DEFAULT_BASE_DIRECTORY);
 		String dbName = getDatabaseProperties(PROPERTY_NAME_DATABASE_NAME);
 		DATABASE_NAME = (StringUtils.isBlank(dbName)) ? "wps" : dbName;
-		try {	
+		try {
 			Class.forName("org.postgresql.Driver");
 			initializeBaseDirectory(baseDirectoryPath);
 			initializeConnectionHandler();
@@ -292,15 +295,14 @@ public class PostgresDatabase extends AbstractDatabase {
 	}
 
 	private void insertWpsRequest(WpsRequest wpsReq) {
-		Connection connection = null;
+		
 		Savepoint transaction = null;
-		try {
-			connection = getConnection();
-			connection.setAutoCommit(false);
-			PreparedStatement insertRequestStatement = connection.prepareStatement(INSERT_REQUEST_STATEMENT);
-			PreparedStatement insertInputStatement = connection.prepareStatement(INSERT_INPUT_STATEMENT);
-			PreparedStatement insertOutputDefStatement = connection.prepareStatement(INSERT_OUTPUT_DEF_STATEMENT);
+		try (Connection connection = getConnection();
+				PreparedStatement insertRequestStatement = connection.prepareStatement(INSERT_REQUEST_STATEMENT);
+				PreparedStatement insertInputStatement = connection.prepareStatement(INSERT_INPUT_STATEMENT);
+				PreparedStatement insertOutputDefStatement = connection.prepareStatement(INSERT_OUTPUT_DEF_STATEMENT)) {
 			
+			connection.setAutoCommit(false);
 			transaction = connection.setSavepoint();
 			
 			insertRequest(insertRequestStatement, wpsReq);
@@ -309,14 +311,14 @@ public class PostgresDatabase extends AbstractDatabase {
 			
 			connection.commit();
 		} catch (Exception e) {
+			String msg = "Failed to insert request into database";
 			try {
 				if (connection != null) {
 					connection.rollback(transaction);
 				}
 			} catch (Exception e2) {
-				// I don't really care any more
+				LOGGER.error("Unable to rollback changes", e2);
 			}
-			String msg = "Failed to insert request into database";
 			LOGGER.error(msg, e);
 			throw new RuntimeException(msg, e);
 		}
@@ -361,26 +363,25 @@ public class PostgresDatabase extends AbstractDatabase {
 	
 
 	private void insertWpsResponse(WpsResponse wpsResp) {
-		Connection connection = null;
 		Savepoint transaction = null;
-		try {
-			connection = getConnection();
+		try (Connection connection = getConnection();
+				PreparedStatement insertResponseStatement = connection.prepareStatement(INSERT_RESPONSE_STATEMENT)) {
+			
 			connection.setAutoCommit(false);
-			connection.setSavepoint();
-			PreparedStatement insertResponseStatement = connection.prepareStatement(INSERT_RESPONSE_STATEMENT);
+			transaction = connection.setSavepoint();
 			
 			insertResponseToDb(insertResponseStatement, wpsResp);
 			
 			connection.commit();
 		} catch (Exception e) {
+			String msg = "Failed to insert request into database";
 			try {
 				if (connection != null) {
 					connection.rollback(transaction);
 				}
 			} catch (Exception e2) {
-				// I don't really care any more
+				LOGGER.error("Unable to rollback chnages", e2);
 			}
-			String msg = "Failed to insert request into database";
 			LOGGER.error(msg, e);
 			throw new RuntimeException(msg, e);
 		}
@@ -415,12 +416,14 @@ public class PostgresDatabase extends AbstractDatabase {
 	}
 	
 	private Date toSQLDate(DateTime dateTime) {
-		return dateTime == null ? null : new Date(dateTime.getMillis());
+		return (dateTime == null) ? null : new Date(dateTime.getMillis());
 	}
 	
 	@Override
-	public synchronized String storeComplexValue(String requestid, String outputId, InputStream stream, String type, String mimeType) {
-		String wpsResponseId = readWpsResponseFromDB(requestid).getId(); 
+	public synchronized String storeComplexValue(String requestid, String outputIdentifier, InputStream stream, String type, String mimeType) {
+		String wpsResponseId = readWpsResponseFromDB(requestid).getId();
+		// For now id will just be requestId + wps identifier which is unique as long as requests can only run once
+		String outputId = requestid + outputIdentifier;
 		WpsOutput output = new WpsOutput(wpsResponseId, outputId, mimeType);
 		if (SAVE_RESULTS_TO_DB) {
 			output.setInline(stream);
@@ -434,75 +437,13 @@ public class PostgresDatabase extends AbstractDatabase {
 				LOGGER.error("Failed to write output data to disk", ex);
 			}
 		}
-		try {
-			persistOutput(output, getConnection().prepareStatement(INSERT_OUTPUT_STATEMENT));
+		try (Connection connection = getConnection();
+				PreparedStatement statement = connection.prepareStatement(INSERT_OUTPUT_STATEMENT)) {
+			persistOutput(output, statement);
 		} catch (Exception e) {
 			throw new RuntimeException("issue writing output", e);
 		}
-		return generateRetrieveResultURL(requestid + outputId);
-	}
-	
-	
-	private WpsResponse readWpsResponseFromDB(String requestid) {
-		Connection connection = null;
-		try {
-			connection = getConnection();
-			PreparedStatement selectRequestStatement = connection.prepareStatement(SELECT_RESPONSE_STATEMENT);
-			selectRequestStatement.setString(1, requestid);
-			
-			ResultSet rs = selectRequestStatement.executeQuery();
-			WpsResponse ret = null;
-			if (rs != null && rs.next()) {
-				ret = constructResponseFromRs(rs);
-			}
-			return ret; 
-		} catch (Exception e) {
-			String msg = "Failed to select request from database";
-			LOGGER.error(msg, e);
-			throw new RuntimeException(msg, e);
-		}
-	}
-	
-	private WpsResponse constructResponseFromRs(ResultSet rs) {
-		if (rs != null) {
-			try {
-				WpsResponse ret = new WpsResponse(rs.getString("ID"), rs.getString("REQUEST_ID"), rs.getString("WPS_ALGORITHM_IDENTIFIER"), WpsStatus.valueOf(rs.getString("STATUS")), rs.getInt("PERCENT_COMPLETE"), new DateTime(rs.getTimestamp("CREATION_TIME")));
-				return ret;
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		return null;
-	}
-
-	private WpsOutput readOutputFromDB(String outputId) {
-		Connection connection = null;
-		try {
-			connection = getConnection();
-			PreparedStatement selectRequestStatement = connection.prepareStatement(SELECT_OUTPUT_STATEMENT);
-			selectRequestStatement.setString(1, outputId);
-			
-			ResultSet rs = selectRequestStatement.executeQuery();
-			WpsOutput ret = null;
-			if (rs != null && rs.next()) {
-				ret = constructOutputFromRs(rs);
-			}
-			return ret; 
-		} catch (Exception e) {
-			String msg = "Failed to select request from database";
-			LOGGER.error(msg, e);
-			throw new RuntimeException(msg, e);
-		}
-	}
-
-	private WpsOutput constructOutputFromRs(ResultSet rs) {
-	}
-
-	@Override
-	public long getContentLengthForStoreResponse(String id) {
-		// TODO Auto-generated method stub
-		return super.getContentLengthForStoreResponse(id);aa //need to implement just for the response xml length
+		return generateRetrieveResultURL(outputId);
 	}
 	
 	/**
@@ -528,50 +469,123 @@ public class PostgresDatabase extends AbstractDatabase {
 		IOUtils.closeQuietly(os);
 		return createdFilePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "");
 	}
+	
+	private WpsResponse readWpsResponseFromDB(String requestid) {
+		WpsResponse ret = null;
+		try (Connection connection = getConnection();
+				PreparedStatement selectRequestStatement = connection.prepareStatement(SELECT_RESPONSE_STATEMENT)) {
+			
+			selectRequestStatement.setString(1, requestid);
+			
+			ResultSet rs = selectRequestStatement.executeQuery();
+			
+			if (rs != null && rs.next()) {
+				ret = constructResponseFromRs(rs);
+			}
+		} catch (Exception e) {
+			String msg = "Failed to select request from database";
+			LOGGER.error(msg, e);
+			throw new RuntimeException(msg, e);
+		}
+		return ret;
+	}
+	
+	private WpsResponse constructResponseFromRs(ResultSet rs) {
+		WpsResponse ret = null;
+		if (rs != null) {
+			try {
+				ret = new WpsResponse(rs.getString("ID"), rs.getString("REQUEST_ID"),
+						rs.getString("WPS_ALGORITHM_IDENTIFIER"), WpsStatus.valueOf(rs.getString("STATUS")),
+						rs.getInt("PERCENT_COMPLETE"), new DateTime(rs.getTimestamp("CREATION_TIME")));
+			} catch (SQLException e) {
+				String msg = "Failed to build response from database";
+				LOGGER.error(msg, e);
+				throw new RuntimeException(msg, e);
+			}
+		}
+		return ret;
+	}
+
+	private WpsOutput readOutputFromDB(String outputId) {
+		WpsOutput ret = null;
+		
+		try (Connection connection = getConnection();
+				PreparedStatement selectRequestStatement = connection.prepareStatement(SELECT_OUTPUT_STATEMENT);) {
+			selectRequestStatement.setString(1, outputId);
+			
+			ResultSet rs = selectRequestStatement.executeQuery();
+			
+			if (rs != null && rs.next()) {
+				ret = constructOutputFromRs(rs);
+			}
+		} catch (Exception e) {
+			String msg = "Failed to select request from database";
+			LOGGER.error(msg, e);
+			throw new RuntimeException(msg, e);
+		}
+		return ret;
+	}
+
+	private WpsOutput constructOutputFromRs(ResultSet rs) {
+		WpsOutput ret = null;
+		if (rs != null) {
+			try {
+				ret = new WpsOutput(rs.getString("ID"), rs.getString("OUTPUT_ID"),
+						rs.getString("RESPONSE_ID"), rs.getString("INLINE_RESPONSE"),
+						rs.getInt("MIME_TYPE"), rs.getLong("RESPONSE_LENGTH"), rs.getString("LOCATION"));
+			} catch (SQLException e) {
+				String msg = "Failed to build output from database";
+				LOGGER.error(msg, e);
+				throw new RuntimeException(msg, e);
+			}
+		}
+		return ret;
+	}
 
 	@Override
+	public long getContentLengthForStoreResponse(String id) {
+		long contentLength = -1;
+		WpsResponse response = readWpsResponseFromDB(id);
+		if (response == null) {
+			WpsOutput output = readOutputFromDB(id);
+			contentLength = output.getResponseLength();
+		}
+		return contentLength;
+	}
+
+	"ID VARCHAR(100) NOT NULL PRIMARY KEY,"
+			+ "REQUEST_ID VARCHAR(100),"
+			+ "WPS_ALGORITHM_IDENTIFIER VARCHAR(200),"
+			+ "STATUS VARCHAR(50),"
+			+ "PERCENT_COMPLETE INTEGER,"
+			+ "CREATION_TIME TIMESTAMP with time zone,"
+			+ "START_TIME TIMESTAMP with time zone,"
+			+ "END_TIME TIMESTAMP with time zone)";
+	/**
+	 * This is called when response already exists and just needs status or other updates set
+	 * @param id
+	 * @param stream 
+	 */
+	@Override
 	public void updateResponse(String id, InputStream stream) {
-		boolean compressData = !SAVE_RESULTS_TO_DB;
-		boolean proceed = true;
-		String data = "";
-
-		synchronized (storeResponseLock) {
-			if (!SAVE_RESULTS_TO_DB) {
-				try {
-					// The result contents won't be saved to the database, only a pointer to the file system. I am therefore
-					// going to GZip the data to save space
-					data = writeInputStreamToDisk(id, stream, compressData);
-				} catch (IOException ex) {
-					LOGGER.error("Failed to write output data to disk", ex);
-					proceed = false;
-				}
-			}
-
-			if (proceed) {
-				//if data is the  
-				//otherwise unmarshal & update response table
+		WpsResponse wpsResponse = new WpsResponse(id, stream);
+		if (wpsResponse.getStatus() == WpsStatus.SUCCEEDED || wpsResponse.getStatus() == WpsStatus.FAILED) {
+			wpsResponse.setEndTime(new DateTime());
+		}
 				
-				try (Connection connection = getConnection();
-					PreparedStatement updateStatement = connection.prepareStatement(UPDATE_RESPONSE_STATEMENT)) {
-					updateStatement.setString(INSERT_COLUMN_REQUEST_ID, id);
-					updateStatement.setTimestamp(INSERT_COLUMN_REQUEST_DATE, new Timestamp(Calendar.getInstance().getTimeInMillis()));
+		try (Connection connection = getConnection();
+			PreparedStatement updateStatement = connection.prepareStatement(UPDATE_RESPONSE_STATEMENT)) {
+			
+			updateStatement.setString(1, wpsResponse.getStatus().toString());
+			updateStatement.setInt(2, wpsResponse.getPercentComplete());
+			updateStatement.setDate(3, toSQLDate(wpsResponse.getEndTime()));
+			updateStatement.setString(4, id);
+			
+			updateStatement.executeUpdate();
 
-					if (SAVE_RESULTS_TO_DB) {
-						// This is implemented because we need to handle the case of SAVE_RESULTS_TO_DB = true. However,
-						// this should not be used if you expect results to be large. 
-						// TODO- Remove and reimplement when setAsciiStream() has been properly implemented 
-						// @ https://github.com/pgjdbc/pgjdbc/blob/master/org/postgresql/jdbc4/AbstractJdbc4Statement.java
-						updateStatement.setString(INSERT_COLUMN_RESPONSE, IOUtils.toString(stream, DEFAULT_ENCODING));
-					} else {
-						updateStatement.setString(INSERT_COLUMN_RESPONSE, data);
-					}
-					updateStatement.executeUpdate();
-
-					LOGGER.debug("Updated data  into database with id of:" + id);
-				} catch (SQLException | IOException ex) {
-					LOGGER.error(MessageFormat.format("Failed to update data in database with  id of:{0}", id), ex);
-				}
-			}
+			LOGGER.debug("Updated response into database with id of:" + id);
+		} catch (SQLException | IOException ex) {
+			LOGGER.error(MessageFormat.format("Failed to update data in database with  id of:{0}", id), ex);
 		}
 	}
 
