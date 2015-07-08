@@ -181,8 +181,8 @@ public class DatabaseFactory implements IDatabase
 	}
 	
 	@Override
-    public synchronized String storeComplexValue(String request_Id, String output_id, InputStream stream, String type, String mimeType) {
-		return DatabaseFactory.database.storeComplexValue(request_Id, output_id, stream, type, mimeType);
+    public synchronized String storeComplexValue(String requestId, String outputId, InputStream stream, String type, String mimeType) {
+		return DatabaseFactory.database.storeComplexValue(requestId, outputId, stream, type, mimeType);
 	}
 	
 	/**
