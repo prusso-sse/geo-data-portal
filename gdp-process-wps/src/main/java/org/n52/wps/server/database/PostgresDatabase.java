@@ -2,7 +2,6 @@ package org.n52.wps.server.database;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,13 +46,16 @@ import com.google.common.collect.ImmutableMap;
 import java.io.ByteArrayInputStream;
 
 import java.sql.Savepoint;
+import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
-import net.opengis.ows.v_1_1_0.ExceptionReport;
 import net.opengis.ows.x11.LanguageStringType;
-import net.opengis.wps.v_1_0_0.ProcessFailedType;
 import net.opengis.wps.x100.ExecuteResponseDocument;
+import net.opengis.wps.x100.OutputDataType;
+import net.opengis.wps.x100.OutputReferenceType;
 import net.opengis.wps.x100.ProcessBriefType;
+import net.opengis.wps.x100.ProcessFailedType;
 import net.opengis.wps.x100.ProcessStartedType;
 import net.opengis.wps.x100.StatusType;
 import org.n52.wps.server.RepositoryManager;
@@ -63,6 +65,7 @@ import org.n52.wps.server.database.domain.WpsOutput;
 import org.n52.wps.server.database.domain.WpsOutputDefinition;
 import org.n52.wps.server.database.domain.WpsResponse;
 import org.n52.wps.server.database.domain.WpsStatus;
+
 
 /**
  *
@@ -151,7 +154,8 @@ public class PostgresDatabase extends AbstractDatabase {
 			+ "INLINE_RESPONSE TEXT,"
 			+ "MIME_TYPE VARCHAR(100),"
 			+ "RESPONSE_LENGTH BIGINT,"
-			+ "LOCATION VARCHAR(200))";
+			+ "LOCATION VARCHAR(200),"
+			+ "INSERTED TIMESTAMP)";
 
 	private static final ImmutableMap<String, String> CREATE_TABLE_MAP = ImmutableMap.<String, String>builder()
 		.put(REQUEST_TABLE_NAME, CREATE_REQUEST_TABLE_PSQL)
@@ -165,13 +169,18 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String INSERT_INPUT_STATEMENT = "INSERT INTO " + INPUT_TABLE_NAME + " VALUES (?, ?, ?, ?)";
 	private static final String INSERT_OUTPUT_DEF_STATEMENT = "INSERT INTO " + OUTPUT_DEF_TABLE_NAME + " VALUES (?, ?, ?, ?)";
 	private static final String INSERT_RESPONSE_STATEMENT = "INSERT INTO " + RESPONSE_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-	private static final String INSERT_OUTPUT_STATEMENT = "INSERT INTO " + OUTPUT_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?)";
+	private static final String INSERT_OUTPUT_STATEMENT = "INSERT INTO " + OUTPUT_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 	
 	private static final String UPDATE_RESPONSE_STATEMENT = "UPDATE " + RESPONSE_TABLE_NAME + " SET STATUS=?,PERCENT_COMPLETE=?,END_TIME=? WHERE REQUEST_ID = ?";
 	
 	private static final String SELECT_REQUEST_STATEMENT = "SELECT * FROM " + REQUEST_TABLE_NAME + " WHERE REQUEST_ID = ?";
 	private static final String SELECT_RESPONSE_STATEMENT = "SELECT * FROM " + RESPONSE_TABLE_NAME + " WHERE REQUEST_ID = ?";
 	private static final String SELECT_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + " WHERE OUTPUT_ID = ?";
+	
+	private static final String SELECT_ALL_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + " WHERE " 
+			+ OUTPUT_TABLE_NAME + ".RESPONSE_ID=" + RESPONSE_TABLE_NAME + ".ID AND " + RESPONSE_TABLE_NAME + ".REQUEST_ID=?";
+	private static final String SELECT_OLD_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + " WHERE " +
+			"(SELECT EXTRACT(EPOCH FROM INSERTED) * 1000 AS TIMESTAMP FROM " + OUTPUT_TABLE_NAME + ") outputs WHERE TIMESTAMP < ?";
 	
 	private PostgresDatabase() {
 		PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
@@ -291,30 +300,34 @@ public class PostgresDatabase extends AbstractDatabase {
 	}
 
 	private void insertWpsRequest(WpsRequest wpsReq) {
-		
 		Savepoint transaction = null;
-		try (Connection connection = getConnection();
-				PreparedStatement insertRequestStatement = connection.prepareStatement(INSERT_REQUEST_STATEMENT);
-				PreparedStatement insertInputStatement = connection.prepareStatement(INSERT_INPUT_STATEMENT);
-				PreparedStatement insertOutputDefStatement = connection.prepareStatement(INSERT_OUTPUT_DEF_STATEMENT)) {
-			
-			connection.setAutoCommit(false);
-			transaction = connection.setSavepoint();
-			
-			insertRequest(insertRequestStatement, wpsReq);
-			insertInputs(wpsReq.getWpsInputs(), insertInputStatement);
-			insertOutputDefs(wpsReq.getWpsRequestedOutputs(), insertOutputDefStatement);
-			
-			connection.commit();
-		} catch (Exception e) {
-			String msg = "Failed to insert request into database";
-			try {
-				if (connection != null) {
-					connection.rollback(transaction);
+		try (Connection connection = getConnection()) {
+			try (PreparedStatement insertRequestStatement = connection.prepareStatement(INSERT_REQUEST_STATEMENT);
+					PreparedStatement insertInputStatement = connection.prepareStatement(INSERT_INPUT_STATEMENT);
+					PreparedStatement insertOutputDefStatement = connection.prepareStatement(INSERT_OUTPUT_DEF_STATEMENT)) {
+
+				connection.setAutoCommit(false);
+				transaction = connection.setSavepoint();
+
+				insertRequest(insertRequestStatement, wpsReq);
+				insertInputs(wpsReq.getWpsInputs(), insertInputStatement);
+				insertOutputDefs(wpsReq.getWpsRequestedOutputs(), insertOutputDefStatement);
+
+				connection.commit();
+			} catch (Exception e) {
+				String msg = "Failed to insert request into database";
+				try {
+					if (connection != null) {
+						connection.rollback(transaction);
+					}
+				} catch (Exception e2) {
+					LOGGER.error("Unable to rollback changes", e2);
 				}
-			} catch (Exception e2) {
-				LOGGER.error("Unable to rollback changes", e2);
+				LOGGER.error(msg, e);
+				throw new RuntimeException(msg, e);
 			}
+		} catch (Exception e) {
+			String msg = "Failed to get database connection";
 			LOGGER.error(msg, e);
 			throw new RuntimeException(msg, e);
 		}
@@ -360,24 +373,29 @@ public class PostgresDatabase extends AbstractDatabase {
 
 	private void insertWpsResponse(WpsResponse wpsResp) {
 		Savepoint transaction = null;
-		try (Connection connection = getConnection();
-				PreparedStatement insertResponseStatement = connection.prepareStatement(INSERT_RESPONSE_STATEMENT)) {
-			
-			connection.setAutoCommit(false);
-			transaction = connection.setSavepoint();
-			
-			insertResponseToDb(insertResponseStatement, wpsResp);
-			
-			connection.commit();
-		} catch (Exception e) {
-			String msg = "Failed to insert request into database";
-			try {
-				if (connection != null) {
-					connection.rollback(transaction);
+		try (Connection connection = getConnection()) {
+			try (PreparedStatement insertResponseStatement = connection.prepareStatement(INSERT_RESPONSE_STATEMENT)) {
+
+				connection.setAutoCommit(false);
+				transaction = connection.setSavepoint();
+
+				insertResponseToDb(insertResponseStatement, wpsResp);
+
+				connection.commit();
+			} catch (Exception e) {
+				String msg = "Failed to insert request into database";
+				try {
+					if (connection != null) {
+						connection.rollback(transaction);
+					}
+				} catch (Exception e2) {
+					LOGGER.error("Unable to rollback changes", e2);
 				}
-			} catch (Exception e2) {
-				LOGGER.error("Unable to rollback chnages", e2);
+				LOGGER.error(msg, e);
+				throw new RuntimeException(msg, e);
 			}
+		} catch (Exception e) {
+			String msg = "Failed to get database connection";
 			LOGGER.error(msg, e);
 			throw new RuntimeException(msg, e);
 		}
@@ -407,6 +425,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			insertOutputStatement.setString(5, output.getMimeType());
 			insertOutputStatement.setLong(6, output.getResponseLength());
 			insertOutputStatement.setString(7, output.getLocation());
+			insertOutputStatement.setTimestamp(8, new Timestamp(Calendar.getInstance().getTimeInMillis()));
 			insertOutputStatement.executeUpdate();
 		}
 	}
@@ -474,7 +493,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			
 			ResultSet rs = selectRequestStatement.executeQuery();
 			
-			if (rs != nul && rs.next()) {
+			if (rs != null && rs.next()) {
 				ret = constructRequestFromRs(rs);
 			}
 		} catch (Exception e) {
@@ -540,16 +559,36 @@ public class PostgresDatabase extends AbstractDatabase {
 		WpsOutput ret = null;
 		
 		try (Connection connection = getConnection();
-				PreparedStatement selectRequestStatement = connection.prepareStatement(SELECT_OUTPUT_STATEMENT)) {
-			selectRequestStatement.setString(1, outputId);
+				PreparedStatement selectOutputStatement = connection.prepareStatement(SELECT_OUTPUT_STATEMENT)) {
+			selectOutputStatement.setString(1, outputId);
 			
-			ResultSet rs = selectRequestStatement.executeQuery();
+			ResultSet rs = selectOutputStatement.executeQuery();
 			
 			if (rs != null && rs.next()) {
 				ret = constructOutputFromRs(rs);
 			}
 		} catch (Exception e) {
-			String msg = "Failed to select request from database";
+			String msg = "Failed to select output from database";
+			LOGGER.error(msg, e);
+			throw new RuntimeException(msg, e);
+		}
+		return ret;
+	}
+	
+	private List<WpsOutput> readOutputsByRequestFromDB(String requestId) {
+		List<WpsOutput> ret = new ArrayList<>();
+		
+		try (Connection connection = getConnection();
+				PreparedStatement selectOutputStatement = connection.prepareStatement(SELECT_ALL_OUTPUT_STATEMENT)) {
+			selectOutputStatement.setString(1, requestId);
+			
+			ResultSet rs = selectOutputStatement.executeQuery();
+			
+			while (rs != null && rs.next()) {
+				ret.add(constructOutputFromRs(rs));
+			}
+		} catch (Exception e) {
+			String msg = "Failed to select output list from database";
 			LOGGER.error(msg, e);
 			throw new RuntimeException(msg, e);
 		}
@@ -562,7 +601,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			try {
 				ret = new WpsOutput(rs.getString("ID"), rs.getString("OUTPUT_ID"),
 						rs.getString("RESPONSE_ID"), rs.getString("INLINE_RESPONSE"),
-						rs.getInt("MIME_TYPE"), rs.getLong("RESPONSE_LENGTH"), rs.getString("LOCATION"));
+						rs.getString("MIME_TYPE"), rs.getLong("RESPONSE_LENGTH"), rs.getString("LOCATION"));
 			} catch (SQLException e) {
 				String msg = "Failed to build output from database";
 				LOGGER.error(msg, e);
@@ -572,12 +611,14 @@ public class PostgresDatabase extends AbstractDatabase {
 		return ret;
 	}
 	
+
+	
 	private InputStream buildExecuteResponse(String id) {
 		InputStream is = null;
 		
 		WpsResponse responseObj = readWpsResponseFromDB(id);
 		WpsRequest request = readWpsRequestFromDB(id);
-		//List<WpsOutput> outputs = readOutputFromDB(id) TODO get outputs
+		List<WpsOutput> outputList = readOutputsByRequestFromDB(id);
 		
 		ExecuteResponseDocument.ExecuteResponse response = ExecuteResponseDocument.Factory.newInstance()
 				.addNewExecuteResponse();
@@ -604,7 +645,7 @@ public class PostgresDatabase extends AbstractDatabase {
 				ProcessStartedType started = ProcessStartedType.Factory.newInstance();
 				started.setPercentCompleted(responseObj.getPercentComplete());
 				started.setStringValue("Process Started");
-				status.setProcessStarted(paused);
+				status.setProcessStarted(started);
 				break;
 			case SUCCEEDED:
 				status.setProcessSucceeded("Process successful");
@@ -612,18 +653,28 @@ public class PostgresDatabase extends AbstractDatabase {
 			case FAILED:
 			default:
 				// TODO need to add exceptions to the database?
-				ProcessFailedType failed = new ProcessFailedType().setExceptionReport(new ExceptionReport());
+				ProcessFailedType failed = ProcessFailedType.Factory.newInstance();
+				failed.addNewExceptionReport();
 				status.setProcessFailed(failed);
 				break;
 		}
 				
 		if (responseObj.getStatus() == WpsStatus.SUCCEEDED) {
 			response.addNewDataInputs().setInputArray(request.getExecuteDoc().getExecute().getDataInputs().getInputArray());
+			ExecuteResponseDocument.ExecuteResponse.ProcessOutputs processOutputs = response.addNewProcessOutputs();
+			for (WpsOutput output : outputList) {
+				OutputDataType outputType = processOutputs.addNewOutput();
+
+				// This is why the ids should be split up, HACK
+				String outputId = output.getOutputId().replace(id, "");
+				outputType.addNewIdentifier().setStringValue(outputId);
+				// TODO add title outputType.addNewTitle()
+				OutputReferenceType reference = outputType.addNewReference();
+				reference.setMimeType(output.getMimeType());
+				reference.setHref(generateRetrieveResultURL(output.getOutputId()));
+			}
 		}
-		
-		ExecuteResponseDocument.ExecuteResponse.ProcessOutputs processOutputs = response.addNewProcessOutputs();
-		
-		
+		return response.newInputStream();
 	}
 
 	/**
@@ -649,7 +700,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			updateStatement.executeUpdate();
 
 			LOGGER.debug("Updated response into database with id of:" + id);
-		} catch (SQLException | IOException ex) {
+		} catch (SQLException ex) {
 			LOGGER.error(MessageFormat.format("Failed to update data in database with  id of:{0}", id), ex);
 		}
 	}
@@ -671,59 +722,34 @@ public class PostgresDatabase extends AbstractDatabase {
 				//next select to see if what we are looking up is in the output Table
 				WpsOutput outputFromDb = readOutputFromDB(id);
 				
-				result = responseFromDb.toXML(); //serialize to XML 
-				
-				try (Connection connection = getConnection();
-					PreparedStatement selectStatement = connection.prepareStatement(selectionString)) {
-					selectStatement.setString(SELECTION_STRING_REQUEST_ID_PARAM_INDEX, id);
-
-					try (ResultSet rs = selectStatement.executeQuery()) {
-						if (null == rs || !rs.next()) {
-							LOGGER.warn("No response found for request id " + id);
-						} else {
-							result = rs.getAsciiStream(SELECTION_STRING_RESPONSE_COLUMN_INDEX);
-							// Copy the file to disk and create an inputstream from that because once I leave
-							// this function, result will not be accessible since the connection to the database 
-							// will be broken. I eat a bit of overhead this way, but afaik, it's the best solution
-							File tempFile = Files.createTempFile("GDP-SAFE-TO-DELETE-" + id, null).toFile();
-
-							// Best effort, even though SelfCleaningFileInputStream should delete it
-							tempFile.deleteOnExit();
-
-							// Copy the ASCII stream to file
-							IOUtils.copyLarge(result, new FileOutputStream(tempFile));
-							IOUtils.closeQuietly(result);
-
-							// Create an InputStream (of the self-cleaning type) from this File and pass that on
-							result = new SelfCleaningFileInputStream(tempFile);
-						}
-					} catch (IOException ex) {
-						LOGGER.error("Could not look up response in database", ex);
-					}
-				} catch (SQLException ex) {
-					LOGGER.error("Could not look up response in database", ex);
-				}
-
-				if (null != result) {
-					if (!SAVE_RESULTS_TO_DB) {
-						try {
-							String outputFileLocation = IOUtils.toString(result);
-							LOGGER.debug("ID {} is output and saved to disk instead of database. Path = " + outputFileLocation);
-							if (Files.exists(Paths.get(outputFileLocation))) {
-								result = new GZIPInputStream(new FileInputStream(outputFileLocation));
-							} else {
-								LOGGER.warn("Response not found on disk for id " + id + " at " + outputFileLocation);
+				if (responseFromDb != null) {
+					result = buildExecuteResponse(id);
+				} else if (outputFromDb != null) {
+					// TODO switch to ascii stream
+					// result = rs.getAsciiStream(SELECTION_STRING_RESPONSE_COLUMN_INDEX);
+					String inDbContent = outputFromDb.getContent();
+					String location = outputFromDb.getLocation();
+					if (inDbContent != null) {
+						result = new ByteArrayInputStream(inDbContent.getBytes());
+					} else if (location != null) {
+						LOGGER.debug("ID {} is output and saved to disk instead of database. Path = " + location);
+						if (Files.exists(Paths.get(location))) {
+							try {
+								result = new GZIPInputStream(new FileInputStream(location));
+							} catch (IOException e) {
+								String msg = "Problem reading file";
+								LOGGER.warn(msg + " at " + location);
+								throw new RuntimeException(msg, e);
 							}
-						} catch (FileNotFoundException ex) {
-							LOGGER.warn("Response not found on disk for id " + id, ex);
-						} catch (IOException ex) {
-							LOGGER.warn("Error processing response for id " + id, ex);
+						} else {
+							String msg = "Response not found on disk for id " + id;
+							LOGGER.warn(msg + " at " + location);
+							throw new RuntimeException(msg);
 						}
+					} else {
+						throw new RuntimeException("No content to return");
 					}
-				} else {
-					LOGGER.warn("response found but returned null");
 				}
-
 			} else {
 				LOGGER.warn("tried to look up response for null id, returned null");
 			}
@@ -762,18 +788,9 @@ public class PostgresDatabase extends AbstractDatabase {
 		throw new UnsupportedOperationException("This is only supported in FlatFileDatabase");
 	}
 
-	/**
-	 * TODO fix this to clean up files and do whatever in database needs doing
-	 */
 	private class WipeTimerTask extends TimerTask {
 
 		private final long thresholdMillis;
-		private static final String DELETE_STATEMENT = "DELETE FROM RESULTS WHERE RESULTS.REQUEST_ID = ANY ( ? ) AND RESULTS.REQUESTS_ID NOT LIKE 'REQ_%';";aa //TODO wipe from response & output table?
-		private static final int DELETE_STATEMENT_LIST_PARAM_INDEX = 1;
-		private static final String LOOKUP_STATEMENT = "SELECT * FROM "
-				+ "(SELECT REQUEST_ID, EXTRACT(EPOCH FROM REQUEST_DATE) * 1000 AS TIMESTAMP FROM RESULTS) items WHERE TIMESTAMP < ?";
-		private static final int LOOKUP_STATEMENT_TIMESTAMP_PARAM_INDEX = 1;
-		private static final int LOOKUP_STATEMENT_REQUEST_ID_COLUMN_INDEX = 1;
 		private final String databaseName = getDatabaseName();
 
 		WipeTimerTask(long thresholdMillis) {
@@ -798,42 +815,33 @@ public class PostgresDatabase extends AbstractDatabase {
 
 		private int wipe() throws SQLException, IOException {
 			LOGGER.debug(databaseName + " Postgres wiper, checking for records older than {} ms", thresholdMillis);
-			int deletedRecordsCount = 0;
-			List<String> oldRecords = findOldRecords();
-			if (!SAVE_RESULTS_TO_DB) {
-				for (String recordId : oldRecords) {
-					if (recordId.toLowerCase(Locale.US).contains("output")) {
-						Files.deleteIfExists(Paths.get(BASE_DIRECTORY.toString(), recordId));
-					}
+			int deletedFileCount = 0;
+			List<String> locations = findOldRecords();
+			for (String location : locations) {
+				boolean deleted = Files.deleteIfExists(Paths.get(location));
+				if (deleted) {
+					deletedFileCount++;
 				}
 			}
-			if (!oldRecords.isEmpty()) {
-				deletedRecordsCount = deleteRecords(oldRecords);
-			}
-			return deletedRecordsCount;
-		}
-
-		private int deleteRecords(List<String> recordIds) throws SQLException {
-			int deletedRecordsCount;
-			try (Connection connection = connectionHandler.getConnection(); PreparedStatement deleteStatement = connection.prepareStatement(DELETE_STATEMENT)) {
-				deleteStatement.setArray(DELETE_STATEMENT_LIST_PARAM_INDEX, connection.createArrayOf("varchar", recordIds.toArray()));
-				deletedRecordsCount = deleteStatement.executeUpdate();
-			}
-			return deletedRecordsCount;
+			return deletedFileCount;
 		}
 
 		private List<String> findOldRecords() throws SQLException {
-			List<String> matchingRecords = new ArrayList<>();
-			try (Connection connection = connectionHandler.getConnection(); PreparedStatement lookupStatement = connection.prepareStatement(LOOKUP_STATEMENT)) {
+			List<String> locations = new ArrayList<>();
+			try (Connection connection = getConnection(); 
+					PreparedStatement lookupStatement = connection.prepareStatement(SELECT_OLD_OUTPUT_STATEMENT)) {
 				long ageMillis = System.currentTimeMillis() - thresholdMillis;
-				lookupStatement.setLong(LOOKUP_STATEMENT_TIMESTAMP_PARAM_INDEX, ageMillis);
+				lookupStatement.setLong(1, ageMillis);
 				try (ResultSet rs = lookupStatement.executeQuery()) {
 					while (rs.next()) {
-						matchingRecords.add(rs.getString(LOOKUP_STATEMENT_REQUEST_ID_COLUMN_INDEX));
+						WpsOutput output = constructOutputFromRs(rs);
+						if (output.getLocation() != null) {
+							locations.add(output.getLocation());
+						}
 					}
 				}
 			}
-			return matchingRecords;
+			return locations;
 		}
 	}
 }

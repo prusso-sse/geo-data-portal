@@ -97,7 +97,7 @@ public class RetrieveResultServlet extends HttpServlet {
 				String suffix = MIMEUtil.getSuffixFromMIMEType(mimeType).toLowerCase();
 
 				// if attachment parameter unset, default to true TODO fix this
-				boolean useAttachment = (StringUtils.isEmpty(attachment) || Boolean.parseBoolean(attachment));
+				boolean useAttachment = (StringUtils.isEmpty(attachment) && !"xml".equals(suffix) || Boolean.parseBoolean(attachment));
 				if (useAttachment) {
 					String attachmentName = (new StringBuilder(id)).append('.').append(suffix).toString();
 
