@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ncml:netcdf xmlns:ncml="http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2" location="file:/Users/prusso/Development/Projects/GDP/examples/OPeNDAP/ssebopeta_OPeNDAP_URI.nc">
+  <ncml:dimension name="time" length="180" />
+  <ncml:dimension name="x" length="783" />
+  <ncml:dimension name="y" length="449" />
+  <ncml:attribute name="Conventions" value="CF-1.5" />
+  <ncml:attribute name="Metadata_Conventions" value="Unidata Dataset Discovery v1.0" />
+  <ncml:attribute name="title" value="Conterminous U.S. actual evapotranspiration data" />
+  <ncml:attribute name="summary" value="Actual ET (ETa) is produced using the operational Simplified Surface Energy Balance (SSEBop) model (Senay and others, 2013) for the period 2000 to present. The SSEBop setup is based on the Simplified Surface Energy Balance (SSEB) approach (Senay and others, 2007, 2011) with unique parameterization for operational applications. It combines ET fractions generated from remotely sensed MODIS thermal imagery, acquired every 8 days, with reference ET using a thermal index approach. The unique feature of the SSEBop parameterization is that it uses pre-defined, seasonally dynamic, boundary conditions that are unique to each pixel for the hot/dry and cold/wet reference points." />
+  <ncml:attribute name="keywords" value="" />
+  <ncml:attribute name="keywords_vocabulary" value="GCMD Science Keywords" />
+  <ncml:attribute name="id" value="/pub/dcp/archive/bcca/..." />
+  <ncml:attribute name="naming_authority" value="gdo-dcp.ucllnl.org" />
+  <ncml:attribute name="cdm_data_type" value="Grid" />
+  <ncml:attribute name="date_created" value="February, 2013" />
+  <ncml:attribute name="date_modified" value="February, 2013" />
+  <ncml:attribute name="creator_name" value="Stefanie Bohms" />
+  <ncml:attribute name="creator_url" value="http://eros.usgs.gov/" />
+  <ncml:attribute name="creator_email" value="sbohms@usgs.gov" />
+  <ncml:attribute name="publisher_name" value="David Blodgett" />
+  <ncml:attribute name="publisher_url" value="http://cida.usgs.gov/" />
+  <ncml:attribute name="publisher_email" value="dblodgett@usgs.gov" />
+  <ncml:attribute name="institution" value="U.S. Geological Survey" />
+  <ncml:attribute name="date_issued" value="February, 2013" />
+  <ncml:attribute name="project" value="WaterSMART National Water Census" />
+  <ncml:attribute name="processing_level" value="Refer to documentation." />
+  <ncml:attribute name="acknowledgement" value="Senay, G.B., M. Budde, J.P. Verdin, and A.M. Melesse, 2007. A coupled remote sensing and simplified surface energy balance approach to estimate actual evapotranspiration from irrigated fields. Special issue: Remote sensing of natural resources and the environment. SENSORS, 1, 979-1000.  Senay, G.B., M. Budde, J.P. Verdin, 2011. Enhancing the Simplified Surface Energy Balance (SSEB) approach for estimating landscape ET: Validation with the METRIC model. Agricultural Water Management, 98: 606-618. Senay, G.B., S. Bohms, R. Singh, P.A. Gowda,  N.M. Velpuri, H. Alemu and J.P. Verdin, 2013. Operational evapotranspiration mapping using remote sensing and weather datasets: A new parameterization for the SSEB approach. Journal of American Water Resources Research. Accepted." />
+  <ncml:attribute name="contributors" value="Senay, G.B., S. Bohms, R. Singh, P.A. Gowda,  N.M. Velpuri, H. Alemu, J.P. Verdin,  M. Budde and A.M. Melesse." />
+  <ncml:attribute name="geospatial_lat_min" value="24" />
+  <ncml:attribute name="geospatial_lat_max" value="49.5" />
+  <ncml:attribute name="geospatial_lon_min" value="-126" />
+  <ncml:attribute name="geospatial_lon_max" value="-66.5" />
+  <ncml:attribute name="time_coverage_start" value="2007-06-16T12:00" />
+  <ncml:attribute name="time_coverage_end" value="2011-06-16T12:00" />
+  <ncml:attribute name="time_coverage_resolution" value="P1Y" />
+  <ncml:attribute name="license" value="Freely available" />
+  <ncml:variable name="lon" shape="x" type="double">
+    <ncml:attribute name="units" value="degrees_east" />
+    <ncml:attribute name="standard_name" value="longitude" />
+    <ncml:attribute name="_ChunkSizes" type="int" value="6612" />
+  </ncml:variable>
+  <ncml:variable name="lat" shape="y" type="double">
+    <ncml:attribute name="units" value="degrees_north" />
+    <ncml:attribute name="standard_name" value="latitude" />
+    <ncml:attribute name="_ChunkSizes" type="int" value="2835" />
+  </ncml:variable>
+  <ncml:variable name="crs" shape="" type="int">
+    <ncml:attribute name="grid_mapping_name" value="latitude_longitude" />
+    <ncml:attribute name="longitude_of_prime_meridian" type="double" value="0.0" />
+    <ncml:attribute name="semi_major_axis" type="double" value="6378137.0" />
+    <ncml:attribute name="inverse_flattening" type="double" value="298.257223563" />
+  </ncml:variable>
+  <ncml:variable name="time" shape="time" type="int">
+    <ncml:attribute name="_CoordinateAxisType" value="Time" />
+    <ncml:attribute name="long_name" value="Actual Evapotranspiration" />
+    <ncml:attribute name="units" value="calendar months since 2000-01-01 00:00" />
+    <ncml:attribute name="_ChunkSizes" type="int" value="180" />
+  </ncml:variable>
+  <ncml:variable name="et" shape="time y x" type="short">
+    <ncml:attribute name="grid_mapping" value="crs" />
+    <ncml:attribute name="coordinates" value="time lat lon" />
+    <ncml:attribute name="missing_value" type="short" value="9999" />
+    <ncml:attribute name="units" value="mm" />
+    <ncml:attribute name="_ChunkSizes" type="int" value="1 300 600" />
+  </ncml:variable>
+</ncml:netcdf>
