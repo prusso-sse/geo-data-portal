@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ncml:netcdf xmlns:ncml="http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2" location="file:/Users/prusso/Development/Projects/GDP/examples/OPeNDAP/daymet_OPeNDAP_URI.nc">
+  <ncml:dimension name="time" length="366" />
+  <ncml:dimension name="x" length="612" />
+  <ncml:dimension name="y" length="467" />
+  <ncml:attribute name="start_year" type="short" value="1980" />
+  <ncml:attribute name="source" value="Daymet Software Version 2.0" />
+  <ncml:attribute name="Version_software" value="Daymet Software Version 2.0" />
+  <ncml:attribute name="Version_data" value="Daymet Data Version 2.1" />
+  <ncml:attribute name="Conventions" value="CF-1.4" />
+  <ncml:attribute name="citation" value="Please see http://daymet.ornl.gov/ for current Daymet data citation information" />
+  <ncml:attribute name="references" value="Please see http://daymet.ornl.gov/ for current information on Daymet references" />
+  <ncml:attribute name="institution" value="Oak Ridge National Laboratory Distributed Active Archive Center (ORNL DAAC)" />
+  <ncml:attribute name="title" value="Daymet: Daily Surface Weather Data on a 1-km Grid for North America, Version 2 (aggregated)" />
+  <ncml:attribute name="end_year" type="short" value="2013" />
+  <ncml:variable name="lambert_conformal_conic" shape="" type="short">
+    <ncml:attribute name="grid_mapping_name" value="lambert_conformal_conic" />
+    <ncml:attribute name="longitude_of_central_meridian" type="double" value="-100.0" />
+    <ncml:attribute name="latitude_of_projection_origin" type="double" value="42.5" />
+    <ncml:attribute name="false_easting" type="double" value="0.0" />
+    <ncml:attribute name="false_northing" type="double" value="0.0" />
+    <ncml:attribute name="standard_parallel" type="double" value="25.0 60.0" />
+    <ncml:attribute name="longitude_of_prime_meridian" type="double" value="0.0" />
+    <ncml:attribute name="semi_major_axis" type="double" value="6378137.0" />
+    <ncml:attribute name="inverse_flattening" type="double" value="298.257223563" />
+  </ncml:variable>
+  <ncml:variable name="x" shape="x" type="float">
+    <ncml:attribute name="units" value="m" />
+    <ncml:attribute name="long_name" value="x coordinate of projection" />
+    <ncml:attribute name="standard_name" value="projection_x_coordinate" />
+    <ncml:attribute name="_ChunkSize" type="int" value="5268" />
+  </ncml:variable>
+  <ncml:variable name="y" shape="y" type="float">
+    <ncml:attribute name="units" value="m" />
+    <ncml:attribute name="long_name" value="y coordinate of projection" />
+    <ncml:attribute name="standard_name" value="projection_y_coordinate" />
+    <ncml:attribute name="_ChunkSize" type="int" value="4823" />
+  </ncml:variable>
+  <ncml:variable name="time" shape="time" type="float">
+    <ncml:attribute name="long_name" value="time" />
+    <ncml:attribute name="calendar" value="standard" />
+    <ncml:attribute name="units" value="days since 1980-01-01 00:00:00 UTC" />
+    <ncml:attribute name="bounds" value="time_bnds" />
+    <ncml:attribute name="_ChunkSize" type="int" value="1" />
+    <ncml:attribute name="add_offset" type="double" value="-0.5" />
+  </ncml:variable>
+  <ncml:variable name="prcp" shape="time y x" type="float">
+    <ncml:attribute name="cell_methods" value="area: mean time: sum" />
+    <ncml:attribute name="coordinates" value="lat lon" />
+    <ncml:attribute name="grid_mapping" value="lambert_conformal_conic" />
+    <ncml:attribute name="long_name" value="daily total precipitation" />
+    <ncml:attribute name="missing_value" type="float" value="-9999.0" />
+    <ncml:attribute name="units" value="mm/day" />
+    <ncml:attribute name="valid_range" type="float" value="0.0 200.0" />
+    <ncml:attribute name="_FillValue" type="float" value="-9999.0" />
+    <ncml:attribute name="_ChunkSize" type="int" value="1 496 542" />
+  </ncml:variable>
+  <ncml:variable name="srad" shape="time y x" type="float">
+    <ncml:attribute name="cell_methods" value="area: mean time: mean" />
+    <ncml:attribute name="coordinates" value="lat lon" />
+    <ncml:attribute name="grid_mapping" value="lambert_conformal_conic" />
+    <ncml:attribute name="long_name" value="daylight average incident shortwave radiation" />
+    <ncml:attribute name="missing_value" type="float" value="-9999.0" />
+    <ncml:attribute name="units" value="W/m2" />
+    <ncml:attribute name="valid_range" type="float" value="0.0 800.0" />
+    <ncml:attribute name="_FillValue" type="float" value="-9999.0" />
+    <ncml:attribute name="_ChunkSize" type="int" value="1 496 542" />
+  </ncml:variable>
+  <ncml:variable name="swe" shape="time y x" type="float">
+    <ncml:attribute name="cell_methods" value="area: mean time: mean" />
+    <ncml:attribute name="coordinates" value="lat lon" />
+    <ncml:attribute name="grid_mapping" value="lambert_conformal_conic" />
+    <ncml:attribute name="long_name" value="snow water equivalent" />
+    <ncml:attribute name="missing_value" type="float" value="-9999.0" />
+    <ncml:attribute name="units" value="kg/m2" />
+    <ncml:attribute name="valid_range" type="float" value="0.0 1000.0" />
+    <ncml:attribute name="_FillValue" type="float" value="-9999.0" />
+    <ncml:attribute name="_ChunkSize" type="int" value="1 496 542" />
+  </ncml:variable>
+</ncml:netcdf>

@@ -128,6 +128,9 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
              */
             resultSizeHeuristic.setGridDataset(gridDataSet);
             if(!resultSizeHeuristic.validated()) {
+            	/*
+            	 * Create OPeNDAP URI and place in response message
+            	 */
             	log.error(resultSizeHeuristic.getError());
             	addError(resultSizeHeuristic.getError());
             	return;
@@ -157,6 +160,9 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
             addError("Error attempting CRS transform: " + e.getMessage());
         } catch (AlgorithmHeuristicException e) {
             log.error("Heuristic Error: ", e);
+        	/*
+        	 * Create OPeNDAP URI and place in response message
+        	 */
             addError("Heuristic Error: " + e.getMessage());
         } catch (Exception e) {
             log.error("General Error: ", e);

@@ -1,16 +1,17 @@
-package gov.usgs.cida.gdp.wps.algorithm.heuristic.exception;
+package gov.usgs.cida.gdp.utilities.exception;
 
-public class AlgorithmHeuristicException extends Exception {
-    private static final long serialVersionUID = 1467607385043208978L;
 
-    private final AlgorithmHeuristicExceptionID exceptionid;    // uniquely generated id for this exception
-    private final String classname;                             // the name of the class that threw the exception
-    private final String method;                                 // the name of the method that threw the exception
-    private final String message;                                 // a detailed message
-    private AlgorithmHeuristicException previous = null;        // the exception which was caught
-    private String delimeter = "\n";                             // line separator
+public class OPeNDAPUtilException extends Exception {
+    private static final long serialVersionUID = 4518234967865565491L;
+
+    private final OPeNDAPUtilExceptionID exceptionid;    // uniquely generated id for this exception
+    private final String classname;                     // the name of the class that threw the exception
+    private final String method;                         // the name of the method that threw the exception
+    private final String message;                         // a detailed message
+    private OPeNDAPUtilException previous = null;        // the exception which was caught
+    private String delimeter = "\n";                     // line separator
     
-    public AlgorithmHeuristicException(final AlgorithmHeuristicExceptionID id, final String classname, final String method, final String message) {
+    public OPeNDAPUtilException(final OPeNDAPUtilExceptionID id, final String classname, final String method, final String message) {
         this.exceptionid    = id;
         this.classname      = classname;
         this.method            = method;
@@ -18,7 +19,7 @@ public class AlgorithmHeuristicException extends Exception {
         this.previous          = null;
     }
 
-    public AlgorithmHeuristicException(final AlgorithmHeuristicExceptionID id, final String classname, final String method, final String message, final AlgorithmHeuristicException previous) {
+    public OPeNDAPUtilException(final OPeNDAPUtilExceptionID id, final String classname, final String method, final String message, final OPeNDAPUtilException previous) {
         this.exceptionid    = id;
         this.classname      = classname;
         this.method            = method;
@@ -33,8 +34,8 @@ public class AlgorithmHeuristicException extends Exception {
     public String traceBack(final String sep) {
         this.delimeter = sep;
         int level = 0;
-        AlgorithmHeuristicException e = this;
-        final StringBuffer text = new StringBuffer(line("AlgorithmHeuristicException Trace: Calling sequence (top to bottom)"));
+        OPeNDAPUtilException e = this;
+        final StringBuffer text = new StringBuffer(line("OPeNDAPUtilException Trace: Calling sequence (top to bottom)"));
         while (e != null) {
             level++;
             text.append(this.delimeter);
@@ -61,7 +62,7 @@ public class AlgorithmHeuristicException extends Exception {
         return this.traceBack();
     }
 
-    public AlgorithmHeuristicExceptionID getExceptionid() {
+    public OPeNDAPUtilExceptionID getExceptionid() {
         return this.exceptionid;
     }
 
@@ -73,7 +74,7 @@ public class AlgorithmHeuristicException extends Exception {
         return this.method;
     }
 
-    public AlgorithmHeuristicException getPrevious() {
+    public OPeNDAPUtilException getPrevious() {
         return this.previous;
     }
 
