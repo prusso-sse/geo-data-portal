@@ -197,7 +197,6 @@ public class OPeNDAPUtils {
          * variable and determine order 5. Include variable with dimensions in
          * URI string
          */
-        int size = gridVariableList.size();
         List<String> attributeVariablesUsed = new ArrayList<String>();
         List<String> uriParameters = new ArrayList<String>();
         for (int i = 0; i < gridVariableList.size(); i++) {
