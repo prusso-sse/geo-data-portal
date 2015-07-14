@@ -66,7 +66,7 @@ public class OPeNDAPUtils {
     }
 
     public static final int RANGE_STRIDE = 1;
-    public static final String PARAMETER_DECLARITOR = "?";
+    public static final String PARAMETER_DECLARATOR = "?";
     public static final String RANGE_DELIMETER = ":";
     public static final String URI_DELIMETER = ",";
     public static final String OPENDAP_PROTO = "dods:";
@@ -110,7 +110,7 @@ public class OPeNDAPUtils {
     public static String generateOpenDapURL(String datasetURI, List<String> requestedVariableList,
             List<?> gridVariableList, Range timeRange, Range yRange, Range xRange,
             OPeNDAPContentType contentType) throws OPeNDAPUtilException {
-        StringBuffer uriString = new StringBuffer();
+        StringBuilder uriString = new StringBuilder();
 
         /*
          * Need Data Set URI (variable datasetURI) Example:
@@ -143,7 +143,7 @@ public class OPeNDAPUtils {
         uriString.append(OPeNDAPContentType.getContentTypeString(contentType));
 
         // Append parameter declarator
-        uriString.append(PARAMETER_DECLARITOR);
+        uriString.append(PARAMETER_DECLARATOR);
 
         /*
          * Create longitude range
@@ -198,24 +198,22 @@ public class OPeNDAPUtils {
          * URI string
          */
         int size = gridVariableList.size();
-        int lastIndex = size - 1;
         List<String> attributeVariablesUsed = new ArrayList<String>();
+        List<String> uriParameters = new ArrayList<String>();
         for (int i = 0; i < gridVariableList.size(); i++) {
-            boolean variableUsed = false;
-
             Object variable = gridVariableList.get(i);
 
             /*
              * First check to see if this is indeed a VariableDS object.
              */
             if (variable instanceof VariableDS) {
-                String varName = ((VariableDS) variable).getShortName();
+                StringBuilder varNameBuilder = new StringBuilder(((VariableDS) variable).getShortName());
 
                 /*
                  * Now lets see if this variable name exists in the
                  * requestedVariableList
                  */
-                if (requestedVariableList.contains(varName)) {
+                if (requestedVariableList.contains(varNameBuilder.toString())) {
                     /*
                      * First, we have a variable that has been requested in the
                      * original post. Lets see if it has any dependent
@@ -240,19 +238,15 @@ public class OPeNDAPUtils {
                                      * attribute value. If we have, continue. If
                                      * not, we need to add it to our URI.
                                      */
-                                    if (!attributeVariablesUsed.contains(stringValue)) {
+                                    if ((!attributeVariablesUsed.contains(stringValue)) && (!stringValue.isEmpty())) {
                                         attributeVariablesUsed.add(stringValue);
-                                        uriString.append(stringValue + URI_DELIMETER);
+                                        uriParameters.add(stringValue);
                                     }
                                 }
                             }
                         }
                     }
 
-                    /*
-                     * Append the main variable
-                     */
-                    uriString.append(varName);
 
                     /*
                      * We now need to figure out the order of the dimensions. As
@@ -270,7 +264,7 @@ public class OPeNDAPUtils {
                          */
                         String dimensionName = dimension.getShortName();
                         if (dimensionRawMapping.containsKey(dimensionName)) {
-                            uriString.append(dimensionRawMapping.get(dimensionName));
+                            varNameBuilder.append(dimensionRawMapping.get(dimensionName));
                         } else {
                             /*
                              * We got an error... this variable's dimension does
@@ -281,36 +275,30 @@ public class OPeNDAPUtils {
                                     "] has no corresponding dimension in mapping [" + dimensionRawMapping + "]");
                         }
                     }
-
-                    variableUsed = true;
-                }
-            }
-
-            /*
-             * Lets see if we need to append a delimeter
-             */
-            if (variableUsed) {
-                if (i < lastIndex) {
-                    uriString.append(URI_DELIMETER);
+                    
+                    /*
+                     * Append the main variable
+                     */
+                    if(varNameBuilder.length() > 0) {
+                        uriParameters.add(varNameBuilder.toString());
+                    }
                 }
             }
         }
-
+        
         /*
-         * We have an issue where we might have appended a URI_DELIMETER to the
-         * URI when it was the last variable to be used but NOT the last
-         * variable in the list we iterate over. This means we could have a
-         * hanging delimeter. As far as I can tell, there really is no good way
-         * to deal with it programatically as we don't know if we will use all
-         * the variables in the variable list or not. Lets just check here and
-         * remove it.
+         * Lets add our parameter delimeters
          */
-        String uri = uriString.toString();
-        if (uri.indexOf(URI_DELIMETER, (uri.length() - 1)) != -1) {
-            uri = uri.substring(0, uri.length() - 1);
+        for(int i = 0; i < uriParameters.size(); i++) {
+            String param = uriParameters.get(i);
+            uriString.append(param);
+            
+            if((i + 1) < uriParameters.size()) {
+                uriString.append(URI_DELIMETER);
+            }
         }
 
-        return uri;
+        return uriString.toString();
     }
 
     public static Map<String, String> getDimensionRawNameRangeMapping(List<?> gridVariableList,
