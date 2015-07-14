@@ -116,7 +116,7 @@ public class WpsResponse {
 	}
 	
 	private Integer parsePercentComplete(StatusType type) {
-		Integer percentage = null;
+		Integer percentage = 0;
 		ProcessStartedType processPaused = type.getProcessPaused();
 		ProcessStartedType processStarted = type.getProcessStarted();
 		if (processPaused != null) {

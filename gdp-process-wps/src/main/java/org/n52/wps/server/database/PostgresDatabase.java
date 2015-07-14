@@ -50,6 +50,8 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 import net.opengis.ows.x11.LanguageStringType;
 import net.opengis.wps.x100.ExecuteResponseDocument;
 import net.opengis.wps.x100.OutputDataType;
@@ -58,13 +60,18 @@ import net.opengis.wps.x100.ProcessBriefType;
 import net.opengis.wps.x100.ProcessFailedType;
 import net.opengis.wps.x100.ProcessStartedType;
 import net.opengis.wps.x100.StatusType;
+import org.apache.xmlbeans.XmlCursor;
+import org.n52.wps.server.CapabilitiesConfiguration;
 import org.n52.wps.server.RepositoryManager;
+import org.n52.wps.server.WebProcessingService;
 
 import org.n52.wps.server.database.domain.WpsInput;
 import org.n52.wps.server.database.domain.WpsOutput;
 import org.n52.wps.server.database.domain.WpsOutputDefinition;
 import org.n52.wps.server.database.domain.WpsResponse;
 import org.n52.wps.server.database.domain.WpsStatus;
+import org.n52.wps.server.request.Request;
+import org.n52.wps.util.XMLBeansHelper;
 
 
 /**
@@ -177,8 +184,9 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String SELECT_RESPONSE_STATEMENT = "SELECT * FROM " + RESPONSE_TABLE_NAME + " WHERE REQUEST_ID = ?";
 	private static final String SELECT_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + " WHERE OUTPUT_ID = ?";
 	
-	private static final String SELECT_ALL_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + " WHERE " 
-			+ OUTPUT_TABLE_NAME + ".RESPONSE_ID=" + RESPONSE_TABLE_NAME + ".ID AND " + RESPONSE_TABLE_NAME + ".REQUEST_ID=?";
+	private static final String SELECT_ALL_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + ", " + RESPONSE_TABLE_NAME
+			+ " WHERE " + OUTPUT_TABLE_NAME + ".RESPONSE_ID=" + RESPONSE_TABLE_NAME + ".ID AND "
+			+ RESPONSE_TABLE_NAME + ".REQUEST_ID=?";
 	private static final String SELECT_OLD_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + " WHERE " +
 			"(SELECT EXTRACT(EPOCH FROM INSERTED) * 1000 AS TIMESTAMP FROM " + OUTPUT_TABLE_NAME + ") outputs WHERE TIMESTAMP < ?";
 	
@@ -355,8 +363,8 @@ public class PostgresDatabase extends AbstractDatabase {
 		for (WpsOutputDefinition output : outputs) {
 			preparedStatement.setString(1, output.getId());
 			preparedStatement.setString(2, output.getWpsRequestId());
-			preparedStatement.setString(3, output.getOutputIdentifier());
-			preparedStatement.setString(3, output.getOutputIdentifier());
+			preparedStatement.setString(3, output.getMimeType());
+			preparedStatement.setString(4, output.getOutputIdentifier());
 			preparedStatement.addBatch();
 		}
 		preparedStatement.executeBatch();
@@ -620,11 +628,12 @@ public class PostgresDatabase extends AbstractDatabase {
 		WpsRequest request = readWpsRequestFromDB(id);
 		List<WpsOutput> outputList = readOutputsByRequestFromDB(id);
 		
-		ExecuteResponseDocument.ExecuteResponse response = ExecuteResponseDocument.Factory.newInstance()
-				.addNewExecuteResponse();
+		ExecuteResponseDocument doc = ExecuteResponseDocument.Factory.newInstance();
+		ExecuteResponseDocument.ExecuteResponse response = doc.addNewExecuteResponse();
+		
+		addResponseHeaders(doc);
 		
 		ProcessBriefType process = response.addNewProcess();
-		process.setProcessVersion("1.0.0"); // TODO include versioning in database
 		process.addNewIdentifier().setStringValue(responseObj.getWpsAlgoIdentifer());
 		LanguageStringType title = RepositoryManager.getInstance().getProcessDescription(responseObj.getWpsAlgoIdentifer()).getTitle();
 		process.addNewTitle().setStringValue(title.getStringValue());
@@ -674,7 +683,18 @@ public class PostgresDatabase extends AbstractDatabase {
 				reference.setHref(generateRetrieveResultURL(output.getOutputId()));
 			}
 		}
-		return response.newInputStream();
+		return doc.newInputStream(XMLBeansHelper.getXmlOptions());
+	}
+	
+	private void addResponseHeaders(ExecuteResponseDocument doc) {
+		XmlCursor c = doc.newCursor();
+		c.toFirstChild();
+		c.toLastAttribute();
+		c.setAttributeText(new QName(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, "schemaLocation"), "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsExecute_response.xsd");
+		doc.getExecuteResponse().setServiceInstance(CapabilitiesConfiguration.ENDPOINT_URL+"?REQUEST=GetCapabilities&SERVICE=WPS");
+		doc.getExecuteResponse().setLang(WebProcessingService.DEFAULT_LANGUAGE);
+		doc.getExecuteResponse().setService("WPS");
+		doc.getExecuteResponse().setVersion(Request.SUPPORTED_VERSION);
 	}
 
 	/**
@@ -704,7 +724,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			LOGGER.error(MessageFormat.format("Failed to update data in database with  id of:{0}", id), ex);
 		}
 	}
-
+	
 	/**
 	 * TODO stop pointing at old table.
 	 * @param id

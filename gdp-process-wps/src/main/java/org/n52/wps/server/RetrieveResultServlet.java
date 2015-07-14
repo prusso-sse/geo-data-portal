@@ -83,9 +83,8 @@ public class RetrieveResultServlet extends HttpServlet {
 
 		if (StringUtils.isEmpty(id)) {
 			errorResponse("id parameter missing", response);
-			//this is an output request
+		} else {
 			inputStream = db.lookupResponse(id);
-			//read input stream looking for output?
 			mimeType = db.getMimeTypeForStoreResponse(id);
 			contentLength = db.getContentLengthForStoreResponse(id);
 		}
