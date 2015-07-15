@@ -38,6 +38,11 @@ public class WpsResponse {
 		status = WpsStatus.lookup(executeStatus);
 		percentComplete = parsePercentComplete(executeStatus);
 		creationTime = new DateTime(executeStatus.getCreationTime());
+//		TODO put this in database
+//		ProcessFailedType processFailed = executeResponseDoc.getExecuteResponse().getStatus().getProcessFailed();
+//		if (processFailed != null) {
+//			processFailed.getExceptionReport()
+//		}
 	}
 	
 	public WpsResponse(String inId, String inWpsRequestId, String inWpsAlgoIdentifer, WpsStatus inStatus, Integer inPercentComplete, DateTime inCreationTime) {

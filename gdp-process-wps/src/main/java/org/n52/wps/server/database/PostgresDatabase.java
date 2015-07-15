@@ -60,6 +60,7 @@ import net.opengis.wps.x100.ProcessBriefType;
 import net.opengis.wps.x100.ProcessFailedType;
 import net.opengis.wps.x100.ProcessStartedType;
 import net.opengis.wps.x100.StatusType;
+import org.apache.commons.io.input.CountingInputStream;
 import org.apache.xmlbeans.XmlCursor;
 import org.n52.wps.server.CapabilitiesConfiguration;
 import org.n52.wps.server.RepositoryManager;
@@ -425,8 +426,8 @@ public class PostgresDatabase extends AbstractDatabase {
 	private void persistOutput(WpsOutput output, PreparedStatement insertOutputStatement) throws SQLException {
 		if (output != null) {
 			insertOutputStatement.setString(1, output.getId());
-			insertOutputStatement.setString(2, output.getWpsResponseId());
-			insertOutputStatement.setString(3, output.getOutputId());
+			insertOutputStatement.setString(2, output.getOutputId());
+			insertOutputStatement.setString(3, output.getWpsResponseId());
 			//NOTE either content or location is populated, based on type of output (inline or not)
 			String content = output.getContent();
 			insertOutputStatement.setString(4, content);
@@ -448,14 +449,16 @@ public class PostgresDatabase extends AbstractDatabase {
 		// For now id will just be requestId + wps identifier which is unique as long as requests can only run once
 		String outputId = requestid + outputIdentifier;
 		WpsOutput output = new WpsOutput(wpsResponseId, outputId, mimeType);
+		
 		if (SAVE_RESULTS_TO_DB) {
 			output.setInline(stream);
 		} else{
 			try {
 				// The result contents won't be saved to the database, only a pointer to the file system. I am therefore
 				// going to GZip the data to save space
-				String referenceLocation = writeInputStreamToDisk(requestid, stream, true);
-				output.setLocation(referenceLocation);
+				FileReferenceInfo info = writeInputStreamToDisk(requestid, stream, true);
+				output.setLocation(info.getFileLocation());
+				output.setResponseLength(info.getFileSize());
 			} catch (IOException ex) {
 				LOGGER.error("Failed to write output data to disk", ex);
 			}
@@ -474,10 +477,11 @@ public class PostgresDatabase extends AbstractDatabase {
 	 * @param filename base filename
 	 * @param data String of data to write to disk, compressed using gzip
 	 * @param compress true to GZip results
-	 * @return String of the file URI pointing where the data was written
-	 * @throws Exception
+	 * @return FileReferenceInfo of the file URI pointing where the data was written and length of data
+	 * @throws IOException
 	 */
-	private String writeInputStreamToDisk(String filename, InputStream data, boolean compress) throws IOException {
+	private FileReferenceInfo writeInputStreamToDisk(String filename, InputStream data, boolean compress) throws IOException {
+		FileReferenceInfo info = null;
 		Path filePath = BASE_DIRECTORY.resolve(Joiner.on(".").join(filename, SUFFIX_GZIP));
 		Files.deleteIfExists(filePath);
 		Path createdFilePath = Files.createFile(filePath);
@@ -488,9 +492,11 @@ public class PostgresDatabase extends AbstractDatabase {
 			os = new GZIPOutputStream(os);
 		}
 
-		IOUtils.copyLarge(data, os);
+		long bytesCopied = IOUtils.copyLarge(data, os);
 		IOUtils.closeQuietly(os);
-		return createdFilePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, "");
+		info = new FileReferenceInfo(createdFilePath.toUri().toString().replaceFirst(FILE_URI_PREFIX, ""), bytesCopied);
+		
+		return info;
 	}
 	
 	private WpsRequest readWpsRequestFromDB(String requestId) {

@@ -49,7 +49,7 @@ public class WpsResponseTest {
 		
 		assertThat("process outputs are empty", wpsResponse.getOutputs(), is(empty()));
 		assertThat("process endtime is null", wpsResponse.getEndTime(), is(nullValue()));
-		assertThat("process percent complete is null", wpsResponse.getPercentComplete(), is(nullValue()));
+		assertThat("process percent complete is 0", wpsResponse.getPercentComplete(), is(equalTo(0)));
 	}
 	
 	@Test
@@ -66,6 +66,6 @@ public class WpsResponseTest {
 		
 		assertThat("process outputs are empty", wpsResponse.getOutputs().size(), is(1));
 		assertThat("process endtime is null", wpsResponse.getEndTime(), is(nullValue()));
-		assertThat("process percent complete is null", wpsResponse.getPercentComplete(), is(nullValue()));
+		assertThat("process percent complete is 0", wpsResponse.getPercentComplete(), is(equalTo(0)));
 	}
 }
