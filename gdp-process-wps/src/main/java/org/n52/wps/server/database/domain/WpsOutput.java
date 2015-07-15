@@ -31,7 +31,7 @@ public class WpsOutput {
 
 	public WpsOutput(String inWpsResponseId, String inOutputId, String inMimeType) {
 		id = UUID.randomUUID().toString();
-		outputId = inWpsResponseId + "" + inOutputId;
+		outputId = inOutputId;
 		wpsResponseId = inWpsResponseId;
 		mimeType = inMimeType;
 		isReference = true;

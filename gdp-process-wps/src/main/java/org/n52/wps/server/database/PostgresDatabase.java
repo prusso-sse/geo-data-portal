@@ -302,7 +302,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			insertWpsRequest(wpsReq);
 		} else{
 			//TODO eventually we may need to support KVP (non xml) execution
-			String msg = "PostgreseDatabase does not support persisting non xml";
+			String msg = "Postgres Database does not support persisting non xml";
 			LOGGER.error(msg);
 			throw new UnsupportedOperationException(msg);
 		}
