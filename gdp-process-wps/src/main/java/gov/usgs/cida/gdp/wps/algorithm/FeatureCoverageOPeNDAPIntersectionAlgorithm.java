@@ -1,13 +1,17 @@
 package gov.usgs.cida.gdp.wps.algorithm;
 
 import gov.usgs.cida.gdp.constants.AppConstant;
+import gov.usgs.cida.gdp.wps.algorithm.heuristic.ResultSizeAlgorithmHeuristic;
+import gov.usgs.cida.gdp.wps.algorithm.heuristic.exception.AlgorithmHeuristicException;
 import gov.usgs.cida.gdp.wps.binding.GMLStreamingFeatureCollectionBinding;
 import gov.usgs.cida.gdp.wps.binding.NetCDFFileBinding;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
+
 import org.geotools.feature.FeatureCollection;
 import org.n52.wps.algorithm.annotation.Algorithm;
 import org.n52.wps.algorithm.annotation.ComplexDataInput;
@@ -19,6 +23,7 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import ucar.ma2.InvalidRangeException;
 import ucar.nc2.dt.GridDataset;
 
@@ -34,7 +39,9 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
     
     private static final Logger log = LoggerFactory.getLogger(FeatureCoverageOPeNDAPIntersectionAlgorithm.class);
 
-    private FeatureCollection featureCollection;
+    private ResultSizeAlgorithmHeuristic resultSizeHeuristic = new ResultSizeAlgorithmHeuristic();
+    
+    private FeatureCollection<?, ?> featureCollection;
     private URI datasetURI;
     private List<String> datasetId;
     private boolean requireFullCoverage;
@@ -48,8 +55,9 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
             title=GDPAlgorithmConstants.FEATURE_COLLECTION_TITLE,
             abstrakt=GDPAlgorithmConstants.FEATURE_COLLECTION_ABSTRACT,
             binding=GMLStreamingFeatureCollectionBinding.class)
-    public void setFeatureCollection(FeatureCollection featureCollection) {
+    public void setFeatureCollection(FeatureCollection<?, ?> featureCollection) {
         this.featureCollection = featureCollection;
+        this.resultSizeHeuristic.setFeatureCollection(featureCollection);
     }
 
     @LiteralDataInput(
@@ -67,6 +75,7 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
             maxOccurs= Integer.MAX_VALUE)
     public void setDatasetId(List<String> datasetId) {
         this.datasetId = datasetId;
+        this.resultSizeHeuristic.setGridVariableList(datasetId);
     }
     
     @LiteralDataInput(
@@ -76,6 +85,7 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
             defaultValue="true")
     public void setRequireFullCoverage(boolean requireFullCoverage) {
         this.requireFullCoverage = requireFullCoverage;
+        this.resultSizeHeuristic.setRequireFullCoverage(requireFullCoverage);
     }
     
     @LiteralDataInput(
@@ -85,6 +95,7 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
             minOccurs=0)
     public void setTimeStart(Date timeStart) {
         this.timeStart = timeStart;
+        this.resultSizeHeuristic.setDateTimeStart(timeStart);
     }
 
     @LiteralDataInput(
@@ -94,6 +105,7 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
         minOccurs=0)
     public void setTimeEnd(Date timeEnd) {
         this.timeEnd = timeEnd;
+        this.resultSizeHeuristic.setDateTimeEnd(timeEnd);
     }
 
     @ComplexDataOutput(identifier="OUTPUT",
@@ -109,6 +121,21 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
         GridDataset gridDataSet = null;
         try { 
             gridDataSet = GDPAlgorithmUtil.generateGridDataSet(datasetURI);
+            
+            /*
+             * Lets run our size heuristic to see if we should go ahead and process
+             * this request.
+             */
+            resultSizeHeuristic.setGridDataset(gridDataSet);
+            if(!resultSizeHeuristic.validated()) {
+            	/*
+            	 * Create OPeNDAP URI and place in response message
+            	 */
+            	log.error(resultSizeHeuristic.getError());
+            	addError(resultSizeHeuristic.getError());
+            	return;
+            }
+            
             output = File.createTempFile(getClass().getSimpleName(), ".nc", new File(AppConstant.WORK_LOCATION.getValue()));
             NetCDFGridWriter.makeFile(
                     output.getAbsolutePath(),
@@ -131,6 +158,12 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
         } catch (TransformException e) {
             log.error("Error attempting CRS transform: ", e);
             addError("Error attempting CRS transform: " + e.getMessage());
+        } catch (AlgorithmHeuristicException e) {
+            log.error("Heuristic Error: ", e);
+        	/*
+        	 * Create OPeNDAP URI and place in response message
+        	 */
+            addError("Heuristic Error: " + e.getMessage());
         } catch (Exception e) {
             log.error("General Error: ", e);
             addError("General Error: " + e.getMessage());
