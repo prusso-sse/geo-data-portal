@@ -52,6 +52,7 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
+import net.opengis.ows.x11.ExceptionReportDocument.ExceptionReport;
 import net.opengis.ows.x11.LanguageStringType;
 import net.opengis.wps.x100.ExecuteResponseDocument;
 import net.opengis.wps.x100.OutputDataType;
@@ -60,7 +61,6 @@ import net.opengis.wps.x100.ProcessBriefType;
 import net.opengis.wps.x100.ProcessFailedType;
 import net.opengis.wps.x100.ProcessStartedType;
 import net.opengis.wps.x100.StatusType;
-import org.apache.commons.io.input.CountingInputStream;
 import org.apache.xmlbeans.XmlCursor;
 import org.n52.wps.server.CapabilitiesConfiguration;
 import org.n52.wps.server.RepositoryManager;
@@ -669,7 +669,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			default:
 				// TODO need to add exceptions to the database?
 				ProcessFailedType failed = ProcessFailedType.Factory.newInstance();
-				failed.addNewExceptionReport();
+				ExceptionReport report = failed.addNewExceptionReport();
 				status.setProcessFailed(failed);
 				break;
 		}
@@ -732,7 +732,6 @@ public class PostgresDatabase extends AbstractDatabase {
 	}
 	
 	/**
-	 * TODO stop pointing at old table.
 	 * @param id
 	 * @return 
 	 */
