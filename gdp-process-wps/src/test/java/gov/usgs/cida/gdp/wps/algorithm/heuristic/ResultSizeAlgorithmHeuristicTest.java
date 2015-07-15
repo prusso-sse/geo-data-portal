@@ -42,21 +42,21 @@ public class ResultSizeAlgorithmHeuristicTest {
     @Before
     public void setUp() throws Exception {
         FeatureDataset daymetFeatureDataSet = FeatureDatasetFactoryManager.open(FeatureType.GRID,
-                ResultSizeAlgorithmHeuristicTest.class.getClassLoader().getResource("ncml/daymet.ncml").toString(),
+                ResultSizeAlgorithmHeuristicTest.class.getClassLoader().getResource("nc/daymet.nc").toString(),
                 null, new Formatter(System.err));
         if (daymetFeatureDataSet instanceof GridDataset) {
             daymetGridDataSet = (GridDataset) daymetFeatureDataSet;
         }
         
         FeatureDataset prismFeatureDataSet = FeatureDatasetFactoryManager.open(FeatureType.GRID,
-                ResultSizeAlgorithmHeuristicTest.class.getClassLoader().getResource("ncml/prism.ncml").toString(),
+                ResultSizeAlgorithmHeuristicTest.class.getClassLoader().getResource("nc/prism.nc").toString(),
                 null, new Formatter(System.err));
         if (prismFeatureDataSet instanceof GridDataset) {
             prismGridDataSet = (GridDataset) prismFeatureDataSet;
         }
         
         FeatureDataset ssebopetaFeatureDataSet = FeatureDatasetFactoryManager.open(FeatureType.GRID,
-                ResultSizeAlgorithmHeuristicTest.class.getClassLoader().getResource("ncml/ssebopeta.ncml").toString(),
+                ResultSizeAlgorithmHeuristicTest.class.getClassLoader().getResource("nc/ssebopeta.nc").toString(),
                 null, new Formatter(System.err));
         if (ssebopetaFeatureDataSet instanceof GridDataset) {
             ssebopetaGridDataSet = (GridDataset) ssebopetaFeatureDataSet;

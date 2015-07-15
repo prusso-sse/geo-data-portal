@@ -31,21 +31,21 @@ public class OPeNDAPUtilsTest {
     @Before
     public void setUp() throws Exception {
         FeatureDataset daymetFeatureDataSet = FeatureDatasetFactoryManager.open(FeatureType.GRID,
-                OPeNDAPUtilsTest.class.getClassLoader().getResource("daymet.ncml").toString(),
+                OPeNDAPUtilsTest.class.getClassLoader().getResource("netcdf/daymet.nc").toString(),
                 null, new Formatter(System.err));
         if (daymetFeatureDataSet instanceof GridDataset) {
             daymetGridDataSet = (GridDataset) daymetFeatureDataSet;
         }
         
         FeatureDataset prismFeatureDataSet = FeatureDatasetFactoryManager.open(FeatureType.GRID,
-                OPeNDAPUtilsTest.class.getClassLoader().getResource("prism.ncml").toString(),
+                OPeNDAPUtilsTest.class.getClassLoader().getResource("netcdf/prism.nc").toString(),
                 null, new Formatter(System.err));
         if (prismFeatureDataSet instanceof GridDataset) {
             prismGridDataSet = (GridDataset) prismFeatureDataSet;
         }
         
         FeatureDataset ssebopetaFeatureDataSet = FeatureDatasetFactoryManager.open(FeatureType.GRID,
-                OPeNDAPUtilsTest.class.getClassLoader().getResource("ssebopeta.ncml").toString(),
+                OPeNDAPUtilsTest.class.getClassLoader().getResource("netcdf/ssebopeta.nc").toString(),
                 null, new Formatter(System.err));
         if (ssebopetaFeatureDataSet instanceof GridDataset) {
             ssebopetaGridDataSet = (GridDataset) ssebopetaFeatureDataSet;
@@ -155,7 +155,7 @@ public class OPeNDAPUtilsTest {
             
         } catch (OPeNDAPUtilException ignore) {}
         
-        assertNotNull(openDapURL);
+        assertNotNull(openDapURL);    
         assertTrue(openDapURL.equals("http://daymet.ornl.gov/thredds/dodsC/daymet-agg/daymet-agg.ncml?time[9763:1:10128],y[1903:1:2369],x[1241:1:1852],lambert_conformal_conic,prcp[9763:1:10128][1903:1:2369][1241:1:1852],srad[9763:1:10128][1903:1:2369][1241:1:1852],swe[9763:1:10128][1903:1:2369][1241:1:1852]"));
     }
     
@@ -235,7 +235,7 @@ public class OPeNDAPUtilsTest {
         } catch (OPeNDAPUtilException ignore) {}
         
         assertNotNull(openDapURL);
-        assertTrue(openDapURL.equals("http://cida.usgs.gov/thredds/dodsC/prism?lon[382:1:552],time[0:1:1417],lat[213:1:312],ppt[0:1:1417][213:1:312][382:1:552]"));
+        assertTrue(openDapURL.equals("http://cida.usgs.gov/thredds/dodsC/prism?time[0:1:1417],lon[382:1:552],lat[213:1:312],ppt[0:1:1417][213:1:312][382:1:552]"));
     }
     
     @Test
