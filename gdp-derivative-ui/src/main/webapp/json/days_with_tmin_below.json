@@ -1,0 +1,26 @@
+[
+	{
+		"identifier" : "days_with_tmax_above",
+		"descriptiveKeywords" : {
+			"derivatives" : [
+				"Days with Tmin Below"
+			],
+			"scenarios" : [
+				"A2",
+				"A1FI",
+				"A1B",
+				"B2"
+			],
+			"gcm" : [
+				"Ensemble",
+				"PCM",
+				"CCSM3",
+				"HADCM3",
+				"GFDL 2.1"
+			]
+		},
+		"serviceIdentification" : {
+			"sos" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/thredds/sos/dcp/{shapefile}/{gcm}_{scenario}_tmin-days_below_threshold,{threshold},dsg.nc"
+		}
+	}
+]

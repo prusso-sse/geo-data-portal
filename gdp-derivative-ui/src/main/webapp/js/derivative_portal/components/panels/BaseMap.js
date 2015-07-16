@@ -309,7 +309,7 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
                     var tooltipTopPosition = Ext.ComponentMgr.get('plotFieldSet').getPosition()[1] + Ext.ComponentMgr.get('plotFieldSet').getHeight() + 5;
                     Ext.ux.NotifyMgr.offsets = [tooltipTopPosition, 10];
 
-                    // TODO - There should be a better way of getting at this. 
+                    // TODO - There should be a better way of getting at this.
                     // Look into OpenLayers scoping for layer.on events
                     if (!Ext.ComponentMgr.get('mapPanel').notificationWindow) {
                         Ext.ComponentMgr.get('mapPanel').notificationWindow = new Ext.ux.Notify({
@@ -401,7 +401,7 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
 
 				this.map.addLayers([selectedLayer]);
 
-                // TODO - There should be a better way of getting at this. 
+                // TODO - There should be a better way of getting at this.
                 // Look into OpenLayers scoping for layer.on events
                 if (Ext.ComponentMgr.get('mapPanel').notificationWindow) {
                     Ext.ComponentMgr.get('mapPanel').notificationWindow.animHide();
@@ -416,7 +416,7 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
             this.map.addControl(selectorControl);
             selectorControl.activate();
         }, this);
-        this.layerController.on('exception-catstore', function () {}, this);
+        this.layerController.on('exception-metadatastore', function () {}, this);
         this.on('resize', function () {
             this.realignLegend();
         }, this);
@@ -506,16 +506,16 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
             return null;
         }
     },
-    clearLayers : function () { 
+    clearLayers : function () {
         LOG.debug('BaseMap:clearLayers: Handling request.');
         Ext.each(this.layers.data.getRange(), function (item){
             var layer = item.data.layer;
             if (layer.isBaseLayer || layer.CLASS_NAME === 'OpenLayers.Layer.Vector' || layer.name === 'foilayer') {
                 LOG.debug('BaseMap:clearLayers: Layer '+layer.id+' is a base layer and will not be cleared.');
                 return;
-            }                
-            //TODO- This remove function should just take the layer defined above but 
-            // testing shows the layer store does not remove the layer using the 
+            }
+            //TODO- This remove function should just take the layer defined above but
+            // testing shows the layer store does not remove the layer using the
             // one defined above but this does work.
             this.layers.remove(this.layers.getById(layer.id));
             LOG.debug('BaseMap:clearLayers: Cleared layer: ' + layer.id);
@@ -524,7 +524,7 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
     },
     onChangeLayer : function () {
         LOG.debug('BaseMap:onChangeLayer: Handling request.');
-            
+
         var layer = this.layerController.getLayer();
 
         if (!this.currentLayer || this.currentLayer.getLayer() !== layer) {
@@ -559,12 +559,12 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
             LOG.debug(' BaseMap:onChangeDimension: Found existing layer index ' + result);
             return result;
         }, this, 0);
-		
+
         var params = {};
         Ext.apply(params, this.layerController.getAllDimensions());
-		
+
         this.replaceLayer(
-            this.layerController.getLayer(), 
+            this.layerController.getLayer(),
             params,
             (-1 < existingLayerIndex) ? existingLayerIndex : undefined
             );
@@ -573,13 +573,13 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
     onChangeLegend : function () {
         LOG.debug('BaseMap:onChangeLegend: Handling Request.');
         if (!this.layerController.getLayer()) return;
-        
+
         var legendHref = this.layerController.getLegendRecord().data.href;
         if(this.legendImage.url && this.legendImage.url.contains(legendHref)) {
             LOG.debug('BaseMap: \'changelegend\' called but legend image is already the same as requested legend.');
             return;
         }
-        
+
         LOG.debug('BaseMap: Removing current legend image and reapplying new legend image.');
         this.legendImage.setUrl(GDP.PROXY_PREFIX + legendHref);
         var record = this.layerController.getLegendRecord();
@@ -605,14 +605,14 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
             LOG.debug('BaseMap:onReplaceBaseLayer: A record object was not passed in. Using map\'s baselayer.');
             record = this.layerController.getBaseLayer();
         }
-            
+
         var baseLayerIndex = 0;
         if (this.layers.getCount() > 0) {
             LOG.debug('BaseMap:onReplaceBaseLayer: Trying to find current base layer to remove it.');
             baseLayerIndex = this.layers.findBy(function (r, id){
                 return r.data.layer.isBaseLayer;
             });
-                
+
             if (baseLayerIndex > -1 ) {
                 this.layers.removeAt(baseLayerIndex);
                 LOG.debug('BaseMap:onReplaceBaseLayer: Removed base layer from this object\'s map.layers at index ' + baseLayerIndex);
@@ -621,24 +621,24 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
                 LOG.debug('BaseMap:onReplaceBaseLayer: Base layer not found.');
             }
         }
-            
+
         this.layers.add([record]);
         //        this.redraw();
         LOG.debug('BaseMap:onReplaceBaseLayer: Added base layer to this object\'s map.layers at index ' + baseLayerIndex);
-    },    
+    },
     replaceLayer : function (record, params, existingIndex) {
         LOG.debug('BaseMap:replaceLayer: Handling request.');
         if (!record) return;
         if (!params) {
             params = {};
         }
-		
+
         if (this.currentLayer) {
             var layer = this.currentLayer.getLayer();
             layer.setOpacity(0.0); // This will effectively hide the current layer
             LOG.debug('BaseMap:replaceLayer: Hiding current layer');
         }
-                
+
         if (existingIndex) {
             LOG.debug('BaseMap:replaceLayer: Replacing current layer with already-existing layer at index ' + existingIndex);
             var existingLayer = this.layers.getAt(existingIndex);
@@ -653,7 +653,7 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
                 transparent : true,
                 styles : (params.styles) ? params.styles : this.layerController.getLegendRecord().id
             }, params);
-            
+
 
             copy.get('layer').displayInLayerSwitcher = false;
             copy.get('layer').mergeNewParams(params);
@@ -663,7 +663,7 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
                 //                if (LOADMASK) LOADMASK.hide();
                 });
             this.layers.add(copy);
-            
+
             var foilayer = this.map.getLayersByName('foilayer');
             var selectedLayer = this.map.getLayersByName('selectedlayer');
             var highestZ = this.getHighestZIndex();
@@ -673,9 +673,9 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
             if (selectedLayer.length) {
                 selectedLayer[0].setZIndex(highestZ + 2);
             }
-            
+
         }
-        
+
     },
     createGeomOverlay : function (args) {
         LOG.debug('BaseMap:createGeometryOverlay: Drawing vector');
@@ -684,7 +684,7 @@ GDP.BaseMap = Ext.extend(GeoExt.MapPanel, {
         var feature = new OpenLayers.Feature.Vector(geom, {
             id : 'draw-vector'
         });
-            
+
         this.map.getLayersByName('bboxvector')[0].removeAllFeatures(null,true);
         this.map.getLayersByName('bboxvector')[0].addFeatures([feature]);
         this.map.zoomToExtent(bounds,true);

@@ -1,0 +1,106 @@
+[
+	{
+		"identifier" : "3722c5a9-0247-47d0-b566-36a99579c48d",
+		"abstract" : {
+			"quicktips" : {
+
+			"derivatives" : {
+
+			"Days with Precip Above" : "This is a derivative data product produced from a 1/8th degree daily downscaled climate projection dataset. Annual days with a projected cumulative precipitation above a threshold are represented on the original 1/8th degree grid. Precalculated thresholds are: 1, 2, 3, 4 inches.",
+
+			"Longest Run with Tmax Above" : "This is a derivative data product produced from a 1/8th degree daily downscaled climate projection dataset. Longest run of days in one year with a projected maximum temperature above a temperature threshold are represented on the original 1/8th degree grid. Precalculated thresholds are: 90, 95, and 100 degrees Fahrenheit.",
+
+			"Longest Run with Precip Below" : "This is a derivative data product produced from a 1/8th degree daily downscaled climate projection dataset. Longest run of days in a year with projected precipitation below a threshold are represented on the original 1/8th degree grid. Precalculated thresholds are: 3 mm.",
+
+			"Days with Tmax Above" : "This is a derivative data product produced from a 1/8th degree daily downscaled climate projection dataset. Annual days with a projected maximum temperature above a temperature threshold are represented on the original 1/8th degree grid. Precalculated thresholds are: 90, 95, and 100 degrees Fahrenheit.",
+
+			"Days with Tmin Below" : "This is a derivative data product produced from a 1/8th degree daily downscaled climate projection dataset. Annual days with a projected minimum temperature below a temperature threshold are represented on the original 1/8th degree grid. Precalculated thresholds are: 0, 10, 32 degrees Fahrenheit.",
+
+			"Growing Degree Days" : "This is a derivative data product produced from a 1/8th degree daily downscaled climate projection dataset. Growing degree days is represented on the original 1/8th degree grid. Precalculated threshold is: 50 degrees Fahrenheit",
+
+			"Heating Degree Days" : "This is a derivative data product produced from a 1/8th degree daily downscaled climate projection dataset. heating degree days is represented on the original 1/8th degree grid. Precalculated threshold is: 65 degrees Fahrenheit",
+
+			"Cooling Degree Days" : "This is a derivative data product produced from a 1/8th degree daily downscaled climate projection dataset. Cooling degree days are represented on the original 1/8th degree grid. Precalculated threshold is: 65 degrees Fahrenheit.",
+
+			"Growing Season Length" : "This is a derivative data product produced from a 1/8th degree daily downscaled climate projection dataset. Growing season length is represented on the original 1/8th degree grid. Precalculated threshold is: 32 degrees Fahrenheit."
+
+			},
+
+			"scenarios" : {
+
+			"A1FI" : "Very High: The A1FI scenario describes a future world of very rapid globalization and economic growth with Fossil Intensive (FI) energy sources. The A1FI scenario is displayed by default because it most closely matches the current trajectory of population and emissions growth.",
+
+			"A2" : "High: The A2 scenario describes a very heterogeneous world. Economic development is primarily regionally oriented and per capita economic growth is slower than other scenarios.",
+
+			"A1B" : "Medium: The A1B scenario describes a future world of very rapid globalization and economic growth with a Balanced (B) use of energy sources.",
+
+			"B1" : "Low: The B1 scenario describes a future world of very rapic globalization rapid change in economic structures toward the introduction of clean and resource-efficient technologies."
+
+			},
+
+			"gcms" : {
+
+			"Ensemble" : "An ensemble average of PCM, CCSM3, GFDL 2.1, and HADCM3 climate models.",
+
+			"PCM" : "National Center for Atmospheric Research, USA",
+
+			"CCSM3" : "National Center for Atmospheric Research, USA",
+
+			"GFDL 2.1" : "US Dept. of Commerce / NOAA / Geophysical Fluid Dynamics Laboratory, USA",
+
+			"HADCM3" : "Hadley Center, UK"
+
+			}
+
+			},
+
+			"fieldlabels" : {
+
+			"derivative" : "Choose the derivative you are interested in mapping and plotting.",
+
+			"scenario" : "Choose a scenario. A scenario is a coherent, internally consistent and plausible description of a possible future state of the world. It is not a forecast; rather, each scenario is one alternative image of how the future can unfold. A projection may serve as the raw material for a scenario, but scenarios often require additional information (e.g., about baseline conditions). A set of scenarios is often adopted to reflect, as well as possible, the range of uncertainty in projections. Other terms that have been used as synonyms for scenario are \"characterization\", \"storyline\" and \"construction\".",
+
+			"gcm" : "Choose a Climate Model.",
+
+			"timeperiod" : "Choose a Time Period."
+
+			},
+
+			"helptext" : {
+
+			"plotWindowIntroText" : "This web portal allows visualization and downloading of future climate projections from a group of 'statistically downscaled' global climate models (GCMs). Temperature and precipitation projections from these models have been used to calculate derivative climate indicators that measure the number of days that exceed certain thresholds. You can control what is shown on the map and this plot window using the toolbar on the left.<br><br>All derivative climate indicators on this page have been derived from a suite of downscaled <a href=\"http://www-pcmdi.llnl.gov/ipcc/about_ipcc.php\" target=\"_blank\"> World Climate Research Program Coupled Model Inter-comparison Project 3</a> atmospheric-oceanic general circulation model simulations using four scenarios from the <a href=\"http://sedac.ciesin.columbia.edu/ddc/sres/\" target=\"_blank\">International Panel on Climate Change Special Report on Emissions Scenarios.</a><br><br>The current downscaled data used to derive the indices available in the portal were provided by Hayhoe, Stoner, and Yang. <a href=\"http://cida.usgs.gov/thredds/catalog.html?dataset=cida.usgs.gov/thredds/dcp/conus\" target=\"_blank\">Documentation summarizing this dataset can be found here.</a><br><br><a href=\"http://dx.doi.org/10.1002/joc.3603\" target=\"_blank\">A peer reviewed journal publication summarizing the data used in this application is available here.</a><br><br>Spatial statistics of these derivatives were calculated using the  <a href=\"https://my.usgs.gov/confluence/display/GeoDataPortal/GDP+Home\" target=\"_blank\">USGS Geo Data Portal</a> Feature Weighted Grid Statistics Algorithm. <a href=\"http://pubs.usgs.gov/of/2011/1157/pdf/ofr2011-1157.pdf\" target=\"_blank\">Description and testing of this web processing service algorithm is available here.</a><br><br>Although this program has been used by the U.S. Geological Survey (USGS), no warranty, expressed or implied, is made by the USGS or the U.S. Government as to the accuracy and functioning of the program and related program material nor shall the fact of distribution constitute any such warranty, and no responsibility is assumed by the USGS in connection therewith.<br>",
+
+			"plotHelp" : "This plot displays annual time series of the selected derivative climate indicator. Each scenario is summarized using a solid line to represent a climate model ensemble average and a shaded envelope representing the minimum and maximum values indicated by the suite of climate models used to generate the ensemble. You can zoom in and pan through the plot using the left and right handles and by dragging the selected time period below the plot. Data used to generate this plot is available at the Download button on the right.",
+
+			"changeProdText" : "When this is enabled, the map shows the change for a given time period against the historic period (1961-1990)"
+
+			}	
+		},
+		"descriptiveKeywords" : {
+			"derivatives" : [
+				"Days with Tmax Above",
+				"Days with Tmin Below",
+				"Days with Precip Above",
+				"Longest Run with Tmax Above",
+				"Longest Run with Precip Below",
+				"Growing Degree Days",
+				"Heating Degree Days",
+				"Cooling Degree Days",
+				"Growing Season Length"
+			],
+			"scenarios" : [
+				"A1FI",
+				"A2",
+				"A1B",
+				"B1"
+			],
+			"gcm" : [
+				"Ensemble",
+				"PCM",
+				"CCSM3",
+				"GFDL 2.1",
+				"HADCM3"
+			]
+		}
+	}
+]

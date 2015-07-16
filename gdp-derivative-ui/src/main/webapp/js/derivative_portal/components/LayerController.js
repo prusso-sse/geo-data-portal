@@ -2,7 +2,7 @@ Ext.ns("GDP");
 
 GDP.LayerController = Ext.extend(Ext.util.Observable, {
     MAXIMUM_DIMENSION_COUNT : 101,
-    CSW_ERROR_MSG : 'Could not access CSW catalog. Application will not be functional.  Either reload the application or contact system administrator.',
+    METADATA_SERVICE_ERROR_MSG : 'Could not access application metadata service. Application will not be functional.  Either reload the application or contact system administrator.',
     WMS_ERROR_MSG : 'Could not access WMS endpoint. Application will not be functional.  Either reload the application or contact system administrator.',
     SOS_ERROR_MSG : 'Could not access SOS endpoint. Application will not be functional.  Either reload the application or contact system administrator.',
     baseLayer : undefined,
@@ -122,7 +122,7 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
             "changeopacity",
             "drewbbox",
             "exception-capstore",
-            "exception-catstore",
+            "exception-metadatastore",
             "exception-sosstore",
             "loaded-capstore",
             "loaded-catstore",
@@ -280,7 +280,7 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
         store.removeAll();
         var extents = record.get('dimensions')[extentName];
         if (extents) {
-            
+
             var timesToLoad = [];
             var cleanedTimes = [];
             Ext.each(extents.values, function (item, index, allItems){
@@ -363,12 +363,12 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
         this.fireEvent('exception-capstore', args);
     },
     getRecordsExceptionOccurred : function (args) {
-        LOG.debug('LayerController:getRecordsExceptionFired: Firing event "exception-catstore"');
+        LOG.debug('LayerController:getRecordsExceptionFired: Firing event "exception-metadatastore"');
         if (LOADMASK) LOADMASK.hide();
         NOTIFY.error({
-            msg : this.CSW_ERROR_MSG
+            msg : this.METADATA_SERVICE_ERROR_MSG
         });
-        this.fireEvent('exception-catstore', args);
+        this.fireEvent('exception-metadatastore', args);
     },
     sosExceptionOccurred : function (args) {
         LOG.debug('LayerController:sosExceptionFired: Firing event "exception-sosstore"');
@@ -384,7 +384,7 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
     },
     updatePlotter : function () {
         LOG.debug('LayerController:updatePlotter: Firing event "updateplotter"');
-        this.fireEvent('updateplotter', 
+        this.fireEvent('updateplotter',
             {
                 // need to get this from csw record
                 url : this.getSOSEndpoint(),

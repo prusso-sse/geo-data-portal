@@ -1,8 +1,13 @@
+/*
+ * Currently retrieving this information from json files using the MetatdataRecordsStore.
+ * Leaving this in in case we want to revert.
+ */
+
 Ext.ns("GDP");
 
 GDP.CSWGetRecordsStore = function(meta) {
     meta = meta || {};
-    
+
     meta.format = new OpenLayers.Format.CSWGetRecords(meta.opts);
     meta.format.write();
     meta.fields = [
