@@ -148,7 +148,8 @@ public class PostgresDatabase extends AbstractDatabase {
 			+ "PERCENT_COMPLETE INTEGER,"
 			+ "CREATION_TIME TIMESTAMP with time zone,"
 			+ "START_TIME TIMESTAMP with time zone,"
-			+ "END_TIME TIMESTAMP with time zone)";
+			+ "END_TIME TIMESTAMP with time zone,"
+			+ "EXCEPTION_TEXT TEXT)";
 	
 	/*
 	 * OUTPUT_ID is request_id concattenated with wps output identifier (ex. OUTPUT)
@@ -176,10 +177,10 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String INSERT_REQUEST_STATEMENT = "INSERT INTO " + REQUEST_TABLE_NAME + " VALUES(?, ?, ?)";
 	private static final String INSERT_INPUT_STATEMENT = "INSERT INTO " + INPUT_TABLE_NAME + " VALUES (?, ?, ?, ?)";
 	private static final String INSERT_OUTPUT_DEF_STATEMENT = "INSERT INTO " + OUTPUT_DEF_TABLE_NAME + " VALUES (?, ?, ?, ?)";
-	private static final String INSERT_RESPONSE_STATEMENT = "INSERT INTO " + RESPONSE_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+	private static final String INSERT_RESPONSE_STATEMENT = "INSERT INTO " + RESPONSE_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	private static final String INSERT_OUTPUT_STATEMENT = "INSERT INTO " + OUTPUT_TABLE_NAME + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 	
-	private static final String UPDATE_RESPONSE_STATEMENT = "UPDATE " + RESPONSE_TABLE_NAME + " SET STATUS=?,PERCENT_COMPLETE=?,END_TIME=? WHERE REQUEST_ID = ?";
+	private static final String UPDATE_RESPONSE_STATEMENT = "UPDATE " + RESPONSE_TABLE_NAME + " SET STATUS=?,PERCENT_COMPLETE=?,END_TIME=?,EXCEPTION_TEXT=? WHERE REQUEST_ID = ?";
 	
 	private static final String SELECT_REQUEST_STATEMENT = "SELECT * FROM " + REQUEST_TABLE_NAME + " WHERE REQUEST_ID = ?";
 	private static final String SELECT_RESPONSE_STATEMENT = "SELECT * FROM " + RESPONSE_TABLE_NAME + " WHERE REQUEST_ID = ?";
@@ -419,6 +420,7 @@ public class PostgresDatabase extends AbstractDatabase {
 		insertResponseStatement.setDate(6, toSQLDate(wpsResp.getCreationTime()));
 		insertResponseStatement.setDate(7, toSQLDate(wpsResp.getStartTime()));
 		insertResponseStatement.setDate(8, toSQLDate(wpsResp.getEndTime()));
+		insertResponseStatement.setString(9, wpsResp.getExceptionText());
 		insertResponseStatement.execute();
 	}
 	
@@ -559,7 +561,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			try {
 				ret = new WpsResponse(rs.getString("ID"), rs.getString("REQUEST_ID"),
 						rs.getString("WPS_ALGORITHM_IDENTIFIER"), WpsStatus.valueOf(rs.getString("STATUS")),
-						rs.getInt("PERCENT_COMPLETE"), new DateTime(rs.getTimestamp("CREATION_TIME")));
+						rs.getInt("PERCENT_COMPLETE"), new DateTime(rs.getTimestamp("CREATION_TIME")), rs.getString("EXCEPTION_TEXT"));
 			} catch (SQLException e) {
 				String msg = "Failed to build response from database";
 				LOGGER.error(msg, e);
@@ -667,9 +669,9 @@ public class PostgresDatabase extends AbstractDatabase {
 				break;
 			case FAILED:
 			default:
-				// TODO need to add exceptions to the database?
 				ProcessFailedType failed = ProcessFailedType.Factory.newInstance();
 				ExceptionReport report = failed.addNewExceptionReport();
+				report.addNewException().addExceptionText(responseObj.getExceptionText());
 				status.setProcessFailed(failed);
 				break;
 		}
@@ -721,8 +723,9 @@ public class PostgresDatabase extends AbstractDatabase {
 			updateStatement.setString(1, wpsResponse.getStatus().toString());
 			updateStatement.setInt(2, wpsResponse.getPercentComplete());
 			updateStatement.setDate(3, toSQLDate(wpsResponse.getEndTime()));
-			updateStatement.setString(4, id);
-			
+			updateStatement.setString(4, wpsResponse.getExceptionText());
+			updateStatement.setString(5, id);
+
 			updateStatement.executeUpdate();
 
 			LOGGER.debug("Updated response into database with id of:" + id);

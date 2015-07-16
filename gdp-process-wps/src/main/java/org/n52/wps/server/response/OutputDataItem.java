@@ -182,7 +182,7 @@ public class OutputDataItem extends ResponseData {
 		if (dataTypeReference != null) {
 			literalData.setDataType(dataTypeReference);
 		}
-	    literalData.setStringValue(processValue);
+		literalData.setStringValue(processValue);
 		if(obj instanceof AbstractLiteralDataBinding){
 			String uom = ((AbstractLiteralDataBinding)obj).getUnitOfMeasurement();
 			if(uom != null && !uom.equals("")){
