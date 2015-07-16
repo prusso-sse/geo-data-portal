@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,12 +34,8 @@ import org.slf4j.LoggerFactory;
 public class ProcessListService extends BaseProcessServlet {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProcessListService.class);
-	private static final String DATA_QUERY = "select request_id, request_date, response from results where request_id like ?;";
+	private static final String DATA_QUERY = "select request_id, wps_algorithm_identifier, status, creation_time, start_time, end_time, exception_text from response where request_id like ?;";
 	private static final int DATA_QUERY_REQUEST_ID_PARAM_INDEX = 1;
-	private static final int DATA_QUERY_REQUEST_ID_COLUMN_INDEX = 1;
-	private static final int DATA_QUERY_REQUEST_DATE_COLUMN_INDEX = 2;
-	private static final int DATA_QUERY_RESPONSE_COLUMN_INDEX = 3;
-	private static final String REQUEST_PREFIX = "REQ_";
 	private static final long serialVersionUID = 1L;
 	private static final int NO_OFFSET = 0;
 
@@ -76,10 +73,9 @@ public class ProcessListService extends BaseProcessServlet {
 		String requestUrl = req.getRequestURL().toString();
 		String cleanedUrl = requestUrl.substring(0, requestUrl.indexOf("/list"));
 		for (String request : getRequestIds(DEFAULT_LIMIT, offset)) {
-			String baseRequestId = request.substring(REQUEST_PREFIX.length());
-			DashboardData dashboardData = buildDashboardData(baseRequestId);
-			dashboardData.setRequestId(baseRequestId);
-			dashboardData.setRequestLink(cleanedUrl + "/request?id=" + baseRequestId);
+			DashboardData dashboardData = buildDashboardData(request);
+			dashboardData.setRequestId(request);
+			dashboardData.setRequestLink(cleanedUrl + "/request?id=" + request);
 			dataset.add(dashboardData);
 		}
 		return dataset;
@@ -90,31 +86,31 @@ public class ProcessListService extends BaseProcessServlet {
 		long startTime = -1;
 		long endTime = System.currentTimeMillis();
 		try (Connection conn = getConnection(); PreparedStatement pst = conn.prepareStatement(DATA_QUERY)) {
-			pst.setString(DATA_QUERY_REQUEST_ID_PARAM_INDEX, "%" + baseRequestId + "%");
+			pst.setString(DATA_QUERY_REQUEST_ID_PARAM_INDEX, baseRequestId);
 			try (ResultSet rs = pst.executeQuery()) {
 				while (rs.next()) {
-					String requestId = rs.getString(DATA_QUERY_REQUEST_ID_COLUMN_INDEX);
-					String requestDate = rs.getString(DATA_QUERY_REQUEST_DATE_COLUMN_INDEX);
-					String xml = rs.getString(DATA_QUERY_RESPONSE_COLUMN_INDEX);
-					if (requestId.toUpperCase().endsWith("OUTPUT")) {
-						endTime = Timestamp.valueOf(requestDate).getTime();
-						data.setOutput(xml);
-					} else if (requestId.startsWith(REQUEST_PREFIX)) {
-						String identifier;
-						identifier = getIdentifier(xml);
-						data.setIdentifier(identifier);
-					} else {
-						String status = getStatus(xml);
-						startTime = getStartTime(xml);
-						data.setStatus(status);
-						data.setCreationTime(startTime);
+					String requestId = rs.getString("request_id");
+					Timestamp creationDate = rs.getTimestamp("creation_time");
+					String wpsAlgorithmIdentifier = rs.getString("wps_algorithm_identifier");
+					String status = rs.getString("status");
+					Timestamp startDate = rs.getTimestamp("start_time");
+					Timestamp endDate = rs.getTimestamp("end_time");
+					String exceptionText = rs.getString("exception_text");
+					if (endDate != null) {
+						endTime = endDate.getTime();
 					}
+					if (startDate != null) {
+						startTime = startDate.getTime();
+					}
+					data.setRequestId(requestId);
+					data.setIdentifier(wpsAlgorithmIdentifier);
+					data.setErrorMessage(exceptionText);
+					data.setStatus(status);
+					data.setCreationTime(creationDate.getTime());
 				}
 				if (startTime != -1) {
 					data.setElapsedTime(endTime - startTime);
 				}
-			} catch (JAXBException | IOException ex) {
-				data.setErrorMessage("Unmarshalling error for request [" + baseRequestId + "] " + ex.toString());
 			}
 		}
 		return data;
