@@ -1,0 +1,26 @@
+[
+	{
+		"identifier" : "cooling_degree_days",
+		"descriptiveKeywords" : {
+			"derivatives" : [
+				"Cooling Degree Days"
+			],
+			"scenarios" : [
+				"A2",
+				"A1FI",
+				"A1B",
+				"B2"
+			],
+			"gcm" : [
+				"Ensemble",
+				"PCM",
+				"CCSM3",
+				"HADCM3",
+				"GFDL 2.1"
+			]
+		},
+		"serviceIdentification" : {
+			"sos" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/thredds/sos/dcp/{shapefile}/{gcm}_{scenario}_cooling_degree_days,{threshold},dsg.nc"
+		}
+	}
+]
