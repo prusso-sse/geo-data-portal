@@ -194,7 +194,7 @@ public class OutputDataItem extends ResponseData {
 	public void updateResponseAsReference(ExecuteResponseDocument res, String reqID, String mimeType) throws ExceptionReport {
 		prepareGenerator();
 		OutputDataType output = prepareOutput(res);
-		InputStream stream;
+		InputStream stream = null;
 
 		OutputReferenceType outReference = output.addNewReference();
 		if (schema != null) {
@@ -220,16 +220,18 @@ public class OutputDataItem extends ResponseData {
 
 			else {
 				throw new ExceptionReport("Unable to generate encoding " + encoding, ExceptionReport.NO_APPLICABLE_CODE);
-			}
+			}			
+			String storeReference = db.storeComplexValue(reqID, id, stream, COMPLEX_DATA_TYPE, mimeType);
+			storeReference = storeReference.replace("#", "%23");
+			outReference.setHref(storeReference);
 		}
 		catch (IOException e){
 			LOGGER.error(e.getMessage(), e);
 			throw new ExceptionReport("Error while generating Complex Data out of the process result", ExceptionReport.NO_APPLICABLE_CODE, e);
+		} finally {
+			IOUtils.closeQuietly(stream);
 		}
-
-		String storeReference = db.storeComplexValue(reqID, id, stream, COMPLEX_DATA_TYPE, mimeType);
-		storeReference = storeReference.replace("#", "%23");
-		outReference.setHref(storeReference);
+		
 		// MSS:  05-02-2009 changed default output type to text/xml to be certain that the calling application doesn't
 		// serve the wrong type as it is a reference in this case.
 		this.mimeType = "text/xml";
