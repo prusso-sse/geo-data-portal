@@ -83,7 +83,7 @@ public abstract class BaseProcessServlet extends HttpServlet {
 		return property;
 	}
 
-	protected InputStream getRequestEntityAsFile(String id) throws SQLException, IOException {
+	protected InputStream getRequestEntityAsStream(String id) throws SQLException, IOException {
 		InputStream requestEntity = null;
 		try (Connection conn = getConnection(); PreparedStatement pst = conn.prepareStatement(REQUEST_ENTITY_QUERY)) {
 			pst.setString(1, id);

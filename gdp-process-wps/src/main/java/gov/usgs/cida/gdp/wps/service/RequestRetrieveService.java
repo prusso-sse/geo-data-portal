@@ -34,9 +34,9 @@ public class RequestRetrieveService extends BaseProcessServlet {
 		if (StringUtils.isBlank(id)) {
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
 		} else {
-			try (InputStream requestEntity = getRequestEntityAsFile(id)){
+			try (InputStream requestEntity = getRequestEntityAsStream(id)){
 				response.setContentType("application/octet-stream");
-				response.setHeader("Content-Disposition", "attachment; filename=\"" + id + "\".gz");
+				response.setHeader("Content-Disposition", "attachment; filename=\"" + id + "\".xml");
 				response.setContentLength(-1);
 
 				IOUtils.copy(requestEntity, response.getOutputStream());
