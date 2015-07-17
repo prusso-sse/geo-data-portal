@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -417,9 +416,9 @@ public class PostgresDatabase extends AbstractDatabase {
 		insertResponseStatement.setString(3, wpsResp.getWpsAlgoIdentifer());
 		insertResponseStatement.setString(4, wpsResp.getStatus().toString());
 		insertResponseStatement.setInt(5, wpsResp.getPercentComplete() == null ? 0 : wpsResp.getPercentComplete());
-		insertResponseStatement.setDate(6, toSQLDate(wpsResp.getCreationTime()));
-		insertResponseStatement.setDate(7, toSQLDate(wpsResp.getStartTime()));
-		insertResponseStatement.setDate(8, toSQLDate(wpsResp.getEndTime()));
+		insertResponseStatement.setTimestamp(6, toSQLTimestamp(wpsResp.getCreationTime()));
+		insertResponseStatement.setTimestamp(7, toSQLTimestamp(wpsResp.getStartTime()));
+		insertResponseStatement.setTimestamp(8, toSQLTimestamp(wpsResp.getEndTime()));
 		insertResponseStatement.setString(9, wpsResp.getExceptionText());
 		insertResponseStatement.execute();
 	}
@@ -441,8 +440,8 @@ public class PostgresDatabase extends AbstractDatabase {
 		}
 	}
 	
-	private Date toSQLDate(DateTime dateTime) {
-		return (dateTime == null) ? null : new Date(dateTime.getMillis());
+	private Timestamp toSQLTimestamp(DateTime dateTime) {
+		return (dateTime == null) ? null : new Timestamp(dateTime.getMillis());
 	}
 	
 	@Override
@@ -722,7 +721,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			
 			updateStatement.setString(1, wpsResponse.getStatus().toString());
 			updateStatement.setInt(2, wpsResponse.getPercentComplete());
-			updateStatement.setDate(3, toSQLDate(wpsResponse.getEndTime()));
+			updateStatement.setTimestamp(3, toSQLTimestamp(wpsResponse.getEndTime()));
 			updateStatement.setString(4, wpsResponse.getExceptionText());
 			updateStatement.setString(5, id);
 
