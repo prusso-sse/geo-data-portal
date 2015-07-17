@@ -13,6 +13,7 @@ $(document).ready(function () {
 					var $table = $(tableString).appendTo($('#processData'));
 					var $headerRow = $(trString).appendTo($table);
 					$headerRow.append(
+						$(thString).text('Request'),
 						$(thString).text('Identifier'),
 						$(thString).text('Status'),
 						$(thString).text('Created'),
@@ -21,6 +22,7 @@ $(document).ready(function () {
 					$.each(processJSON, function (idx, data) {
 						var $dataRow = $(trString).appendTo($table);
 						$dataRow.append(
+							$(tdString).append($('<a/>').attr('href', data.requestLink).html('->')),
 							$(tdString).text(data.identifier),
 							$(tdString).text(data.status),
 							$(tdString).text(data.creationTime),
