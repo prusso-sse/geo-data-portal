@@ -1,3 +1,8 @@
+/*
+ * Currently retrieving this information from json files using the MetatdataRecordsStore.
+ * Leaving this in in case we want to revert.
+ */
+
 Ext.ns("GDP");
 
 GDP.CSWGetRecordsReader = function(meta, recordType) {
@@ -15,7 +20,7 @@ GDP.CSWGetRecordsReader = function(meta, recordType) {
             {name: "wms", type: "string"},
             {name: "sos", type: "string"},
             {name: "fieldLabels"},
-            {name: "helptext"} 
+            {name: "helptext"}
         ]
         );
     }
@@ -47,7 +52,7 @@ Ext.extend(GDP.CSWGetRecordsReader, Ext.data.DataReader, {
         }
         return this.readRecords(data);
     },
-    
+
 
     /** private: method[readRecords]
      *  :param data: ``DOMElement | String | Object`` A document element or XHR
@@ -57,14 +62,14 @@ Ext.extend(GDP.CSWGetRecordsReader, Ext.data.DataReader, {
      *      capabilities parser.
      *  :return: ``Object`` A data block which is used by an ``Ext.data.Store``
      *      as a cache of ``Ext.data.Record`` objects.
-     *  
+     *
      *  Create a data block containing Ext.data.Records from an XML document.
      */
     readRecords: function(data) {
         if(typeof data === "string" || data.nodeType) {
             data = this.meta.format.read(data);
         }
-        
+
         var records = [];
 
         Ext.iterate(data.records, function (item) {
@@ -73,9 +78,9 @@ Ext.extend(GDP.CSWGetRecordsReader, Ext.data.DataReader, {
             values.derivatives = [];
             values.scenarios = [];
             values.gcms = [];
-            
+
             var idInfos = item.identificationInfo;
-            
+
             Ext.iterate(idInfos, function (idInfo) {
                 var keywordTypes = idInfo.descriptiveKeywords;
                 var srvId = idInfo.serviceIdentification;
@@ -87,7 +92,7 @@ Ext.extend(GDP.CSWGetRecordsReader, Ext.data.DataReader, {
                     // means not json, set abstract to null
                     abstrakt = null;
                 }
-                
+
                 if (keywordTypes) {
                     Ext.iterate(keywordTypes, function (kt) {
                         if (kt.type.codeListValue === "derivative") {
@@ -140,18 +145,18 @@ Ext.extend(GDP.CSWGetRecordsReader, Ext.data.DataReader, {
                         else if (serviceId === "OGC-SOS") {
                             values.sos = endpoint;
                         }
-                    } 
+                    }
                 }
                 if (abstrakt !== null) {
                     values.fieldLabels = abstrakt.fieldlabels;
                     values.helptext = abstrakt.helptext;
                 }
-                
+
             }, this);
-            
+
             records.push(new this.recordType(values));
         }, this);
-        
+
         return {
             totalRecords: records.length,
             success: true,

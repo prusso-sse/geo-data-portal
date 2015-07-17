@@ -1,0 +1,26 @@
+[
+	{
+		"identifier" : "growing_season_length",
+		"descriptiveKeywords" : {
+			"derivatives" : [
+				"Growing Season Length"
+			],
+			"scenarios" : [
+				"A2",
+				"A1FI",
+				"A1B",
+				"B2"
+			],
+			"gcm" : [
+				"Ensemble",
+				"PCM",
+				"CCSM3",
+				"HADCM3",
+				"GFDL 2.1"
+			]
+		},
+		"serviceIdentification" : {
+			"sos" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/thredds/sos/dcp/{shapefile}/{gcm}_{scenario}_growing_season_length,{threshold},dsg.nc"
+		}
+	}
+]

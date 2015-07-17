@@ -78,7 +78,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             LOG.debug('Plotter:onLoadedCatstore');
             this.onLoadedLeafstore(args);
         }, this);
-        this.controller.on('exception-catstore', function () {
+        this.controller.on('exception-metadatastore', function () {
             this.collapse();
         }, this);
         this.on('resize', function () {
@@ -106,7 +106,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 		Ext.get(this.plotterDiv).dom.innerHTML = '';
         var height = Math.round(0.5 * parseInt(Ext.get(this.plotterDiv).dom.style.height));
         LOADMASK = new Ext.LoadMask(Ext.get(this.plotterDiv).dom, {
-            msg: '<div id="cida-load-msg">Loading...</div><img height="' + height + '" src="images/cida-anim.gif" />', 
+            msg: '<div id="cida-load-msg">Loading...</div><img height="' + height + '" src="images/cida-anim.gif" />',
             msgCls: 'cida-load-plotter'
         });
         LOADMASK.show();
@@ -138,7 +138,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 						sequencePosition : 1,
 						pressed : this.visibility[1],
 						enableToggle: true
-					}), 
+					}),
 					new Ext.Button({
 						text : 'a1b',
 						id : 'plotter-toolbar-btngrp-table3',
@@ -180,12 +180,12 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         this.topToolbar["plotter-toolbar-errorbars-button"].on('click', function (obj) {
             this.graph.updateOptions({
                 fillAlpha : obj.pressed ? 0.15 : 0.0
-                
+
             });
             this.errorBarsOn = obj.pressed;
-        }, this);          
+        }, this);
         this.topToolbar.doLayout();
-        
+
         Ext.iterate(this.scenarioGcmJSON, function (scenario, object) {
             Ext.iterate(object, function (gcm) {
                 if (gcm !== 'ensemble') {
@@ -204,11 +204,11 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         }, this);
         this.resizePlotter();
     },
-	
+
 	/**
-	 * Using the leaf store, test whether or not it contains a scenario and 
+	 * Using the leaf store, test whether or not it contains a scenario and
 	 * whether or not that scenario contains a given gcm
-	 * 
+	 *
 	 * @argument {Object} args "store" - {Object} The leaf store, "scenario" - {String} , "gcm" - {String}
 	 */
 	testScenarioGCMComboExists : function (args) {
@@ -216,7 +216,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 		var store = args.store;
 		var scenario = args.scenario;
 		var gcm = args.gcm;
-		
+
 		var scenarioGCMComboExists = false;
 
 		// This should always be true, unless we selectively don't have scenarios
@@ -227,18 +227,18 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 			}, this);
 			scenarioGCMComboExists = gcmArray.indexOf(gcm.toLowerCase()) > -1;
 		}
-		
+
 		return scenarioGCMComboExists;
 	},
-	
+
     resizePlotter : function () {
         LOG.debug('Plotter:resizePlotter()');
         var divPlotter = Ext.get(this.plotterDiv);
         var divLegend = Ext.get(this.legendDiv);
-        
+
         divLegend.setWidth(this.legendWidth);
         divPlotter.setWidth(this.getWidth() - (this.legendWidth + 2));
-        divPlotter.setHeight(this.getHeight() - this.toolbar.getHeight()); 
+        divPlotter.setHeight(this.getHeight() - this.toolbar.getHeight());
         if (this.graph) {
             this.graph.resize(divPlotter.getWidth(), divPlotter.getHeight());
         }
@@ -257,20 +257,20 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 }
             }, this);
         }, this);
-		
+
         // Set up the text for the initial view of the plotter panel
         Ext.DomHelper.append(Ext.DomQuery.selectNode("div[id='dygraph-content']"), {
-            tag : 'div', 
-            id : 'plotter-prefill-text',
+            tag : 'div',
+           id : 'plotter-prefill-text',
             html : args.record.get('helptext')['plotWindowIntroText']
-        });
-        
+		});
+
         this.doLayout();
-        
+
         // This tooltip will show up to the right of any title text
         this.titleTipText = '&nbsp;&nbsp;<span ext:qtip="'+args.record.get('helptext')['plotHelp']+'" class="x-combo-list-item"><img class="quicktip-img" src="images/info.gif" /></span>';
     },
-	
+
 	onLoadedLeafstore : function (args) {
 		this.scenarioGcmJSON = this.cloneScenarioGcmJSON();
 		this.leafStore = args.store;
@@ -291,16 +291,16 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 			}
         }, this);
 	},
-	
+
     loadSOSStore : function (meta, offering) {
         var url = "proxy/" + meta.url + "?service=SOS&request=GetObservation&version=1.0.0&offering=" + encodeURIComponent(encodeURIComponent(offering)) + "&observedProperty=mean";
-        
+
         this.sosStore.push(new GDP.SOSGetObservationStore({
             url : url, // gmlid is url for now, eventually, use SOS endpoint + gmlid or whatever param
             autoLoad : true,
             proxy : new Ext.data.HttpProxy({
-                url: url, 
-                disableCaching: false, 
+                url: url,
+                disableCaching: false,
                 method: "GET"
             }),
             baseParams : {},
@@ -318,7 +318,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 },
                 scope: this
             }
-            
+
         }));
     },
     globalArrayUpdate : function (store, meta) {
@@ -373,12 +373,12 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                     }
                 });
             });
-            
+
             this.yLabels = scenarios;
-            
+
             this.plotterYMin = 1000000;
             this.plotterYMax = 0;
-            
+
             for (var i=0; i<observationsLength; i++) {
                 this.plotterData.push(new Array());
                 this.plotterData[i][0] = this.scenarioGcmJSON[scenarios[0]][gcms[0]][i][0];
@@ -403,9 +403,9 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 }, this);
             }
             this.dygraphUpdateOptions(store);
-            
+
             // Set up the download CSV button
-            this.topToolbar["plotter-toolbar-download-button"].un('click');          
+            this.topToolbar["plotter-toolbar-download-button"].un('click');
             this.topToolbar["plotter-toolbar-download-button"].on('click', function (){
                 var id = Ext.id();
                 var frame = document.createElement('iframe');
@@ -445,7 +445,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                                 }
                             });
                         });
-                    
+
                         var csv = '#' + scope.plotterTitle + ' calculated by ' + window.location + '\n';
                         var line = 'date, ';
                         Ext.each(scenarios, function (scenario) {
@@ -456,7 +456,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                             }, this);
                         }, this);
                         csv += line.substr(0, line.length - 1) + "\n";
-                        
+
                         for (var i=0; i<observationsLength; i++) {
                             var line2 = '';
                             line2 += scope.scenarioGcmJSON[scenarios[0]][gcms[0]][i][0].getFullYear() + ",";
@@ -473,7 +473,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 
                         return encodeURIComponent(csv);
                     }(this)
-                }); 
+                });
 
                 document.body.appendChild(form);
                 var callback = function (e) {
@@ -498,12 +498,12 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 Ext.EventManager.on(frame, Ext.isIE?'readystatechange':'load', callback);
                 form.submit();
             }, this);
-            
+
         }
     },
     dygraphUpdateOptions : function (store) {
         var record = store.getAt(0);
-        
+
         // this is mean for us, probably figure this out better?
         var yaxisUnits = record.get('dataRecord')[1].uom;
 
@@ -526,7 +526,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 },
                 rightGap : 5,
                 showRangeSelector: true,
-                //ylabel: record.data.dataRecord[1].name,                            
+                //ylabel: record.data.dataRecord[1].name,
                 yAxisLabelWidth: 75,
                 ylabel: this.controller.getDerivative().get('derivative') + " " + this.controller.getThreshold() + " " + this.controller.getUnits().replace('deg', '&deg;'),
                 valueRange: [this.plotterYMin - (this.plotterYMin / 10) , this.plotterYMax + (this.plotterYMax / 10)],

@@ -233,7 +233,7 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
             this.catStoreOnLoad(catStore);
         }, this);
         this.parentRecordStore.on('exception', function () {
-            LOG.debug('DatasetConfigPanel: Catalog store has encountered an exception.');
+            LOG.debug('DatasetConfigPanel: Meta data store has encountered an exception.');
             this.controller.getRecordsExceptionOccurred();
         }, this);
         this.derivativeCombo.on('select', function (combo, record) {
@@ -294,7 +294,7 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
             LOG.debug('DatasetConfigPanel: Observed \'changedimension\'.');
             this.onChangeDimension(extentName);
         }, this);
-        this.controller.on('exception-catstore', function () {
+        this.controller.on('exception-metadatastore', function () {
             this.collapse();
         }, this);
 
@@ -343,8 +343,8 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 			url = args.url,
 			recordIndex;
 
-		// A record was not passed in with the args - find the leaf record to 
-		// populate the combobox by querying on the scenario combobox to get the 
+		// A record was not passed in with the args - find the leaf record to
+		// populate the combobox by querying on the scenario combobox to get the
 		// right set of records for the GCM combo
 		if (!record) {
 			recordIndex = this.leafRecordStore.data.findIndexBy(function (record) {
@@ -485,9 +485,9 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
     },
     onChangeScenario : function (args) {
         LOG.debug("DatasetConfigPanel: onChangeScenario()");
-		
+
 		args = args || {};
-		
+
 		// Derivative record store needs to be loaded first
         if (this.derivRecordStoreLoaded) {
 			if (this.leafRecordStoreLoaded) {
@@ -538,47 +538,17 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
         LOG.debug("DatasetConfigPanel: loadDerivRecordStore()");
         // TODO fail nicely if this fails
         var derivative = this.controller.getDerivative();
-        this.derivRecordStore = new GDP.CSWGetRecordsStore({
-            url : "geonetwork/csw",
-            storeId : 'cswStore',
-            opts : {
-                resultType : 'results',
-                outputSchema : 'http://www.isotc211.org/2005/gmd',
-                Query : {
-                    ElementSetName : {
-                        value: 'full'
-                    },
-                    Constraint : {
-                        Filter : {
-                            type : '&&',
-                            filters : [{
-                                type : "==",
-                                property : 'ParentIdentifier',
-                                value : this.parentRecordStore.getAt(0).get("identifier")
-                            }, {
-                                type : "&&",
-                                filters : [{
-                                    type : "==",
-                                    property : 'KeywordType',
-                                    value : 'derivative'
-                                }, {
-                                    type : "==",
-                                    property : 'Subject',
-                                    value : derivative.get('derivative')
-                                }]
-                            }]
-                        },
-                        version : '1.1.0'
-                    }
-                }
-            },
+        this.derivRecordStore = new GDP.MetadataRecordsStore({
+            url : 'json/' + derivative.get('derivative').toLowerCase().replace(/ /g, '_') + '.json',
+            storeId : 'metadataStore',
+            opts : {},
             listeners : {
                 load : function (derivStore) {
-                    LOG.debug('DatasetConfigPanel: Catalog store has finished loading.');
+                    LOG.debug('DatasetConfigPanel: Meta data store has finished loading.');
                     this.derivStoreOnLoad(derivStore);
                 },
                 exception : function () {
-                    LOG.debug('DatasetConfigPanel: Catalog store has encountered an exception.');
+                    LOG.debug('DatasetConfigPanel: Meta data store has encountered an exception.');
                     this.controller.getRecordsExceptionOccurred();
                 },
                 scope : this
@@ -588,13 +558,13 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
     },
 
 	/**
-	 * Loads one or more CSW records based on identifier and an array of scenarios
-	 * @argument {Object} args 
-	 *	parentIdentifier - CSW fileIdentifier for derivative
+	 * Loads one or more metadata records based on identifier and an array of scenarios
+	 * @argument {Object} args
+	 *	parentIdentifier - fileIdentifier for derivative
 	 *	scenarios - Array of scenario names
 	 *	callbacks - {
 	 *		success : [
-	 *			function(GDP.CSWGetRecordsStore) {}
+	 *			function(GDP.MetadataRecordsStore) {}
 	 *		],
 	 *		error : [
 	 *			function() {}
@@ -606,37 +576,7 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 		args = args || {};
 		var parentIdentifier = args.parentIdentifier || this.derivRecordStore.getAt(0).get("identifier"),
 			scenarios = args.scenarios || [this.controller.getScenario().get('scenario')],
-			scenarioFilters = (function (scenarios) {
-				// It's possible that the incoming argument is an array of arrays of strings.
-				// We need an array of strings
-				var cleanedScenarios = (function (scenarios) {
-					scenarios = scenarios || [];
-					var cleanedScenarios = [];
-					if (Object.prototype.toString.call(scenarios[0]) === '[object Array]') {
-						Ext.each(scenarios, function (scenario) {
-							this.push(scenario[0]);
-						}, cleanedScenarios);
-					}
-					return cleanedScenarios;
-				}(scenarios)),
-					scenariosArray = [
-						{
-							type: "==",
-							property: 'KeywordType',
-							value: 'scenario'
-						}
-					];
 
-				Ext.each(cleanedScenarios, function (scenario) {
-					this.push({
-						type: "==",
-						property: 'Subject',
-						value: scenario
-					});
-				}, scenariosArray);
-
-				return scenariosArray;
-			}(scenarios)),
 			callbacks = args.callbacks || {
 				success: [
 					function (store) {
@@ -651,41 +591,19 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 			};
 
 		if (scenarios && scenarios.length) {
-			this.leafRecordStore = new GDP.CSWGetRecordsStore({
-				url: "geonetwork/csw",
-				storeId: 'cswStore',
-				opts: {
-					resultType: 'results',
-					outputSchema: 'http://www.isotc211.org/2005/gmd',
-					Query: {
-						ElementSetName: {
-							value: 'full'
-						},
-						Constraint: {
-							Filter: {
-								type: '&&',
-								filters: [{
-									type: "==",
-									property: 'ParentIdentifier',
-									value: parentIdentifier
-								}, {
-									type: "||",
-									filters: scenarioFilters
-								}]
-							},
-							version: '1.1.0'
-						}
-					}
-				},
+			this.leafRecordStore = new GDP.MetadataRecordsStore({
+				url: "json/" + parentIdentifier + '_scenarios.json',
+				storeId: 'metadataStore',
+				opts: {},
 				listeners: {
 					load: function (leafStore) {
-						LOG.debug('DatasetConfigPanel: Catalog store has finished loading.');
+						LOG.debug('DatasetConfigPanel: Metadata store has finished loading.');
 						for (var sCallback = 0;sCallback < callbacks.success.length; sCallback++) {
 							callbacks.success[sCallback].call(this, leafStore);
 						}
 					},
 					exception: function() {
-						LOG.debug('DatasetConfigPanel: Catalog store has encountered an exception.');
+						LOG.debug('DatasetConfigPanel: Metadata store has encountered an exception.');
 						for (var sCallback = 0; sCallback < callbacks.success.length; sCallback++) {
 							callbacks.error[sCallback].call(this);
 						}

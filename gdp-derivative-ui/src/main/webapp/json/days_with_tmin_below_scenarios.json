@@ -1,0 +1,71 @@
+[
+	{
+		"identifier" : "days_with_tmin_below_a1fI",
+		"descriptiveKeywords" : {
+			"scenarios" : [
+				"A1FI"
+			],
+			"gcm" : [
+				"Ensemble",
+				"PCM",
+				"HADCM3",
+				"GFDL 2.1",
+				"CCSM3"
+			]
+		},
+		"serviceIdentification" : {
+			"wms" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1&DATASET=a1fi_tmin"
+		}
+	},{
+		"identifier" : "days_with_tmin_below_a1b",
+		"descriptiveKeywords" : {
+			"scenarios" : [
+				"A1B"
+			],
+			"gcm" : [
+				"Ensemble",
+				"PCM",
+				"HADCM3",
+				"GFDL 2.1",
+				"CCSM3"
+			]
+		},
+		"serviceIdentification" : {
+			"wms" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1&DATASET=a1b_tmin"
+		} 
+	},{
+		"identifier" : "days_with_tmin_below_a2",
+		"descriptiveKeywords" : {
+			"scenarios" : [
+				"A2"
+			],
+			"gcm" : [
+				"Ensemble",
+				"PCM",
+				"HADCM3",
+				"GFDL 2.1",
+				"CCSM3"
+			]
+		},
+		"serviceIdentification" : {
+			"wms" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1&DATASET=a2_tmin"
+		}	
+	}, {
+		"identifier" : "days_with_tmin_below_b1",
+		"descriptiveKeywords" : {
+			"scenarios" : [
+				"B1"
+			],
+			"gcm" : [
+				"Ensemble",
+				"PCM",
+				"HADCM3",
+				"GFDL 2.1",
+				"CCSM3"
+			]
+		},
+		"serviceIdentification" : {
+			"wms" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1&DATASET=b1_tmin"
+		}
+	}
+]

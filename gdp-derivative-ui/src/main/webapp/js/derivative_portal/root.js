@@ -4,14 +4,14 @@ var LOADMASK;
 
 if (Ext.isIE) { // http://www.mail-archive.com/users@openlayers.org/msg01838.html
     document.namespaces;
-} 
+}
 
 Ext.onReady(function () {
     initializeLogging();
     initializeNotification();
     initializeMapping();
     initializeQuickTips();
-	
+
 	// Add the correct URL to the footer
 	document.getElementById('footer-url-info').innerHTML = 'URL: ' + document.location.href;
 });
@@ -21,11 +21,11 @@ Ext.onReady(function () {
  */
 function initializeLogging() {
     LOG = log4javascript.getLogger();
-    
+
     var layout = new log4javascript.PatternLayout(GDP.LOG4JS_PATTERN_LAYOUT);
-    
+
     var appender = new log4javascript.BrowserConsoleAppender();
-    
+
     appender.setLayout(layout);
     //    Thresholds:
     //    log4javascript.Level.ALL
@@ -37,42 +37,42 @@ function initializeLogging() {
     //    log4javascript.Level.FATAL
     //    log4javascript.Level.OFF
     appender.setThreshold(log4javascript.Level.ALL);
-    
+
     LOG.addAppender(appender);
-    
+
     LOG.info('Derivative Portal: Log4javascript v.'+log4javascript.version+' initialized.');
 }
 
 /**
- * Usage example : 
+ * Usage example :
  *      NOTIFY.error({
  *          msg : 'Message here'
  *      });
  */
 function initializeNotification() {
     LOG.info('Derivative Portal: Initializing Notification.');
-    
+
     var defaultConfig = {
         msgWidth: 400,
         hideDelay: 8000
     };
-    
+
     /**
      * ERROR
      */
     var _notifyError = function (args) {
         LOG.trace('Derivative Portal: Showing error popup');
         var config = args || {};
-	
+
         var moreInfo = new Ext.Button({
             text: 'More Info...'
         });
-        
+
         var buttons = [];
         if (config.moreInfoAction) {
             buttons.push(moreInfo);
         }
-        
+
         var notifyError = new Ext.ux.Notify(Ext.applyIf({
             title: 'Error!',
             titleIconCls: 'titleicon-error',
@@ -80,17 +80,17 @@ function initializeNotification() {
             msg: config.msg || 'An error has occured.',
             buttons: buttons
         }, defaultConfig));
-		
+
         if (config.moreInfoAction) {
             moreInfo.on('click', function() {
                 notifyError.hide();
                 config.moreInfoAction();
             });
         }
-		
+
         notifyError.show(document);
     };
-	
+
     /**
      * SUCCESS
      */
@@ -102,10 +102,10 @@ function initializeNotification() {
             msg: msg.msg || 'Data saved successfully.'
         }, defaultConfig)).show(document);
     };
-	
+
     /**
      * DEBUG NOTIFY
-     */    
+     */
     var _notifyDebug = function (msg) {
         LOG.debug('Derivative Portal: Showing debug popup');
         new Ext.ux.Notify(Ext.applyIf({
@@ -114,7 +114,7 @@ function initializeNotification() {
             msg: msg.msg || ''
         }, defaultConfig)).show(document);
     };
-    
+
     /**
      * WARNING
      */
@@ -126,7 +126,7 @@ function initializeNotification() {
             msg: msg.msg || ''
         }, defaultConfig)).show(document);
     };
-    
+
     /**
      * INFO
      */
@@ -137,8 +137,8 @@ function initializeNotification() {
             titleIconCls: 'titleicon-info',
             msg: msg.msg || ''
         }, defaultConfig)).show(document);
-    };    
-    
+    };
+
     NOTIFY = {
         debug : _notifyDebug,
         success : _notifySuccess,
@@ -146,49 +146,49 @@ function initializeNotification() {
         warn : _notifyWarning,
         info : _notifyInfo
     };
-    
+
     LOG.info('Derivative Portal: Notification Initialized.');
 }
 
 function initializeMapping() {
     LOG.info('Derivative Portal: Initializing Mapping.');
-	
+
     LOG.debug('Derivative Portal:initializeMapping: Constructing endpoint panel.');
     var legendStore = new Ext.data.JsonStore({
         idProperty: 'name',
         root: 'styles',
         fields: [
         {
-            name: 'name', 
+            name: 'name',
             mapping: 'name'
         },
         {
-            name: 'title', 
+            name: 'title',
             mapping: 'title'
         },
         {
-            name: 'abstrakt', 
+            name: 'abstrakt',
             mapping: 'abstract'
         },
         {
-            name: 'width', 
+            name: 'width',
             mapping: 'legend.width'
         },
         {
-            name: 'height', 
+            name: 'height',
             mapping: 'legend.height'
         },
         {
-            name: 'format', 
+            name: 'format',
             mapping: 'legend.format'
         },
         {
-            name: 'href', 
+            name: 'href',
             mapping: 'legend.href'
         }
         ]
     });
-    
+
     var baseLayerStore = new GeoExt.data.LayerStore({
         layers : [
         new OpenLayers.Layer.XYZ(
@@ -236,7 +236,7 @@ function initializeMapping() {
         legendStore : legendStore,
         dimensions : ['time', 'elevation']
     });
-    
+
     var mapPanel = new GDP.BaseMap({
         id : 'mapPanel',
         region: 'center',
@@ -247,18 +247,18 @@ function initializeMapping() {
     });
 
     layerController.requestBaseLayer(layerController.getBaseLayer());
-    
+
     var capabilitiesStore = new GeoExt.data.WMSCapabilitiesStore({
         url : GDP.WMS_URL,
         storeId : 'capabilitiesStore'
     });
-    
+
     /*
      * Documenting this, because this is very much a convention, close to a hack
-     * Parent record is a starting point, the id is all we need to enter a 
-     * "CSW tree".
-     * 
-     * The "CSW tree" needs to have the following dynamics
+     * Parent record is a starting point to enter a
+     * "Metadata tree".
+     *
+     * The "Metadata tree" needs to have the following dynamics
      * - Parent record enumerates keywords of all children, broken into categories
      * - Children only contain the keywords that describe data in their branch
      * - The leaf record contains both a data endpoint and wms endpoint (sos?)
@@ -267,28 +267,12 @@ function initializeMapping() {
      * - Keywords are used to build the UI, which then are used to get to the
      *   map layer or data
      */
-    var getRecordsStore = new GDP.CSWGetRecordsStore({
-        url : "geonetwork/csw",
-        storeId : 'cswStore',
-        opts : {
-            resultType : 'results',
-            outputSchema : 'http://www.isotc211.org/2005/gmd',
-            Query : {
-                ElementSetName : {
-                    value: 'full'
-                },
-                Constraint : {
-                    Filter : {
-                        type : '==',
-                        property : 'identifier',
-                        value : GDP.CSW_QUERY_CONSTRAINT_FILTER_VALUE
-                    },
-                    version : '1.1.0'
-                }
-            }
-        }
+    var getRecordsStore = new GDP.MetadataRecordsStore({
+        url : "json/parent.json",
+        storeId : 'metadataStore',
+        opts : {}
     });
-    
+
     var configPanel = new GDP.DatasetConfigPanel({
         controller : layerController,
         collapsible : true,
@@ -310,17 +294,17 @@ function initializeMapping() {
         height : 200,
         controller : layerController
     });
-    
+
     var centerPanel = new Ext.Panel({
         id : 'center-panel',
         region : 'center',
         layout : 'border',
         items : [ mapPanel, plotterPanel]
     });
-    
+
     LOG.info('Derivative Portal: Mapping initialized.');
     LOADMASK = new Ext.LoadMask(Ext.getBody(), {
-        msg: '<div id="cida-load-msg">Loading...</div><img src="images/cida-anim.gif" />', 
+        msg: '<div id="cida-load-msg">Loading...</div><img src="images/cida-anim.gif" />',
         msgCls: 'cida-load'
     });
     LOADMASK.show();
@@ -343,10 +327,10 @@ function initializeMapping() {
     });
     var viewPort = new Ext.Viewport({
         renderTo : document.body,
-        items : [headerPanel, centerPanel, configPanel, footerPanel], 
+        items : [headerPanel, centerPanel, configPanel, footerPanel],
         layout: 'border'
     });
-    
+
     layerController.on('application-resize', function(collapse){
         LOG.debug('Root:Observed "application-resize": Expand: ' + collapse);
         if (collapse) {
@@ -373,7 +357,7 @@ function initializeQuickTips() {
 }
 
 // This is here just for shortcutting some processes in order to test stuff like XML parsing
-function test() { 
+function test() {
     var testArray = [2, 3, 4, 5];
     LOG.debug(Array.max(testArray, 2));
     LOG.debug(Array.max(testArray, 11));
