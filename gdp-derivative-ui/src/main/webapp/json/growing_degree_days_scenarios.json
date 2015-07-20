@@ -65,7 +65,7 @@
 			]
 		},
 		"serviceIdentification" : {
-			"wms" : ">http://cida-eros-derivativeprod.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1&DATASET=b1_growing_degree_days"
+			"wms" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1&DATASET=b1_growing_degree_days"
 		}
 	}
 ]
