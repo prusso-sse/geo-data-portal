@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>gov.usgs.cida.gdp</groupId>
+		<artifactId>gdp</artifactId>
+		<version>39-SNAPSHOT</version>
+	</parent>
+	<artifactId>gdp-liquibase-changelogs</artifactId>
+	<packaging>jar</packaging>
+	
+	<name>GDP Liquibase Changelogs</name>
+	
+	<properties>
+		<liquibase.version>3.4.0</liquibase.version>
+		<db.schema>gdp</db.schema>
+	</properties>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>cida-public</id>
+			<name>CIDA plugin repository</name>
+			<url>http://cida.usgs.gov/maven/cida-public/</url>
+		</pluginRepository>
+	</pluginRepositories>
+	<dependencies>
+		<dependency>
+			<groupId>org.liquibase</groupId>
+			<artifactId>liquibase-core</artifactId>
+			<version>${liquibase.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>9.3-1103-jdbc41</version>
+		</dependency>
+	</dependencies>
+</project>
