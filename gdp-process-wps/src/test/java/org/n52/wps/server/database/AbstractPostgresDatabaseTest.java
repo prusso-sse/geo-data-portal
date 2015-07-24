@@ -1,5 +1,7 @@
 package org.n52.wps.server.database;
 
+import gov.usgs.cida.gdp.liquibase.LiquibaseUtility;
+
 import static java.text.MessageFormat.format;
 
 import java.io.PrintWriter;
@@ -24,29 +26,34 @@ import ru.yandex.qatools.embed.postgresql.config.PostgresConfig;
 
 public class AbstractPostgresDatabaseTest {
 
+	private static final String DB_NAME = "test";
+	private static final String DB_USER = "wpsTest";
+	private static final String DB_PASS = "abc12345";
+	
 	protected static PostgresProcess process = null;
 	protected static DataSource ds = null;
 
 	@BeforeClass
 	public static void setupInMemoryDB() throws Exception {
 		// starting Postgres
-	    PostgresStarter<PostgresExecutable, PostgresProcess> runtime = PostgresStarter.getDefaultInstance();
-	    final PostgresConfig config = PostgresConfig.defaultWithDbName("test", "wpsTest", "abc12345");
-	    
-	    PostgresExecutable exec = runtime.prepare(config);
-	    process = exec.start();
-	
-	    // connecting to a running Postgres
-	    final String url = format("jdbc:postgresql://{0}:{1,number,#}/{2}?user={3}&password={4}",
-	            config.net().host(),
-	            config.net().port(),
-	            config.storage().dbName(),config.credentials().username(), config.credentials().password()
-	    );
-	    
-	    ds = initializeDataSource(url);
-	    
-	    setupJNDI(ds);
-	    PostgresDatabase.getInstance();
+		PostgresStarter<PostgresExecutable, PostgresProcess> runtime = PostgresStarter.getDefaultInstance();
+		final PostgresConfig config = PostgresConfig.defaultWithDbName(DB_NAME, DB_USER, DB_PASS);
+
+		PostgresExecutable exec = runtime.prepare(config);
+		process = exec.start();
+
+		// connecting to a running Postgres
+		final String url = format("jdbc:postgresql://{0}:{1,number,#}/{2}?user={3}&password={4}",
+				config.net().host(),
+				config.net().port(),
+				config.storage().dbName(), config.credentials().username(), config.credentials().password()
+		);
+
+		ds = initializeDataSource(url);
+
+		setupJNDI(ds);
+		LiquibaseUtility.update(ds);
+		PostgresDatabase.getInstance();
 	}
 
 	private static DataSource initializeDataSource(final String url) {
@@ -55,45 +62,64 @@ public class AbstractPostgresDatabaseTest {
 			public Connection getConnection(String username, String password) throws SQLException {
 				return DriverManager.getConnection(url);
 			}
-			
+
 			@Override
 			public Connection getConnection() throws SQLException {
 				return DriverManager.getConnection(url);
 			}
+
 			@Override
-			public <T> T unwrap(Class<T> iface) throws SQLException {return null;}
+			public <T> T unwrap(Class<T> iface) throws SQLException {
+				return null;
+			}
+
 			@Override
-			public boolean isWrapperFor(Class<?> iface) throws SQLException {return false;}
+			public boolean isWrapperFor(Class<?> iface) throws SQLException {
+				return false;
+			}
+
 			@Override
-			public void setLoginTimeout(int seconds) throws SQLException {}
+			public void setLoginTimeout(int seconds) throws SQLException {
+			}
+
 			@Override
-			public void setLogWriter(PrintWriter out) throws SQLException {}
+			public void setLogWriter(PrintWriter out) throws SQLException {
+			}
+
 			@Override
-			public Logger getParentLogger() throws SQLFeatureNotSupportedException {return null;}
+			public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+				return null;
+			}
+
 			@Override
-			public int getLoginTimeout() throws SQLException {return 0;}
+			public int getLoginTimeout() throws SQLException {
+				return 0;
+			}
+
 			@Override
-			public PrintWriter getLogWriter() throws SQLException {return null;}
+			public PrintWriter getLogWriter() throws SQLException {
+				return null;
+			}
 		};
 	}
 
 	private static void setupJNDI(DataSource ds) throws NamingException {
 		// Create initial context
-	    System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory");
-	    System.setProperty(Context.URL_PKG_PREFIXES, "org.apache.naming");            
-	    InitialContext ic = new InitialContext();
-	
-	    ic.createSubcontext("java:");
-	    ic.createSubcontext("java:comp");
-	    ic.createSubcontext("java:comp/env");
-	    ic.createSubcontext("java:comp/env/jdbc");
-	    
-	    ic.bind("java:comp/env/jdbc/" + "gdp", ds);
-	}
+		System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory");
+		System.setProperty(Context.URL_PKG_PREFIXES, "org.apache.naming");
+		InitialContext ic = new InitialContext();
 
+		ic.createSubcontext("java:");
+		ic.createSubcontext("java:comp");
+		ic.createSubcontext("java:comp/env");
+		ic.createSubcontext("java:comp/env/jdbc");
+
+		ic.bind("java:comp/env/jdbc/" + "gdp", ds);
+	}
+	
 	@AfterClass
 	public static void cleanupInMemoryDB() throws SQLException {
-	    process.stop();
+		process.stop();
 	}
 
 }
