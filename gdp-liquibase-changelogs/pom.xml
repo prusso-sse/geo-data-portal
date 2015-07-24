@@ -33,6 +33,11 @@
 			<artifactId>postgresql</artifactId>
 			<version>9.3-1103-jdbc41</version>
 		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.12</version>
+		</dependency>
 	</dependencies>
 	
 	<build>

@@ -6,7 +6,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.sql.Connection;
 import java.sql.Statement;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class PostgresDatabaseTest extends AbstractPostgresDatabaseTest {
