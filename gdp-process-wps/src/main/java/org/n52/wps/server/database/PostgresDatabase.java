@@ -13,7 +13,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,22 +40,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
 import java.io.ByteArrayInputStream;
 
 import java.sql.Savepoint;
 import java.sql.Timestamp;
 import java.util.Calendar;
-import java.util.HashSet;
-import java.util.Set;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
+import net.opengis.ows.x11.CodeType;
 import net.opengis.ows.x11.ExceptionReportDocument.ExceptionReport;
 import net.opengis.ows.x11.LanguageStringType;
 import net.opengis.wps.x100.ExecuteResponseDocument;
 import net.opengis.wps.x100.OutputDataType;
+import net.opengis.wps.x100.OutputDescriptionType;
 import net.opengis.wps.x100.OutputReferenceType;
 import net.opengis.wps.x100.ProcessBriefType;
+import net.opengis.wps.x100.ProcessDescriptionType.ProcessOutputs;
 import net.opengis.wps.x100.ProcessFailedType;
 import net.opengis.wps.x100.ProcessStartedType;
 import net.opengis.wps.x100.StatusType;
@@ -81,8 +80,6 @@ import org.n52.wps.util.XMLBeansHelper;
 public class PostgresDatabase extends AbstractDatabase {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PostgresDatabase.class);
-	
-	private static final String DEFAULT_ENCODING = "UTF-8";
 
 	private static final String KEY_DATABASE_ROOT = "org.n52.wps.server.database";
 	private static final String KEY_DATABASE_PATH = "path";
@@ -96,7 +93,7 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String FILE_URI_PREFIX = "file://";
 	private static final String SUFFIX_GZIP = "gz";
 	private static final String DEFAULT_BASE_DIRECTORY
-	= Joiner.on(File.separator).join(System.getProperty("java.io.tmpdir", "."), "Database", "Results");
+		= Joiner.on(File.separator).join(System.getProperty("java.io.tmpdir", "."), "Database", "Results");
 	private static final ServerDocument.Server server = WPSConfig.getInstance().getWPSConfig().getServer();
 	private static final String baseResultURL = String.format("%s://%s:%s/%s/RetrieveResultServlet?id=",
 			server.getProtocol(), server.getHostname(), server.getHostport(), server.getWebappPath());
@@ -117,60 +114,6 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String OUTPUT_DEF_TABLE_NAME = "output_definition";
 	private static final String OUTPUT_TABLE_NAME = "output";
 	private static final String RESPONSE_TABLE_NAME = "response";
-
-	private static final String CREATE_REQUEST_TABLE_PSQL
-		= "CREATE TABLE " + REQUEST_TABLE_NAME + " ("
-			+ "REQUEST_ID VARCHAR(100) NOT NULL PRIMARY KEY,"
-			+ "WPS_ALGORITHM_IDENTIFIER VARCHAR(200),"
-			+ "REQUEST_XML TEXT)";
-	
-	private static final String CREATE_INPUT_TABLE_PSQL
-		= "CREATE TABLE " + INPUT_TABLE_NAME + " ("
-			+ "ID VARCHAR(100) NOT NULL PRIMARY KEY,"
-			+ "REQUEST_ID VARCHAR(100),"
-			+ "INPUT_IDENTIFIER VARCHAR(200),"
-			+ "INPUT_VALUE VARCHAR(500))";
-			
-	private static final String CREATE_OUTPUT_DEF_TABLE_PSQL
-		= "CREATE TABLE " + OUTPUT_DEF_TABLE_NAME + " ("
-			+ "ID VARCHAR(100) NOT NULL PRIMARY KEY,"
-			+ "REQUEST_ID VARCHAR(100),"
-			+ "MIME_TYPE VARCHAR(100),"
-			+ "OUTPUT_IDENTIFIER VARCHAR(200))";
-
-	private static final String CREATE_RESPONSE_TABLE_PSQL
-		= "CREATE TABLE " + RESPONSE_TABLE_NAME + " ("
-			+ "ID VARCHAR(100) NOT NULL PRIMARY KEY,"
-			+ "REQUEST_ID VARCHAR(100),"
-			+ "WPS_ALGORITHM_IDENTIFIER VARCHAR(200),"
-			+ "STATUS VARCHAR(50),"
-			+ "PERCENT_COMPLETE INTEGER,"
-			+ "CREATION_TIME TIMESTAMP with time zone,"
-			+ "START_TIME TIMESTAMP with time zone,"
-			+ "END_TIME TIMESTAMP with time zone,"
-			+ "EXCEPTION_TEXT TEXT)";
-	
-	/*
-	 * OUTPUT_ID is request_id concattenated with wps output identifier (ex. OUTPUT)
-	 * Not to be confused with OUTPUT_IDENTIFER which is just the identifier
-	 */
-	private static final String CREATE_OUTPUT_TABLE_PSQL
-		= "CREATE TABLE " + OUTPUT_TABLE_NAME + " ("
-			+ "ID VARCHAR(100) NOT NULL PRIMARY KEY,"
-			+ "OUTPUT_ID VARCHAR(100),"
-			+ "RESPONSE_ID VARCHAR(100),"
-			+ "INLINE_RESPONSE TEXT,"
-			+ "MIME_TYPE VARCHAR(100),"
-			+ "RESPONSE_LENGTH BIGINT,"
-			+ "LOCATION VARCHAR(200),"
-			+ "INSERTED TIMESTAMP)";
-
-	private static final ImmutableMap<String, String> CREATE_TABLE_MAP = ImmutableMap.<String, String>builder()
-		.put(REQUEST_TABLE_NAME, CREATE_REQUEST_TABLE_PSQL)
-		.put(INPUT_TABLE_NAME, CREATE_INPUT_TABLE_PSQL)
-		.put(OUTPUT_DEF_TABLE_NAME, CREATE_OUTPUT_DEF_TABLE_PSQL)
-		.put(OUTPUT_TABLE_NAME, CREATE_OUTPUT_TABLE_PSQL)
-		.put(RESPONSE_TABLE_NAME, CREATE_RESPONSE_TABLE_PSQL).build();
 	
 	// SQL STATEMENTS
 	private static final String INSERT_REQUEST_STATEMENT = "INSERT INTO " + REQUEST_TABLE_NAME + " VALUES(?, ?, ?)";
@@ -188,8 +131,8 @@ public class PostgresDatabase extends AbstractDatabase {
 	private static final String SELECT_ALL_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + ", " + RESPONSE_TABLE_NAME
 			+ " WHERE " + OUTPUT_TABLE_NAME + ".RESPONSE_ID=" + RESPONSE_TABLE_NAME + ".ID AND "
 			+ RESPONSE_TABLE_NAME + ".REQUEST_ID=?";
-	private static final String SELECT_OLD_OUTPUT_STATEMENT = "SELECT * FROM " + OUTPUT_TABLE_NAME + " WHERE " +
-			"(SELECT EXTRACT(EPOCH FROM INSERTED) * 1000 AS TIMESTAMP FROM " + OUTPUT_TABLE_NAME + ") outputs WHERE TIMESTAMP < ?";
+	private static final String SELECT_OLD_OUTPUT_STATEMENT = "SELECT * FROM " +
+			"(SELECT *, EXTRACT(EPOCH FROM INSERTED) * 1000 AS TIMESTAMP FROM " + OUTPUT_TABLE_NAME + ") output_time WHERE TIMESTAMP < ?";
 	
 	private PostgresDatabase() {
 		PropertyUtil propertyUtil = new PropertyUtil(server.getDatabase().getPropertyArray(), KEY_DATABASE_ROOT);
@@ -200,7 +143,6 @@ public class PostgresDatabase extends AbstractDatabase {
 			Class.forName("org.postgresql.Driver");
 			initializeBaseDirectory(baseDirectoryPath);
 			initializeConnectionHandler();
-			initializeTables();
 			initializeDatabaseWiper(propertyUtil);
 		} catch (IOException | SQLException | NamingException ex) {
 			LOGGER.error("Error creating PostgresDatabase", ex);
@@ -211,7 +153,7 @@ public class PostgresDatabase extends AbstractDatabase {
 		}
 	}
 
-	private void initializeBaseDirectory(final String baseDirectoryPath) throws IOException {
+	private void initializeBaseDirectory(String baseDirectoryPath) throws IOException {
 		BASE_DIRECTORY = Paths.get(baseDirectoryPath);
 		LOGGER.info("Using \"{}\" as base directory for results database", baseDirectoryPath);
 		Files.createDirectories(BASE_DIRECTORY);
@@ -247,24 +189,6 @@ public class PostgresDatabase extends AbstractDatabase {
 		}
 	}
 
-	private void initializeTables() throws SQLException {
-		try (Connection connection = connectionHandler.getConnection();
-				ResultSet rs = getTables(connection)) {
-			Set<String> tableNames = new HashSet<>();
-			while (rs.next()) {
-				tableNames.add(rs.getString("table_name"));
-			}
-			for (String expectedTableName : CREATE_TABLE_MAP.keySet()) {
-				if (!tableNames.contains(expectedTableName)) {
-					try (Statement st = connection.createStatement()) {
-						LOGGER.debug("Table: " + expectedTableName + " does not yet exist, creating it.");
-						st.executeUpdate(CREATE_TABLE_MAP.get(expectedTableName));
-					}
-				}
-			}
-		}
-	}
-
 	public static synchronized PostgresDatabase getInstance() {
 		if (instance == null) {
 			instance = new PostgresDatabase();
@@ -285,11 +209,7 @@ public class PostgresDatabase extends AbstractDatabase {
 			throw new RuntimeException("Unable to obtain connection to database!", ex);
 		}
 	}
-
-	private ResultSet getTables(Connection connection) throws SQLException {
-		return connection.getMetaData().getTables(null, null, null, new String[]{"TABLE"});
-	}
-
+	
 	@Override
 	public String generateRetrieveResultURL(String id) {
 		return baseResultURL + id;
@@ -614,6 +534,10 @@ public class PostgresDatabase extends AbstractDatabase {
 		WpsOutput ret = null;
 		if (rs != null) {
 			try {
+				/*
+				 * OUTPUT_ID is request_id concattenated with wps output identifier (ex. OUTPUT)
+				 * Not to be confused with OUTPUT_IDENTIFER which is just the identifier
+				 */
 				ret = new WpsOutput(rs.getString("ID"), rs.getString("OUTPUT_ID"),
 						rs.getString("RESPONSE_ID"), rs.getString("INLINE_RESPONSE"),
 						rs.getString("MIME_TYPE"), rs.getLong("RESPONSE_LENGTH"), rs.getString("LOCATION"));
@@ -639,6 +563,8 @@ public class PostgresDatabase extends AbstractDatabase {
 		ExecuteResponseDocument.ExecuteResponse response = doc.addNewExecuteResponse();
 		
 		addResponseHeaders(doc);
+		
+		response.setStatusLocation(generateRetrieveResultURL(id));
 		
 		ProcessBriefType process = response.addNewProcess();
 		process.addNewIdentifier().setStringValue(responseObj.getWpsAlgoIdentifer());
@@ -684,7 +610,10 @@ public class PostgresDatabase extends AbstractDatabase {
 				// This is why the ids should be split up, HACK
 				String outputId = output.getOutputId().replace(id, "");
 				outputType.addNewIdentifier().setStringValue(outputId);
-				// TODO add title outputType.addNewTitle()
+				String titleString = getOutputTitle(output, responseObj, id);
+				if (titleString != null) {
+					outputType.addNewTitle().setStringValue(titleString);
+				}
 				OutputReferenceType reference = outputType.addNewReference();
 				reference.setMimeType(output.getMimeType());
 				reference.setHref(generateRetrieveResultURL(output.getOutputId()));
@@ -702,6 +631,22 @@ public class PostgresDatabase extends AbstractDatabase {
 		doc.getExecuteResponse().setLang(WebProcessingService.DEFAULT_LANGUAGE);
 		doc.getExecuteResponse().setService("WPS");
 		doc.getExecuteResponse().setVersion(Request.SUPPORTED_VERSION);
+	}
+	
+	private String getOutputTitle(WpsOutput output, WpsResponse response, String id) {
+		String title = null;
+		ProcessOutputs outputs = RepositoryManager.getInstance()
+				.getProcessDescription(response.getWpsAlgoIdentifer()).getProcessOutputs();
+		for (OutputDescriptionType type : outputs.getOutputArray()) {
+			CodeType name = type.getIdentifier();
+			LanguageStringType titleType = type.getTitle();
+			// Doing the same identifier 
+			String outputId = output.getOutputId().replace(id, "");
+			if (outputId.equals(name.getStringValue())) {
+				title = titleType.getStringValue();
+			}
+		}
+		return title;
 	}
 
 	/**
