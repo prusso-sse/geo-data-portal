@@ -1,3 +1,5 @@
+--liquibase formatted sql
+
 --changeset jiwalker:2createTableInput
 CREATE TABLE input (
 	ID VARCHAR(100) NOT NULL PRIMARY KEY,

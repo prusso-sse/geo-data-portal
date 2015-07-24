@@ -1,3 +1,5 @@
+--liquibase formatted sql
+
 --changeset jiwalker:4createTableResponse
 CREATE TABLE response (
 	ID VARCHAR(100) NOT NULL PRIMARY KEY,

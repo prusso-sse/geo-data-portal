@@ -13,7 +13,6 @@
 	
 	<properties>
 		<liquibase.version>3.4.0</liquibase.version>
-		<db.schema>gdp</db.schema>
 	</properties>
 
 	<pluginRepositories>
@@ -35,4 +34,20 @@
 			<version>9.3-1103-jdbc41</version>
 		</dependency>
 	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.liquibase</groupId>
+				<artifactId>liquibase-maven-plugin</artifactId>
+				<version>${liquibase.version}</version>
+				<configuration>
+					<changeLogFile>src/main/resources/changeLog.xml</changeLogFile>
+					<promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
+					<schemas>public</schemas>
+					<contexts>default</contexts>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>

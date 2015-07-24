@@ -1,3 +1,5 @@
+--liquibase formatted sql
+
 --changeset jiwalker:3createTableOutputDefinition
 CREATE TABLE output_definition (
 	ID VARCHAR(100) NOT NULL PRIMARY KEY,
