@@ -9,7 +9,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.logging.Logger;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -18,6 +17,7 @@ import javax.sql.DataSource;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.slf4j.LoggerFactory;
 
 import ru.yandex.qatools.embed.postgresql.PostgresExecutable;
 import ru.yandex.qatools.embed.postgresql.PostgresProcess;
@@ -25,6 +25,8 @@ import ru.yandex.qatools.embed.postgresql.PostgresStarter;
 import ru.yandex.qatools.embed.postgresql.config.PostgresConfig;
 
 public class AbstractPostgresDatabaseTest {
+	
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(AbstractPostgresDatabaseTest.class);
 
 	private static final String DB_NAME = "test";
 	private static final String DB_USER = "wpsTest";
@@ -87,17 +89,17 @@ public class AbstractPostgresDatabaseTest {
 			}
 
 			@Override
-			public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-				return null;
-			}
-
-			@Override
 			public int getLoginTimeout() throws SQLException {
 				return 0;
 			}
 
 			@Override
 			public PrintWriter getLogWriter() throws SQLException {
+				return null;
+			}
+
+			@Override
+			public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
 				return null;
 			}
 		};
