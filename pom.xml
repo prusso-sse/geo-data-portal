@@ -10,8 +10,9 @@
 		<module>gdp-common-utilities</module>
 		<module>gdp-data-access</module>
 		<module>gdp-core-processing</module>
+		<module>gdp-liquibase-changelogs</module>
 		<!-- can't add in until netcdf-jna, netcdf-dsg and aparapi projects as added to jenkins/maven -->
-		<!--        <module>gdp-derivative-processing</module>-->
+		<!--<module>gdp-derivative-processing</module>-->
 		<module>gdp-proxy</module>
 		<module>gdp-52n-wps-tests</module>
 		<module>gdp-utility-wps</module>
@@ -21,7 +22,6 @@
 		<module>gdp-derivative-ui</module>
 		<module>gdp-ui-landing</module>
 		<module>gdp-csw-client</module>
-		<module>gdp-liquibase-changelogs</module>
 	</modules>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
