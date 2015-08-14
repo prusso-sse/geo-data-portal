@@ -38,6 +38,10 @@ public class GDPAlgorithmConstants {
     public final static String TIME_END_TITLE = "Time End";
     public final static String TIME_END_ABSTRACT = "The date to end analysis.";
     
+    public final static String OUTPUT_TYPE_IDENTIFIER = "OUTPUT_TYPE";
+    public final static String OUTPUT_TYPE_TITLE = "Output Format Type";
+    public final static String OUTPUT_TYPE_ABSTRACT = "The output type format for this request.  Current implementations: \"netcdf\" and \"geotiff\".";
+    
     
     public final static String DELIMITER_IDENTIFIER = "DELIMITER";
     public final static String DELIMITER_TITLE = "Delimiter";

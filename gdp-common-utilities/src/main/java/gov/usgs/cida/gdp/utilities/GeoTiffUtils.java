@@ -43,6 +43,7 @@ public class GeoTiffUtils {
          */        
         String datasetURI = gridDataset.getLocationURI();        
         String dataId = datasetURI.replace(OPeNDAPUtils.OPENDAP_PROTO, "");
+        dataId = dataId.replace("//", ""); // remove protocal //
         dataId = dataId.replace("/", "-");
         
         /*
