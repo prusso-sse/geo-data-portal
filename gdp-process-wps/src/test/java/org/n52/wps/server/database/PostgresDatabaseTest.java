@@ -5,12 +5,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.sql.Connection;
 import java.sql.Statement;
+import org.junit.Ignore;
 
 import org.junit.Test;
 
+@Ignore
 public class PostgresDatabaseTest extends AbstractPostgresDatabaseTest {
 	
 	@Test
+	@Ignore
 	public void testConnection() throws Exception {
 		PostgresDatabase.getInstance().insertRequest("test", PostgresDatabaseTest.class.getClassLoader().getResourceAsStream("request.xml"), true);
 		// performing some assertions
@@ -30,6 +33,7 @@ public class PostgresDatabaseTest extends AbstractPostgresDatabaseTest {
 	}
 	
 	@Test
+	@Ignore
 	public void testInsertResponse() throws Exception {
 		PostgresDatabase.getInstance().insertResponse("test", PostgresDatabaseTest.class.getClassLoader().getResourceAsStream("succeeded.xml"));
 		// performing some assertions
