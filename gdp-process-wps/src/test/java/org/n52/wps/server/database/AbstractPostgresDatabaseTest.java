@@ -17,6 +17,7 @@ import javax.sql.DataSource;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.slf4j.LoggerFactory;
 
 import ru.yandex.qatools.embed.postgresql.PostgresExecutable;
@@ -24,6 +25,7 @@ import ru.yandex.qatools.embed.postgresql.PostgresProcess;
 import ru.yandex.qatools.embed.postgresql.PostgresStarter;
 import ru.yandex.qatools.embed.postgresql.config.PostgresConfig;
 
+@Ignore
 public class AbstractPostgresDatabaseTest {
 	
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(AbstractPostgresDatabaseTest.class);
