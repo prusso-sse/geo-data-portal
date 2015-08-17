@@ -132,25 +132,33 @@ public class GeoTiffUtils {
          * Final check to make sure that the zip file actually exists and then return the
          * File handle to the caller.
          */
-        if((result != null) && (result.exists())) {
-            return result;
-        } else {
+        if (result == null || !result.exists()) {
             throw new GeoTiffUtilException(GeoTiffUtilExceptionID.GENERAL_EXCEPTION,
                     "GeoTiffUtils", "generateGeoTiffZipFromGrid", "Unable to find resulting GeoTiff zipped file " +
                     resultingZipFileName + "].");
         }
+        
+        return result;
     }
     
     public static void createGeoTiffForGrid(GridDataset gridDataset, GridDatatype grid, int timeIndex, String filename) throws GeoTiffUtilException {
+        GeotiffWriter writer = null;
         try {
             Array data = grid.readDataSlice(timeIndex, 0, -1, -1);
-            GeotiffWriter writer = new GeotiffWriter(filename);
+            writer = new GeotiffWriter(filename);
             writer.writeGrid(gridDataset, grid, data, false);
-            writer.close();
         } catch (Exception e) {
             throw new GeoTiffUtilException(GeoTiffUtilExceptionID.GEOTIFFWRITER_EXCEPTION,
                     "GeoTiffUtils", "generateGeoTiffZipFromGrid", "Unable to generate Tiff image from grid [" +
                     gridDataset.getLocationURI() + "].  Exception: " + e.getMessage());
+        } finally {
+            if(writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    LOGGER.error("GeoTiffUtils.createGeoTiffForGrid() Exception: Unable to close GeotiffWriter.  Exception: " + e.getMessage());
+                }
+            }
         }
     }
 }

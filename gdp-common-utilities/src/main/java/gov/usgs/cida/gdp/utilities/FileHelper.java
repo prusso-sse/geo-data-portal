@@ -480,13 +480,8 @@ public class FileHelper {
      * @throws IOException
      */
     public static boolean zipDirectory(String inputDirectory, String absoluteFileName) throws FileNotFoundException, IOException {
-        FileOutputStream outputStream = null;
-        ZipOutputStream zipOutputStream = null;
-        
-        try {
-            outputStream = new FileOutputStream(absoluteFileName);
-            zipOutputStream = new ZipOutputStream(outputStream);
-            
+        try(FileOutputStream outputStream = new FileOutputStream(absoluteFileName);
+            ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
             Iterator<File> directoryContentsItr = FileUtils.iterateFiles(new File(inputDirectory), null, false);
             
             while(directoryContentsItr.hasNext()) {
@@ -502,16 +497,13 @@ public class FileHelper {
                         ZipEntry zipEntry = new ZipEntry(file.getName());
                         zipOutputStream.putNextEntry(zipEntry);
         
-                        byte[] bytes = new byte[1024];
-                        int length;
-                        while ((length = inputStream.read(bytes)) >= 0) {
-                            zipOutputStream.write(bytes, 0, length);
-                        }
+                        IOUtils.copy(inputStream, zipOutputStream);
                         
                         written = true;
                     } finally {
                         if(written) {
-                            zipOutputStream.closeEntry();
+                            zipOutputStream.finish();
+                            zipOutputStream.flush();
                         }
                         
                         if(inputStream != null) {
@@ -520,14 +512,6 @@ public class FileHelper {
                     }
                 }
             }        
-        } finally {
-            if(zipOutputStream != null) {
-                zipOutputStream.close();
-            }
-            
-            if(outputStream != null) {
-                outputStream.close();
-            }
         }
         
         return true;
