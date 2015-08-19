@@ -40,9 +40,6 @@ import ucar.nc2.dt.GridDataset;
 public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotatedAlgorithm {
     
     private static final Logger log = LoggerFactory.getLogger(FeatureCoverageOPeNDAPIntersectionAlgorithm.class);
-    
-    private static final String NETCDF_OUTPUT_TYPE = "netcdf";
-    private static final String GEOTIFF_OUTPUT_TYPE = "geotiff";
 
     public enum OutputType {
         netcdf,
