@@ -363,7 +363,7 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
 		this.controller.setOPeNDAPEndpoint(record.get("opendap"));
 
         if (this.controller.getShowChange()) {
-            this.capabilitiesStore.proxy.setApi(Ext.data.Api.actions.read, url + '_delta');
+            this.capabilitiesStore.proxy.setApi(Ext.data.Api.actions.read, url.replace('der_periods','der_diff'));
             this.capabilitiesStore.load();
         } else {
             this.capabilitiesStore.proxy.setApi(Ext.data.Api.actions.read, url);
