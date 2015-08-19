@@ -5,9 +5,8 @@ import gov.usgs.cida.gdp.utilities.GeoTiffUtils;
 import gov.usgs.cida.gdp.utilities.exception.GeoTiffUtilException;
 import gov.usgs.cida.gdp.wps.algorithm.heuristic.ResultSizeAlgorithmHeuristic;
 import gov.usgs.cida.gdp.wps.algorithm.heuristic.exception.AlgorithmHeuristicException;
+import gov.usgs.cida.gdp.wps.binding.CoverageFileBinding;
 import gov.usgs.cida.gdp.wps.binding.GMLStreamingFeatureCollectionBinding;
-import gov.usgs.cida.gdp.wps.binding.NetCDFFileBinding;
-import gov.usgs.cida.gdp.wps.binding.ZipFileBinding;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,9 +40,11 @@ import ucar.nc2.dt.GridDataset;
 public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotatedAlgorithm {
     
     private static final Logger log = LoggerFactory.getLogger(FeatureCoverageOPeNDAPIntersectionAlgorithm.class);
-    
-    private static final String NETCDF_OUTPUT_TYPE = "netcdf";
-    private static final String GEOTIFF_OUTPUT_TYPE = "geotiff";
+
+    public enum OutputType {
+        netcdf,
+        geotiff;
+    }
 
     private ResultSizeAlgorithmHeuristic resultSizeHeuristic = new ResultSizeAlgorithmHeuristic();
     
@@ -53,7 +54,7 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
     private boolean requireFullCoverage;
     private Date timeStart;
     private Date timeEnd;
-    private boolean geoTiffRequest = false;
+    private OutputType outputType;
 
     private File output;
 
@@ -121,117 +122,25 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
             abstrakt=GDPAlgorithmConstants.OUTPUT_TYPE_ABSTRACT,
             minOccurs=0,
             maxOccurs=1)
-    public void setOutputType(String outputType) {
-        if((outputType != null) && (!outputType.isEmpty())) {
-            if(NETCDF_OUTPUT_TYPE.equals(outputType)) {
-                geoTiffRequest = false;
-            } else if(GEOTIFF_OUTPUT_TYPE.equals(outputType)) {
-                geoTiffRequest = true;
-            } else {
-                geoTiffRequest = false;
-                log.error("Unknown Output Type requested [" +
-                        outputType + "].  Using default [" +
-                        NETCDF_OUTPUT_TYPE + "]");
-            }
+    public void setOutputType(OutputType outputType) {
+        if (outputType == null) {
+            this.outputType = OutputType.netcdf;
+        } else {
+            this.outputType = outputType;
         }
     }
     
     /*
-     * Algorithm Outputs are confusing with the new OUTPUT_TYPE input option.
-     * 
-     * 
-        There are rules that need to be followed in order for .zip outputs to be
-        received by the <wps:ProcessOutputs> reference field. I added 2 more
-        OUTPUT types:
-                - OUTPUT-NETCDF
-                - OUTPUT-GEOTIFF
-        These will need to be declared in the request POST ResponseDocument
-        field when specifically asking for a file format. The current (and
-        default) way to describe the OUTPUT is as follows:
-        
-                <wps:ResponseForm>
-                    <wps:ResponseDocument storeExecuteResponse="true"
-                        status="true">
-                        <wps:Output asReference="true">
-                            <ows:Identifier>OUTPUT</ows:Identifier>
-                        </wps:Output>
-                    </wps:ResponseDocument>
-                </wps:ResponseForm>
-            
-        This will result in a .nc file REGARDLESS if the user added the
-        OUTPUT_TYPE as "geotiff".
-        
-        The OUTPUT-NETCDF output is for the NETCDF file format and looks like:
-        
-                <wps:ResponseForm>
-                    <wps:ResponseDocument storeExecuteResponse="true"
-                        status="true">
-                        <wps:Output asReference="true">
-                            <ows:Identifier>OUTPUT-NETCDF</ows:Identifier>
-                        </wps:Output>
-                    </wps:ResponseDocument>
-                </wps:ResponseForm>
-                
-        This behaves exactly like the default OUTPUT previously described. It
-        will result in a .nc file REGARDLESS if the user added the OUTPUT_TYPE
-        as "geotiff".
-        
-        The final output is OUTPUT-GEOTIFF and is for a zip file containing all
-        the GeoTiff files expressed in the request. It looks like:
-        
-                <wps:ResponseForm>
-                    <wps:ResponseDocument storeExecuteResponse="true"
-                        status="true">
-                        <wps:Output asReference="true">
-                            <ows:Identifier>OUTPUT-GEOTIFF</ows:Identifier>
-                        </wps:Output>
-                    </wps:ResponseDocument>
-                </wps:ResponseForm>
-                
-        This will result in a .zip file extension on the output file. But just
-        like the other 2 outputs, if OUTPUT_TYPE was not specified as "geotiff",
-        it will be a NetCDF file with the extension of .zip.
-        
-        I could find no other way to logically express OR give an error when the
-        OUTPUT_TYPE and OUTPUT elements in the request POST payload conflict.
-        
-        In all cases above, the only actual issue is the extension on the
-        filename that is downloaded. So, if an OUTPUT_TYPE of "geotiff" is in
-        the request but the OUTPUT is not "OUTPUT-GEOTIFF", it will result in a
-        zipped file with an extension of .nc. It is STILL a zip file, it just
-        does not have the correct extension.
-        
-        The same goes the other way. If there is no OUTPUT_TYPE in the request
-        or the OUTPUT_TYPE is "netcdf" and the OUTPUT is expressed as
-        OUTPUT-GEOTIFF, it will result in a netcdf file with an extension of
-        .zip. It is STILL a .nc file, it just does not have the correct
-        extension.
-     * 
-     * 
-     * 
-     * 
+     *  This is a bit confusing, but similar to FeatureWeightedGridStatistics
+     *  if OUTPUT_TYPE is geotiff, the mimeType of the output should be
+     *  application/zip, or the download will have the wrong extension
+     *  if OUTPUT_TYPE is netcdf, the mimeType should be application/netcdf
      */
     @ComplexDataOutput(identifier="OUTPUT",
             title="Output File",
             abstrakt="A NetCDF file containing requested data.",
-            binding=NetCDFFileBinding.class)
+            binding=CoverageFileBinding.class)
     public File getOutput() {
-        return output;
-    }
-
-    @ComplexDataOutput(identifier="OUTPUT-NETCDF",
-            title="Output File",
-            abstrakt="A NetCDF file containing requested data.",
-            binding=NetCDFFileBinding.class)
-    public File getNetcdfOutput() {
-        return output;
-    }
-
-    @ComplexDataOutput(identifier="OUTPUT-GEOTIFF",
-            title="Output File",
-            abstrakt="A Zip file containing GeoTiff files of the requested data.",
-            binding=ZipFileBinding.class)
-    public File getGeotiffOutput() {
         return output;
     }
 
@@ -261,7 +170,7 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
              * If its a GeoTiff file, we do the GeoTiffUtils logic.
              *      If no output is described we default to NetCDF
              */
-            if(geoTiffRequest) {
+            if(OutputType.geotiff == outputType) {
                 output = GeoTiffUtils.generateGeoTiffZipFromGrid(gridDataSet, datasetId, timeStart, timeEnd, AppConstant.WORK_LOCATION.getValue());
             } else {
                 output = File.createTempFile(getClass().getSimpleName(), ".nc", new File(AppConstant.WORK_LOCATION.getValue()));

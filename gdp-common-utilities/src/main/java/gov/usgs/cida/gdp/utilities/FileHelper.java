@@ -502,8 +502,7 @@ public class FileHelper {
                         written = true;
                     } finally {
                         if(written) {
-                            zipOutputStream.finish();
-                            zipOutputStream.flush();
+                            zipOutputStream.closeEntry();
                         }
                         
                         if(inputStream != null) {
