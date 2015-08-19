@@ -192,10 +192,10 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                     this.scenarioGcmJSON[scenario][gcm] = new Array();
                     var meta = {};
                     var url = endpoint.replace("{shapefile}", this.controller.getCurrentFOI());
-                    url = url.replace('{gcm}', gcm);
-                    url = url.replace('{scenario}', scenario);
-                    url = url.replace('{threshold}', this.controller.getThreshold());
-                    meta.url = url;
+                    url = url.replace(/{gcm}/g, gcm);
+                    url = url.replace(/{scenario}/g, scenario);
+                    url = url.replace('{threshold}', Math.round(this.controller.getThreshold()));
+                    meta.url = url ;
                     meta.scenario = scenario;
                     meta.gcm = gcm;
                     this.loadSOSStore(meta, offering);
@@ -252,7 +252,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             this.origScenarioGcmJSON[scenarioKey] = {};
             Ext.each(args.record.get("gcms"), function (gcm) {
                 if (gcm[0] !== 'Ensemble') {
-                    var gcmKey = this.cleanUpIdentifiers(gcm[0]);
+                    var gcmKey = gcm[0];
                     this.origScenarioGcmJSON[scenarioKey][gcmKey] = [];
                 }
             }, this);
@@ -293,7 +293,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 	},
 
     loadSOSStore : function (meta, offering) {
-        var url = "proxy/" + meta.url + "?service=SOS&request=GetObservation&version=1.0.0&offering=" + encodeURIComponent(encodeURIComponent(offering)) + "&observedProperty=mean";
+        var url = "proxy/" + meta.url + "service=SOS&request=GetObservation&version=1.0.0&offering=" + encodeURIComponent(encodeURIComponent(offering));
 
         this.sosStore.push(new GDP.SOSGetObservationStore({
             url : url, // gmlid is url for now, eventually, use SOS endpoint + gmlid or whatever param
