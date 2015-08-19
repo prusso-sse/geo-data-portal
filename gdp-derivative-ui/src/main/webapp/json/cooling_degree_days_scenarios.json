@@ -1,71 +1,124 @@
 [
-	{
-		"identifier" : "cooling_degree_days_a1fI",
-		"descriptiveKeywords" : {
-			"scenarios" : [
-				"A1FI"
-			],
-			"gcm" : [
-				"Ensemble",
-				"PCM",
-				"HADCM3",
-				"GFDL 2.1",
-				"CCSM3"
-			]
-		},
-		"serviceIdentification" : {
-			"wms" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1&DATASET=a1fi_cooling_degree_days"
-		}
-	},{
-		"identifier" : "cooling_degree_days_a1b",
-		"descriptiveKeywords" : {
-			"scenarios" : [
-				"A1B"
-			],
-			"gcm" : [
-				"Ensemble",
-				"PCM",
-				"HADCM3",
-				"GFDL 2.1",
-				"CCSM3"
-			]
-		},
-		"serviceIdentification" : {
-			"wms" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1&DATASET=a1b_cooling_degree_days"
-		} 
-	},{
-		"identifier" : "cooling_degree_days_a2",
-		"descriptiveKeywords" : {
-			"scenarios" : [
-				"A2"
-			],
-			"gcm" : [
-				"Ensemble",
-				"PCM",
-				"HADCM3",
-				"GFDL 2.1",
-				"CCSM3"
-			]
-		},
-		"serviceIdentification" : {
-			"wms" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1&DATASET=a2_cooling_degree_days"
-		}	
-	}, {
-		"identifier" : "cooling_degree_days_b1",
-		"descriptiveKeywords" : {
-			"scenarios" : [
-				"B1"
-			],
-			"gcm" : [
-				"Ensemble",
-				"PCM",
-				"HADCM3",
-				"GFDL 2.1",
-				"CCSM3"
-			]
-		},
-		"serviceIdentification" : {
-			"wms" : "http://cida-eros-derivativeprod.er.usgs.gov:8080/ncWMS/wms?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.1.1&DATASET=b1_cooling_degree_days"
-		}
-	}
+   {
+       "identifier" : "cooling_degree_days_rcp45",
+       "descriptiveKeywords" : {
+           "scenarios" : [
+               "RCP45"
+           ],
+		    "gcm" : [
+               "ACCESS1-0",
+               "bcc-csm1-1",
+               "BNU-ESM",
+               "CanESM2",
+               "CCSM4",
+               "CESM1-BGC",
+               "CNRM-CM5",
+               "CSIRO-Mk3-6-0",
+               "ensemble",
+               "GFDL-ESM2G",
+               "GFDL-ESM2M",
+               "inmcm4",
+               "IPSL-CM5A-LR",
+               "IPSL-CM5A-MR",
+               "MIROC-ESM-CHEM",
+               "MIROC-ESM",
+               "MIROC5",
+               "MPI-ESM-LR",
+               "MPI-ESM-MR",
+               "MRI-CGCM3",
+               "NorESM1-M"
+           ]
+       },
+       "serviceIdentification" : {
+           "wms" : "http://cida.usgs.gov/thredds/wms/cmip5_bcca/derivatives/ncml/cooling_degree_day_cmip5_der_periods_rcp45.ncml?service=WMS&version=1.1.1&request=GetCapabilities"
+       }
+   },{
+       "identifier" : "cooling_degree_days_rcp60",
+       "descriptiveKeywords" : {
+           "scenarios" : [
+               "RCP60"
+           ],
+		    "gcm" : [
+               "bcc-csm1-1",
+               "CCSM4",
+               "ensemble",
+               "GFDL-CM3",
+               "GFDL-ESM2G",
+               "GFDL-ESM2M",
+               "IPSL-CM5A-LR",
+               "IPSL-CM5A-MR",
+               "MIROC-ESM-CHEM",
+               "MIROC-ESM",
+               "MIROC5",
+               "MRI-CGCM3",
+               "NorESM1-M"
+           ]
+       },
+       "serviceIdentification" : {
+           "wms" : "http://cida.usgs.gov/thredds/wms/cmip5_bcca/derivatives/ncml/cooling_degree_day_cmip5_der_periods_rcp60.ncml?service=WMS&version=1.1.1&request=GetCapabilities"
+       }
+   },{
+       "identifier" : "cooling_degree_days_rcp26",
+       "descriptiveKeywords" : {
+           "scenarios" : [
+               "RCP85"
+           ],
+		    "gcm" : [
+               "bcc-csm1-1",
+               "CanESM2",
+               "CCSM4",
+               "CSIRO-Mk3-6-0",
+               "ensemble",
+               "GFDL-CM3",
+               "GFDL-ESM2G",
+               "GFDL-ESM2M",
+               "IPSL-CM5A-LR",
+               "IPSL-CM5A-MR",
+               "MIROC-ESM-CHEM",
+               "MIROC-ESM",
+               "MIROC5",
+               "MPI-ESM-LR",
+               "MPI-ESM-MR",
+               "MRI-CGCM3",
+               "NorESM1-M"
+           ]
+       },
+       "serviceIdentification" : {
+           "wms" : "http://cida.usgs.gov/thredds/wms/cmip5_bcca/derivatives/ncml/cooling_degree_day_cmip5_der_periods_rcp26.ncml?service=WMS&version=1.1.1&request=GetCapabilities"
+       }
+   },{
+       "identifier" : "cooling_degree_days_rcp85",
+       "descriptiveKeywords" : {
+           "scenarios" : [
+               "RCP85"
+           ],
+		    "gcm" : [
+               "ACCESS1-0",
+               "bcc-csm1-1",
+               "BNU-ESM",
+               "CanESM2",
+               "CCSM4",
+               "CESM1-BGC",
+               "CNRM-CM5",
+               "CSIRO-Mk3-6-0",
+               "ensemble",
+               "GFDL-CM3",
+               "GFDL-ESM2G",
+               "GFDL-ESM2M",
+               "inmcm4",
+               "IPSL-CM5A-LR",
+               "IPSL-CM5A-MR",
+               "MIROC-ESM-CHEM",
+               "MIROC-ESM",
+               "MIROC5",
+               "MPI-ESM-LR",
+               "MPI-ESM-MR",
+               "MRI-CGCM3",
+               "NorESM1-M"
+           ]
+       },
+       "serviceIdentification" : {
+           "wms" : "http://cida.usgs.gov/thredds/wms/cmip5_bcca/derivatives/ncml/cooling_degree_day_cmip5_der_periods_rcp85.ncml?service=WMS&version=1.1.1&request=GetCapabilities"
+       }
+   }
 ]

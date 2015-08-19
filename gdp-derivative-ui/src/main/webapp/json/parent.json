@@ -28,27 +28,55 @@
 
 			"scenarios" : {
 
-			"A1FI" : "Very High: The A1FI scenario describes a future world of very rapid globalization and economic growth with Fossil Intensive (FI) energy sources. The A1FI scenario is displayed by default because it most closely matches the current trajectory of population and emissions growth.",
+			"RCP85" : "Very High: The A1FI scenario describes a future world of very rapid globalization and economic growth with Fossil Intensive (FI) energy sources. The A1FI scenario is displayed by default because it most closely matches the current trajectory of population and emissions growth.",
 
-			"A2" : "High: The A2 scenario describes a very heterogeneous world. Economic development is primarily regionally oriented and per capita economic growth is slower than other scenarios.",
+			"RCP60" : "High: The A2 scenario describes a very heterogeneous world. Economic development is primarily regionally oriented and per capita economic growth is slower than other scenarios.",
 
-			"A1B" : "Medium: The A1B scenario describes a future world of very rapid globalization and economic growth with a Balanced (B) use of energy sources.",
+			"RCP45" : "Medium: The A1B scenario describes a future world of very rapid globalization and economic growth with a Balanced (B) use of energy sources.",
 
-			"B1" : "Low: The B1 scenario describes a future world of very rapic globalization rapid change in economic structures toward the introduction of clean and resource-efficient technologies."
+			"RCP26" : "Low: The B1 scenario describes a future world of very rapic globalization rapid change in economic structures toward the introduction of clean and resource-efficient technologies."
 
 			},
 
 			"gcms" : {
 
-			"Ensemble" : "An ensemble average of PCM, CCSM3, GFDL 2.1, and HADCM3 climate models.",
-
-			"PCM" : "National Center for Atmospheric Research, USA",
-
-			"CCSM3" : "National Center for Atmospheric Research, USA",
-
-			"GFDL 2.1" : "US Dept. of Commerce / NOAA / Geophysical Fluid Dynamics Laboratory, USA",
-
-			"HADCM3" : "Hadley Center, UK"
+            "ACCESS1-0" : "placeholder",
+            
+            "bcc-csm1-1" : "placeholder",
+            
+            "BNU-ESM" : "placeholder",
+            
+            "CanESM2" : "placeholder",
+            
+            "CCSM4" : "placeholder",
+            
+            "CESM1-BGC" : "placeholder",
+            
+            "CSIRO-Mk3-6-0" : "placeholder",
+            
+            "GFDL-CM3" : "placeholder",
+            
+            "GFDL-ESM2G" : "placeholder",
+            
+            "GFDL-ESM2M" : "placeholder",
+            
+            "inmcm4" : "placeholder",
+            
+            "IPSL-CM5A-LR" : "placeholder",
+            
+            "IPSL-CM5A-MR" : "placeholder",
+            
+            "MIROC-ESM" : "placeholder",
+            
+            "MIROC-ESM-CHEM" : "placeholder",
+            
+            "MIROC5" : "placeholder",
+            
+            "MPI-ESM-LR" : "placeholder",
+            
+            "MPI-ESM-MR" : "placeholder",
+            
+            "MRI-CGCM3" : "placeholder"
 
 			}
 
@@ -89,17 +117,33 @@
 				"Growing Season Length"
 			],
 			"scenarios" : [
-				"A1FI",
-				"A2",
-				"A1B",
-				"B1"
+    			"RCP85",
+    			"RCP60",
+    			"RCP45",
+    			"RCP26"
 			],
 			"gcm" : [
-				"Ensemble",
-				"PCM",
-				"CCSM3",
-				"GFDL 2.1",
-				"HADCM3"
+				"ensemble",
+                "ACCESS1-0",
+                "bcc-csm1-1",
+                "BNU-ESM",
+                "CanESM2",
+                "CCSM4",
+                "CESM1-BGC",
+                "CSIRO-Mk3-6-0",
+                "GFDL-CM3",
+                "GFDL-ESM2G",
+                "GFDL-ESM2M",
+                "inmcm4",
+                "IPSL-CM5A-LR",
+                "IPSL-CM5A-MR",
+                "MIROC-ESM",
+                "MIROC-ESM-CHEM",
+                "MIROC5",
+                "MPI-ESM-LR",
+                "MPI-ESM-MR",
+                "MRI-CGCM3",
+                "NorESM1-M"
 			]
 		}
 	}
