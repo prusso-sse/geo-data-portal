@@ -156,7 +156,7 @@ public class OPeNDAPUtilsTest {
         } catch (OPeNDAPUtilException ignore) {}
         
         assertNotNull(openDapURL);    
-        assertTrue(openDapURL.equals("http://daymet.ornl.gov/thredds/dodsC/daymet-agg/daymet-agg.ncml?time[9763:1:10128],y[1903:1:2369],x[1241:1:1852],lambert_conformal_conic,prcp[9763:1:10128][1903:1:2369][1241:1:1852],srad[9763:1:10128][1903:1:2369][1241:1:1852],swe[9763:1:10128][1903:1:2369][1241:1:1852]"));
+        assertTrue(openDapURL.equals("http://daymet.ornl.gov/thredds/dodsC/daymet-agg/daymet-agg.ncml?x[1241:1:1852],y[1903:1:2369],time[9763:1:10128],lambert_conformal_conic,prcp[9763:1:10128][1903:1:2369][1241:1:1852],srad[9763:1:10128][1903:1:2369][1241:1:1852],swe[9763:1:10128][1903:1:2369][1241:1:1852]"));
     }
     
     @Test
@@ -235,7 +235,7 @@ public class OPeNDAPUtilsTest {
         } catch (OPeNDAPUtilException ignore) {}
         
         assertNotNull(openDapURL);
-        assertTrue(openDapURL.equals("http://cida.usgs.gov/thredds/dodsC/prism?time[0:1:1417],lon[382:1:552],lat[213:1:312],ppt[0:1:1417][213:1:312][382:1:552]"));
+        assertTrue(openDapURL.equals("http://cida.usgs.gov/thredds/dodsC/prism?lon[382:1:552],time[0:1:1417],lat[213:1:312],ppt[0:1:1417][213:1:312][382:1:552]"));
     }
     
     @Test
@@ -314,7 +314,7 @@ public class OPeNDAPUtilsTest {
         } catch (OPeNDAPUtilException ignore) {}
         
         assertNotNull(openDapURL);
-        assertTrue(openDapURL.equals("http://cida.usgs.gov/thredds/dodsC/ssebopeta/monthly?time[0:1:179],lon[1881:1:2663],lat[943:1:1391],crs,et[0:1:179][943:1:1391][1881:1:2663]"));
+        assertTrue(openDapURL.equals("http://cida.usgs.gov/thredds/dodsC/ssebopeta/monthly?lon[1881:1:2663],time[0:1:179],lat[943:1:1391],crs,et[0:1:179][943:1:1391][1881:1:2663]"));
     }
 
 }
