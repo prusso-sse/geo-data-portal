@@ -1,6 +1,6 @@
 [
 	{
-		"identifier" : "days_with_tmax_above",
+		"identifier" : "days_with_tmin_below",
 		"descriptiveKeywords" : {
 			"derivatives" : [
 				"Days with Tmin Below"
