@@ -528,7 +528,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 showRangeSelector: true,
                 //ylabel: record.data.dataRecord[1].name,
                 yAxisLabelWidth: 75,
-                ylabel: this.controller.getDerivative().get('derivative') + " " + this.controller.getThreshold() + " " + this.controller.getUnits().replace('deg', '&deg;'),
+                ylabel: this.controller.getDerivative().get('derivative') + " " + this.formatNumberForDisplay(this.controller.getThreshold()) + " " + this.controller.getUnits().replace('deg', '&deg;'),
                 valueRange: [this.plotterYMin - (this.plotterYMin / 10) , this.plotterYMax + (this.plotterYMax / 10)],
                 visibility : this.visibility,
                 axes: {

@@ -112,7 +112,7 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
         this.zlayerStore = new Ext.data.ArrayStore({
             storeId : 'zlayerStore',
             idIndex: 0,
-            fields: [this.zlayerName]
+            fields: [this.zlayerName, 'zlayerDisplayName']
         });
         this.zlayerComboConfig = {
             mode : 'local',
@@ -120,7 +120,8 @@ GDP.DatasetConfigPanel = Ext.extend(Ext.Panel, {
             store : this.zlayerStore,
             forceSelection : true,
             lazyInit : false,
-            displayField : this.zlayerName,
+			valueField : this.zlayerName,
+            displayField : 'zlayerDisplayName',
             emptyText : 'Loading...',
             autoWidth : true
         };

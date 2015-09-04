@@ -21,6 +21,9 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
     getThreshold : function () {
         return this.threshold;
     },
+	formatNumberForDisplay: function(data) {
+		return (Math.round(parseFloat(data) * 100) / 100.0).toString()
+	},
     units : undefined,
     getUnits : function () {
         return this.units;
@@ -280,31 +283,34 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
         store.removeAll();
         var extents = record.get('dimensions')[extentName];
         if (extents) {
-
-            var timesToLoad = [];
-            var cleanedTimes = [];
+            var dataToLoad = [];
+            var cleanedData = [];
             Ext.each(extents.values, function (item, index, allItems){
                 if (index > maxNum) {
                     return false;
-                } else {
-                    // currently for both time and elevation, probably should distinguish them
-                    var time = item.trim();
-                    var timerange = time.substring(0,4) + " - " + (29 + parseInt(time.substring(0,4)));
-                    cleanedTimes.push(time);
-                    timesToLoad.push([time, timerange]);
-                }
-                return true;
+				} else {
+					var data = item.trim();
+					cleanedData.push(data);
+					if (extentName === 'elevation') {
+						dataToLoad.push([data, this.formatNumberForDisplay(data)]);
+					}
+					else {
+		                var timerange = data.substring(0,4) + " - " + (29 + parseInt(data.substring(0,4)));
+						dataToLoad.push([data, timerange]);
+					}
+					return true;
+				}
             }, this);
 
-            if (cleanedTimes.indexOf(this.dimensions[extentName]) === -1) {
+            if (cleanedData.indexOf(this.dimensions[extentName]) === -1) {
                 this.dimensions[extentName] = extents['default'];
             }
             var currentExtent = this.dimensions[extentName];
 
-            store.loadData(timesToLoad);
+            store.loadData(dataToLoad);
             return {
                 currentExtent : currentExtent,
-                loadedData : timesToLoad
+                loadedData : dataToLoad
             };
         } else {
             return null;
@@ -390,7 +396,7 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
                 url : this.getSOSEndpoint(),
                 offering : this.getFeatureAttribute(),
                 featureTitle : this.getDerivative().get('derivative') + " " +
-                this.getThreshold() + " " + this.getUnits() + ' - Spatial average for ' + this.getFeatureTitle()
+                this.formatNumberForDisplay(this.getThreshold()) + " " + this.getUnits() + ' - Spatial average for ' + this.getFeatureTitle()
             });
     }
 });
