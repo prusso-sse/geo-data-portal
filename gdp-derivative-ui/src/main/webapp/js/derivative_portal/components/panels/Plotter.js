@@ -30,7 +30,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         this.plotterTitle = config.title || '';
         this.controller = config.controller;
         this.titleTipText = config.titleTipText;
-        this.visibility = config.visibility || [true, false, false, false];
+        this.visibility = config.visibility || {};
         this.errorBarsOn = config.errorBars || true;
         this.errorDisplayed = false;
         this.toolbar = new Ext.Toolbar({
@@ -114,6 +114,26 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         this.topToolbar.removeAll(true);
 
         // Add the title
+		var scenarioButtons = [];
+		var scenario;
+		var isFirst = false;
+		for (scenario in this.scenarioGcmJSON) {
+			if (!isFirst) {
+				this.visibility[scenario] = true;
+				isFirst = true;
+			}
+			else {
+				this.visibility[scenario] = false;
+			}
+
+			scenarioButtons.push(new Ext.Button({
+				text : scenario,
+				id : 'plotter-toolbar-btngrp-' + scenario,
+				sequencePosition : scenario,
+				pressed : this.visibility[scenario],
+				enableToggle: true
+			}));
+		}
         this.topToolbar.add(
             new Ext.Toolbar.TextItem({
                 id : 'title',
@@ -121,39 +141,10 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             }),
             new Ext.Toolbar.Fill(),
             new Ext.ButtonGroup({
-                columns : 4,
+                columns : scenarioButtons.length,
                 layout : 'table',
                 ref : 'plotter-toolbar-buttongroup',
-                items : [
-					new Ext.Button({
-						text : 'a1fi',
-						id : 'plotter-toolbar-btngrp-table1',
-						sequencePosition : 0,
-						pressed : this.visibility[0],
-						enableToggle: true
-					}),
-					new Ext.Button({
-						text : 'a2',
-						id : 'plotter-toolbar-btngrp-table2',
-						sequencePosition : 1,
-						pressed : this.visibility[1],
-						enableToggle: true
-					}),
-					new Ext.Button({
-						text : 'a1b',
-						id : 'plotter-toolbar-btngrp-table3',
-						sequencePosition : 2,
-						pressed : this.visibility[2],
-						enableToggle: true
-					}),
-					new Ext.Button({
-						text : 'b1',
-						id : 'plotter-toolbar-btngrp-table4',
-						sequencePosition : 3,
-						pressed : this.visibility[3],
-						enableToggle: true
-					})
-                ]
+                items : scenarioButtons
             }),
             new Ext.Button({
                 itemId : 'errorBarsButton',
