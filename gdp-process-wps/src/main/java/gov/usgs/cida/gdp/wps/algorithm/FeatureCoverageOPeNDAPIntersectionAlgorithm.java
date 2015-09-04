@@ -1,10 +1,12 @@
 package gov.usgs.cida.gdp.wps.algorithm;
 
 import gov.usgs.cida.gdp.constants.AppConstant;
+import gov.usgs.cida.gdp.utilities.GeoTiffUtils;
+import gov.usgs.cida.gdp.utilities.exception.GeoTiffUtilException;
 import gov.usgs.cida.gdp.wps.algorithm.heuristic.ResultSizeAlgorithmHeuristic;
 import gov.usgs.cida.gdp.wps.algorithm.heuristic.exception.AlgorithmHeuristicException;
+import gov.usgs.cida.gdp.wps.binding.CoverageFileBinding;
 import gov.usgs.cida.gdp.wps.binding.GMLStreamingFeatureCollectionBinding;
-import gov.usgs.cida.gdp.wps.binding.NetCDFFileBinding;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,12 +34,17 @@ import ucar.nc2.dt.GridDataset;
  * @author tkunicki
  */
 @Algorithm(
-    version = "1.0.0",
+    version = "1.1.0",
     title = "OPeNDAP Subset",
     abstrakt="This service returns the subset of data that intersects a set of vector polygon features and time range, if specified. A NetCDF file will be returned.")
 public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotatedAlgorithm {
     
     private static final Logger log = LoggerFactory.getLogger(FeatureCoverageOPeNDAPIntersectionAlgorithm.class);
+
+    public enum OutputType {
+        netcdf,
+        geotiff;
+    }
 
     private ResultSizeAlgorithmHeuristic resultSizeHeuristic = new ResultSizeAlgorithmHeuristic();
     
@@ -47,6 +54,7 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
     private boolean requireFullCoverage;
     private Date timeStart;
     private Date timeEnd;
+    private OutputType outputType;
 
     private File output;
 
@@ -107,17 +115,37 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
         this.timeEnd = timeEnd;
         this.resultSizeHeuristic.setDateTimeEnd(timeEnd);
     }
-
+    
+    @LiteralDataInput(
+            identifier=GDPAlgorithmConstants.OUTPUT_TYPE_IDENTIFIER,
+            title=GDPAlgorithmConstants.OUTPUT_TYPE_TITLE,
+            abstrakt=GDPAlgorithmConstants.OUTPUT_TYPE_ABSTRACT,
+            minOccurs=0,
+            maxOccurs=1)
+    public void setOutputType(OutputType outputType) {
+        if (outputType == null) {
+            this.outputType = OutputType.netcdf;
+        } else {
+            this.outputType = outputType;
+        }
+    }
+    
+    /*
+     *  This is a bit confusing, but similar to FeatureWeightedGridStatistics
+     *  if OUTPUT_TYPE is geotiff, the mimeType of the output should be
+     *  application/zip, or the download will have the wrong extension
+     *  if OUTPUT_TYPE is netcdf, the mimeType should be application/netcdf
+     */
     @ComplexDataOutput(identifier="OUTPUT",
             title="Output File",
             abstrakt="A NetCDF file containing requested data.",
-            binding=NetCDFFileBinding.class)
+            binding=CoverageFileBinding.class)
     public File getOutput() {
         return output;
     }
 
     @Execute
-    public void process() {
+    public void process() {        
         GridDataset gridDataSet = null;
         try { 
             gridDataSet = GDPAlgorithmUtil.generateGridDataSet(datasetURI);
@@ -136,16 +164,26 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
             	return;
             }
             
-            output = File.createTempFile(getClass().getSimpleName(), ".nc", new File(AppConstant.WORK_LOCATION.getValue()));
-            NetCDFGridWriter.makeFile(
-                    output.getAbsolutePath(),
-                    gridDataSet,
-                    datasetId,
-                    featureCollection,
-                    timeStart,
-                    timeEnd,
-                    requireFullCoverage,
-                    "Grid sub-setted by USGS/CIDA Geo Data Portal");
+            /*
+             * Here we need to check what type of output the request is asking for.
+             * If its a NetCDF file, we do the NetCDFGridWriter logic.
+             * If its a GeoTiff file, we do the GeoTiffUtils logic.
+             *      If no output is described we default to NetCDF
+             */
+            if(OutputType.geotiff == outputType) {
+                output = GeoTiffUtils.generateGeoTiffZipFromGrid(gridDataSet, datasetId, timeStart, timeEnd, AppConstant.WORK_LOCATION.getValue());
+            } else {
+                output = File.createTempFile(getClass().getSimpleName(), ".nc", new File(AppConstant.WORK_LOCATION.getValue()));
+                NetCDFGridWriter.makeFile(
+                        output.getAbsolutePath(),
+                        gridDataSet,
+                        datasetId,
+                        featureCollection,
+                        timeStart,
+                        timeEnd,
+                        requireFullCoverage,
+                        "Grid sub-setted by USGS/CIDA Geo Data Portal");
+            }
         } catch (InvalidRangeException e) {
             log.error("Error subsetting gridded data: ", e);
             addError("Error subsetting gridded data: " + e.getMessage());
@@ -160,10 +198,10 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
             addError("Error attempting CRS transform: " + e.getMessage());
         } catch (AlgorithmHeuristicException e) {
             log.error("Heuristic Error: ", e);
-        	/*
-        	 * Create OPeNDAP URI and place in response message
-        	 */
             addError("Heuristic Error: " + e.getMessage());
+        } catch (GeoTiffUtilException e) {
+            log.error("GeoTiff Generation Error: ", e);
+            addError("GeoTiff Generation Error: " + e.getMessage());
         } catch (Exception e) {
             log.error("General Error: ", e);
             addError("General Error: " + e.getMessage());
