@@ -116,24 +116,24 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         // Add the title
 		var scenarioButtons = [];
 		var scenario;
-		var isFirst = false;
-		for (scenario in this.scenarioGcmJSON) {
-			if (!isFirst) {
-				this.visibility[scenario] = true;
-				isFirst = true;
+		var index = 0;
+		Ext.iterate(this.scenarioGcmJSON, function (scenario) {
+			if (index === 0) {
+				this.visibility[index] = true;
 			}
 			else {
-				this.visibility[scenario] = false;
+				this.visibility[index] = false;
 			}
 
 			scenarioButtons.push(new Ext.Button({
 				text : scenario,
 				id : 'plotter-toolbar-btngrp-' + scenario,
-				sequencePosition : scenario,
-				pressed : this.visibility[scenario],
+				sequencePosition : index,
+				pressed : this.visibility[index],
 				enableToggle: true
 			}));
-		}
+			index++;
+		}, this);
         this.topToolbar.add(
             new Ext.Toolbar.TextItem({
                 id : 'title',
@@ -242,7 +242,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             var scenarioKey = this.cleanUpIdentifiers(scenario[0]);
             this.origScenarioGcmJSON[scenarioKey] = {};
             Ext.each(args.record.get("gcms"), function (gcm) {
-                if (gcm[0] !== 'Ensemble') {
+                if (gcm[0] !== 'ensemble') {
                     var gcmKey = gcm[0];
                     this.origScenarioGcmJSON[scenarioKey][gcmKey] = [];
                 }
@@ -297,7 +297,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             baseParams : {},
             listeners : {
                 load : function (store) {
-                    this.globalArrayUpdate(store, meta);
+                    this.globalArrayUpdate(store, meta, offering);
                 },
                 exception : function () {
                     LOG.debug('Plotter: SOS store has encountered an exception.');
@@ -312,8 +312,8 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 
         }));
     },
-    globalArrayUpdate : function (store, meta) {
-        LOG.debug('Plotter:globalArrayUpdate()');
+    globalArrayUpdate : function (store, meta, offering) {
+        LOG.debug('Plotter:globalArrayUpdate() for ' + meta.url);
         var record = store.getAt(0);
         if (!record) {
             if (!this.errorDisplayed) {
