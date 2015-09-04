@@ -21,8 +21,25 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
     getThreshold : function () {
         return this.threshold;
     },
-	formatNumberForDisplay: function(data) {
-		return (Math.round(parseFloat(data) * 100) / 100.0).toString()
+	convertCtoF : function(data) {
+		var t = parseFloat(this.getThreshold());
+		return t * 9 / 5 + 32;
+
+	},
+	formatValueForDisplay: function(value, units, showUnits) {
+		var t = parseFloat(value);
+		if (units === 'C') {
+			// Convert to fahrenheit
+			t = t * 9.0 / 5.0 + 32.0;
+			units = 'F';
+		}
+		var result = (Math.round(t * 100) / 100.0).toString();
+		if (showUnits) {
+			return result + ' ' + units;
+		}
+		else {
+			return result;
+		}
 	},
     units : undefined,
     getUnits : function () {
@@ -165,8 +182,10 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
 			// var layerName = layerRecord.get('name');
 			//this.zaxisName = dims.elevation.name + ' (' + dims.elevation.units + ')
 			//TODO switch back to above, with proper variable name
+			// For display we  want to show temperatures in F so switch it.
 			this.units = dims.elevation.units;
-			this.zaxisName = 'Threshold (' + this.units + ')';
+
+			this.zaxisName = 'Threshold (' + ((this.units === 'C') ? 'F' : this.units) + ')';
 			LOG.debug('LayerController:requestLayer: Firing event "changelayer".');
 			this.modifyLegendStore(layerRecord.data);
 			this.fireEvent('changelayer', {
@@ -292,7 +311,7 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
 					var data = item.trim();
 					cleanedData.push(data);
 					if (extentName === 'elevation') {
-						dataToLoad.push([data, this.formatNumberForDisplay(data)]);
+						dataToLoad.push([data, this.formatValueForDisplay(data, extents.units, false)]);
 					}
 					else {
 		                var timerange = data.substring(0,4) + " - " + (29 + parseInt(data.substring(0,4)));
@@ -396,7 +415,7 @@ GDP.LayerController = Ext.extend(Ext.util.Observable, {
                 url : this.getSOSEndpoint(),
                 offering : this.getFeatureAttribute(),
                 featureTitle : this.getDerivative().get('derivative') + " " +
-                this.formatNumberForDisplay(this.getThreshold()) + " " + this.getUnits() + ' - Spatial average for ' + this.getFeatureTitle()
+                this.formatValueForDisplay(this.getThreshold(), this.getUnits(), true) + ' - Spatial average for ' + this.getFeatureTitle()
             });
     }
 });
