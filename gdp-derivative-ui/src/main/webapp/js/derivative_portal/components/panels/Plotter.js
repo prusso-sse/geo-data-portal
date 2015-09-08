@@ -30,7 +30,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         this.plotterTitle = config.title || '';
         this.controller = config.controller;
         this.titleTipText = config.titleTipText;
-        this.visibility = config.visibility || [true, false, false, false];
+        this.visibility = config.visibility || [];
         this.errorBarsOn = config.errorBars || true;
         this.errorDisplayed = false;
         this.toolbar = new Ext.Toolbar({
@@ -114,6 +114,26 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
         this.topToolbar.removeAll(true);
 
         // Add the title
+		var scenarioButtons = [];
+		var scenario;
+		var index = 0;
+		Ext.iterate(this.scenarioGcmJSON, function (scenario) {
+			if (index === 0) {
+				this.visibility[index] = true;
+			}
+			else {
+				this.visibility[index] = false;
+			}
+
+			scenarioButtons.push(new Ext.Button({
+				text : scenario,
+				id : 'plotter-toolbar-btngrp-' + scenario,
+				sequencePosition : index,
+				pressed : this.visibility[index],
+				enableToggle: true
+			}));
+			index++;
+		}, this);
         this.topToolbar.add(
             new Ext.Toolbar.TextItem({
                 id : 'title',
@@ -121,39 +141,10 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             }),
             new Ext.Toolbar.Fill(),
             new Ext.ButtonGroup({
-                columns : 4,
+                columns : scenarioButtons.length,
                 layout : 'table',
                 ref : 'plotter-toolbar-buttongroup',
-                items : [
-					new Ext.Button({
-						text : 'a1fi',
-						id : 'plotter-toolbar-btngrp-table1',
-						sequencePosition : 0,
-						pressed : this.visibility[0],
-						enableToggle: true
-					}),
-					new Ext.Button({
-						text : 'a2',
-						id : 'plotter-toolbar-btngrp-table2',
-						sequencePosition : 1,
-						pressed : this.visibility[1],
-						enableToggle: true
-					}),
-					new Ext.Button({
-						text : 'a1b',
-						id : 'plotter-toolbar-btngrp-table3',
-						sequencePosition : 2,
-						pressed : this.visibility[2],
-						enableToggle: true
-					}),
-					new Ext.Button({
-						text : 'b1',
-						id : 'plotter-toolbar-btngrp-table4',
-						sequencePosition : 3,
-						pressed : this.visibility[3],
-						enableToggle: true
-					})
-                ]
+                items : scenarioButtons
             }),
             new Ext.Button({
                 itemId : 'errorBarsButton',
@@ -192,10 +183,10 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                     this.scenarioGcmJSON[scenario][gcm] = new Array();
                     var meta = {};
                     var url = endpoint.replace("{shapefile}", this.controller.getCurrentFOI());
-                    url = url.replace('{gcm}', gcm);
-                    url = url.replace('{scenario}', scenario);
-                    url = url.replace('{threshold}', this.controller.getThreshold());
-                    meta.url = url;
+                    url = url.replace(/{gcm}/g, gcm);
+                    url = url.replace(/{scenario}/g, scenario);
+                    url = url.replace('{threshold}', Math.round(this.controller.getThreshold()));
+                    meta.url = url ;
                     meta.scenario = scenario;
                     meta.gcm = gcm;
                     this.loadSOSStore(meta, offering);
@@ -251,8 +242,8 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             var scenarioKey = this.cleanUpIdentifiers(scenario[0]);
             this.origScenarioGcmJSON[scenarioKey] = {};
             Ext.each(args.record.get("gcms"), function (gcm) {
-                if (gcm[0] !== 'Ensemble') {
-                    var gcmKey = this.cleanUpIdentifiers(gcm[0]);
+                if (gcm[0] !== 'ensemble') {
+                    var gcmKey = gcm[0];
                     this.origScenarioGcmJSON[scenarioKey][gcmKey] = [];
                 }
             }, this);
@@ -293,7 +284,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 	},
 
     loadSOSStore : function (meta, offering) {
-        var url = "proxy/" + meta.url + "?service=SOS&request=GetObservation&version=1.0.0&offering=" + encodeURIComponent(encodeURIComponent(offering)) + "&observedProperty=mean";
+        var url = "proxy/" + meta.url + "service=SOS&request=GetObservation&version=1.0.0&offering=" + encodeURIComponent(encodeURIComponent(offering));
 
         this.sosStore.push(new GDP.SOSGetObservationStore({
             url : url, // gmlid is url for now, eventually, use SOS endpoint + gmlid or whatever param
@@ -306,7 +297,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
             baseParams : {},
             listeners : {
                 load : function (store) {
-                    this.globalArrayUpdate(store, meta);
+                    this.globalArrayUpdate(store, meta, offering);
                 },
                 exception : function () {
                     LOG.debug('Plotter: SOS store has encountered an exception.');
@@ -321,8 +312,8 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
 
         }));
     },
-    globalArrayUpdate : function (store, meta) {
-        LOG.debug('Plotter:globalArrayUpdate()');
+    globalArrayUpdate : function (store, meta, offering) {
+        LOG.debug('Plotter:globalArrayUpdate() for ' + meta.url);
         var record = store.getAt(0);
         if (!record) {
             if (!this.errorDisplayed) {
@@ -528,7 +519,7 @@ GDP.Plotter = Ext.extend(Ext.Panel, {
                 showRangeSelector: true,
                 //ylabel: record.data.dataRecord[1].name,
                 yAxisLabelWidth: 75,
-                ylabel: this.controller.getDerivative().get('derivative') + " " + this.controller.getThreshold() + " " + this.controller.getUnits().replace('deg', '&deg;'),
+                ylabel: this.controller.getDerivative().get('derivative') + " " + this.controller.formatValueForDisplay(this.controller.getThreshold(), this.controller.getUnits(), true),
                 valueRange: [this.plotterYMin - (this.plotterYMin / 10) , this.plotterYMax + (this.plotterYMax / 10)],
                 visibility : this.visibility,
                 axes: {
