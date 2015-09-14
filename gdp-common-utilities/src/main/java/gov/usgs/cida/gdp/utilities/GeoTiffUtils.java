@@ -14,6 +14,7 @@ import org.geotools.feature.FeatureCollection;
 import gov.usgs.cida.gdp.utilities.exception.GeoTiffUtilException;
 import gov.usgs.cida.gdp.utilities.exception.GeoTiffUtilExceptionID;
 import ucar.ma2.Array;
+import ucar.ma2.InvalidRangeException;
 import ucar.ma2.Range;
 import ucar.ma2.Range.Iterator;
 import ucar.nc2.dt.GridCoordSystem;
@@ -118,7 +119,29 @@ public class GeoTiffUtils {
                             "].  Exception: " + e.getMessage());
 				}
                 
-                Iterator iter = timeRange.getIterator();
+                /*
+                 * We introduced an issue here when we created subsets via the feature collection.
+                 * 
+                 * What happens is the original parentGridDataType is the full gridded set for this
+                 * datastore with regards to time, x and y.  When we create the subset for the
+                 * requested feature collect, the TIME is reset to index 0.
+                 * 
+                 * While the start time requested for the parentGridDataType set might be at index 9000 
+                 * and the end time at index 9005, when we create the subset, the start time is set to
+                 * index 0 and the end time is set to 5. 
+                 */
+                int delta = timeRange.last() - timeRange.first();
+                Range deltaRange = null;
+                try {
+					deltaRange = new Range(0, delta);
+				} catch (InvalidRangeException e) {
+					throw new GeoTiffUtilException(GeoTiffUtilExceptionID.GENERAL_EXCEPTION,
+                            "GeoTiffUtils", "generateGeoTiffZipFromGrid", "Unable to generate Subset time range " +
+                            "for dataset [" + gridDataset.getLocationURI() + "] and variable [" + gridVariable +
+                            "].  Exception: " + e.getMessage());
+				}
+                
+                Iterator iter = deltaRange.getIterator();
                 
                 while (iter.hasNext()) {
                     int tRange = iter.next();
