@@ -2,22 +2,31 @@ package gov.usgs.cida.gdp.utilities;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Formatter;
+import java.util.List;
+import java.util.Locale;
 
-import org.geotools.data.FeatureSource;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
-import org.geotools.feature.FeatureCollection;
+import org.geotools.data.simple.SimpleFeatureCollection;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
 
+import gov.usgs.cida.gdp.utilities.exception.GeoTiffUtilException;
 import ucar.nc2.constants.FeatureType;
 import ucar.nc2.dt.grid.GridDataset;
 import ucar.nc2.ft.FeatureDataset;
@@ -27,6 +36,8 @@ public class GeoTiffUtilsTest {
     static GridDataset daymetGridDataSet;
     static GridDataset prismGridDataSet;
     static GridDataset ssebopetaGridDataSet;
+    
+    SimpleFeatureCollection featureCollection;
     
     @Before
     public void setUp() throws Exception {
@@ -50,6 +61,10 @@ public class GeoTiffUtilsTest {
         if (ssebopetaFeatureDataSet instanceof GridDataset) {
             ssebopetaGridDataSet = (GridDataset) ssebopetaFeatureDataSet;
         }
+        
+        URL featurePath =  GeoTiffUtilsTest.class.getClassLoader().getResource("shp/colorado/CONUS_States.shp");
+        FileDataStore featureStore = FileDataStoreFinder.getDataStore(featurePath);
+        featureCollection = featureStore.getFeatureSource().getFeatures();
     }
 
     @After
@@ -80,7 +95,6 @@ public class GeoTiffUtilsTest {
         assertThat(ssebopetaGridDataSet, is(notNullValue()));
     }
     
-    /*
     @Test
     public void writeSsebopetaGridToGeoTiffTest() {
         List<String> gridVariableList = Arrays.asList("et");     // SSEBOPETA
@@ -100,7 +114,7 @@ public class GeoTiffUtilsTest {
         
         File testFile = null;
         try {
-            testFile = GeoTiffUtils.generateGeoTiffZipFromGrid(ssebopetaGridDataSet, gridVariableList, startDate, endDate, ".");
+            testFile = GeoTiffUtils.generateGeoTiffZipFromGrid(ssebopetaGridDataSet, gridVariableList, featureCollection, true, startDate, endDate, ".");
         } catch (GeoTiffUtilException e) {
             e.printStackTrace();
             fail();
@@ -110,6 +124,7 @@ public class GeoTiffUtilsTest {
         
         testFile.delete();
     }
+    
     
     @Test
     public void writePrismGridToGeoTiffTest() {
@@ -130,7 +145,7 @@ public class GeoTiffUtilsTest {
         
         File testFile = null;
         try {
-            testFile = GeoTiffUtils.generateGeoTiffZipFromGrid(prismGridDataSet, gridVariableList, startDate, endDate, ".");
+            testFile = GeoTiffUtils.generateGeoTiffZipFromGrid(prismGridDataSet, gridVariableList, featureCollection, true, startDate, endDate, ".");
         } catch (GeoTiffUtilException e) {
             e.printStackTrace();
             fail();
@@ -142,7 +157,7 @@ public class GeoTiffUtilsTest {
     }
     
     @Test
-    public void writeDaymetGridToGeoTiffTest() {
+	public void writeDaymetGridToGeoTiffTest() {
         List<String> gridVariableList = Arrays.asList("prcp", "srad", "swe");   // DAYMET SET
         
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
@@ -160,20 +175,12 @@ public class GeoTiffUtilsTest {
         
         File testFile = null;
         try {
-            testFile = GeoTiffUtils.generateGeoTiffZipFromGrid(daymetGridDataSet, gridVariableList, startDate, endDate, ".");
+            testFile = GeoTiffUtils.generateGeoTiffZipFromGrid(daymetGridDataSet, gridVariableList, featureCollection, false, startDate, endDate, ".");
             testFile.delete();
             fail();
         } catch (GeoTiffUtilException e) {
             assertTrue(e.getMessage().contains("Exception: Unsupported projection"));
         }
-    }
-    */
-    
-    private FeatureCollection<SimpleFeatureType, SimpleFeature> getFeatureCollection(String ncLocation, String sfLocation) throws IOException {
-    	FileDataStore dataStore = FileDataStoreFinder.getDataStore(new File(sfLocation));
-        FeatureSource<SimpleFeatureType, SimpleFeature> featureSource = dataStore.getFeatureSource();
-        FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection = featureSource.getFeatures();
-        return featureCollection;
     }
 }
 
