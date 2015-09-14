@@ -174,23 +174,6 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
              */
             if(OutputType.geotiff == outputType) {
                 output = GeoTiffUtils.generateGeoTiffZipFromGrid(gridDataSet, datasetId, featureCollection, requireFullCoverage, timeStart, timeEnd, AppConstant.WORK_LOCATION.getValue());
-                
-                /*
-                 * This is an interim change for testing GDP-986.
-                 * For some reason, when the framework copies the zip file into the 
-                 * instance/default/temp/Database/Results directory, it manipulates the
-                 * file into a .gz.  Unfortunately, it corrupts it when it does this and
-                 * I cannot figure out why.
-                 * 
-                 * The following code creates a copy of the zip for testing purposes and
-                 * when the file corruption is fixed this needs to be removed.
-                 */
-                String backupFilename = output.getAbsolutePath();
-                backupFilename = backupFilename.replace(".zip", "");
-                backupFilename = backupFilename + "_BACKUP.zip";
-                File backup = new File(backupFilename);
-                Files.copy(output, backup);
-                log.error("BACKED UP GEOTIFF ZIP TO: [" + backupFilename + "]");
             } else {
                 output = File.createTempFile(getClass().getSimpleName(), ".nc", new File(AppConstant.WORK_LOCATION.getValue()));
                 NetCDFGridWriter.makeFile(
