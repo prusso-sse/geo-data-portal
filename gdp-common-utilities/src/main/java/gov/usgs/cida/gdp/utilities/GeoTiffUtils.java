@@ -1,8 +1,5 @@
 package gov.usgs.cida.gdp.utilities;
 
-import gov.usgs.cida.gdp.utilities.exception.GeoTiffUtilException;
-import gov.usgs.cida.gdp.utilities.exception.GeoTiffUtilExceptionID;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,10 +9,14 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.geotools.feature.FeatureCollection;
 
+import gov.usgs.cida.gdp.utilities.exception.GeoTiffUtilException;
+import gov.usgs.cida.gdp.utilities.exception.GeoTiffUtilExceptionID;
 import ucar.ma2.Array;
 import ucar.ma2.Range;
 import ucar.ma2.Range.Iterator;
+import ucar.nc2.dt.GridCoordSystem;
 import ucar.nc2.dt.GridDataset;
 import ucar.nc2.dt.GridDatatype;
 import ucar.nc2.geotiff.GeotiffWriter;
@@ -31,8 +32,10 @@ public class GeoTiffUtils {
     public static final String FILE_TIFF_EXTENSION = ".tiff";
     public static final String FILE_ZIP_EXTENSION = ".zip";
     
-    public static File generateGeoTiffZipFromGrid(GridDataset gridDataset, List<String> gridVariableList, Date dateTimeStart, Date dateTimeEnd, String destination) throws GeoTiffUtilException {
-        Path destinationDirectory = Paths.get(destination);
+	public static File generateGeoTiffZipFromGrid(GridDataset gridDataset, List<String> gridVariableList,
+			FeatureCollection<?, ?> featureCollection, boolean requireFullCoverage, Date dateTimeStart,
+			Date dateTimeEnd, String destination) throws GeoTiffUtilException {
+		Path destinationDirectory = Paths.get(destination);
         
         CalendarDateFormatter dateFormatter = new CalendarDateFormatter(FILE_DATE_FORMAT);
         
@@ -62,14 +65,15 @@ public class GeoTiffUtils {
         String resultingZipFileName = "";
         try {
             for (String gridVariable : gridVariableList) {
-                GridDatatype gridDataType;
+                GridDatatype parentGridDataType;
+                
                 try {
                     /*
                      * A null pointer exception can be thrown here due to errors in the
                      * request such as incorrect dimensions (GridVariableList) associated
                      * with a dataset that does not contain them.
                      */
-                    gridDataType = gridDataset.findGridDatatype(gridVariable);
+                	parentGridDataType = gridDataset.findGridDatatype(gridVariable);
                 } catch (Exception e) {
                     throw new GeoTiffUtilException(GeoTiffUtilExceptionID.GENERAL_EXCEPTION,
                             "GeoTiffUtils", "generateGeoTiffZipFromGrid", "Unable to generate Grid Data Type " +
@@ -77,7 +81,42 @@ public class GeoTiffUtils {
                             "].  Exception: " + e.getMessage());
                 }
                 
-                Range timeRange = TimeRangeUtil.generateTimeRange(gridDataType, dateTimeStart, dateTimeEnd);
+                /*
+                 * Create the time range object for using in both a grid data type subset (with the feature collection)
+                 * as well as iteration of the geolocation
+                 */
+                Range timeRange = TimeRangeUtil.generateTimeRange(parentGridDataType, dateTimeStart, dateTimeEnd);
+                
+                /*
+            	 * Grab the grid coordinate system
+            	 */
+            	GridCoordSystem gridCoordSystem = parentGridDataType.getCoordinateSystem();
+                
+            	/*
+            	 * Create an XY range for the feature collection requested
+            	 */
+                Range[] xyRanges;
+				try {
+					xyRanges = GridUtils.getXYRangesFromBoundingBox(featureCollection.getBounds(), gridCoordSystem, requireFullCoverage);
+				} catch (Exception e) {
+					throw new GeoTiffUtilException(GeoTiffUtilExceptionID.GENERAL_EXCEPTION,
+                            "GeoTiffUtils", "generateGeoTiffZipFromGrid", "Unable to generate XY Range set from Grid Data Type " +
+                            "for dataset [" + gridDataset.getLocationURI() + "] and variable [" + gridVariable +
+                            "].  Exception: " + e.getMessage());
+				}
+				
+				/*
+            	 * Now create a grid subset so we only get what the user requested with regards to geo locations
+            	 */
+                GridDatatype gridDataType;
+				try {
+					gridDataType = parentGridDataType.makeSubset(null, null, timeRange, null, xyRanges[1], xyRanges[0]);
+				} catch (Exception e) {
+					throw new GeoTiffUtilException(GeoTiffUtilExceptionID.GENERAL_EXCEPTION,
+                            "GeoTiffUtils", "generateGeoTiffZipFromGrid", "Unable to generate Grid Subset " +
+                            "for dataset [" + gridDataset.getLocationURI() + "] and variable [" + gridVariable +
+                            "].  Exception: " + e.getMessage());
+				}
                 
                 Iterator iter = timeRange.getIterator();
                 

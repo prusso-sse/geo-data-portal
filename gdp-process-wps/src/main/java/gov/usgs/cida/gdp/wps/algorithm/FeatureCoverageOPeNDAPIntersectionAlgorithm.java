@@ -26,6 +26,8 @@ import org.opengis.referencing.operation.TransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.io.Files;
+
 import ucar.ma2.InvalidRangeException;
 import ucar.nc2.dt.GridDataset;
 
@@ -145,7 +147,7 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
     }
 
     @Execute
-    public void process() {        
+    public void process() {
         GridDataset gridDataSet = null;
         try { 
             gridDataSet = GDPAlgorithmUtil.generateGridDataSet(datasetURI);
@@ -171,7 +173,24 @@ public class FeatureCoverageOPeNDAPIntersectionAlgorithm extends AbstractAnnotat
              *      If no output is described we default to NetCDF
              */
             if(OutputType.geotiff == outputType) {
-                output = GeoTiffUtils.generateGeoTiffZipFromGrid(gridDataSet, datasetId, timeStart, timeEnd, AppConstant.WORK_LOCATION.getValue());
+                output = GeoTiffUtils.generateGeoTiffZipFromGrid(gridDataSet, datasetId, featureCollection, requireFullCoverage, timeStart, timeEnd, AppConstant.WORK_LOCATION.getValue());
+                
+                /*
+                 * This is an interim change for testing GDP-986.
+                 * For some reason, when the framework copies the zip file into the 
+                 * instance/default/temp/Database/Results directory, it manipulates the
+                 * file into a .gz.  Unfortunately, it corrupts it when it does this and
+                 * I cannot figure out why.
+                 * 
+                 * The following code creates a copy of the zip for testing purposes and
+                 * when the file corruption is fixed this needs to be removed.
+                 */
+                String backupFilename = output.getAbsolutePath();
+                backupFilename = backupFilename.replace(".zip", "");
+                backupFilename = backupFilename + "_BACKUP.zip";
+                File backup = new File(backupFilename);
+                Files.copy(output, backup);
+                log.error("BACKED UP GEOTIFF ZIP TO: [" + backupFilename + "]");
             } else {
                 output = File.createTempFile(getClass().getSimpleName(), ".nc", new File(AppConstant.WORK_LOCATION.getValue()));
                 NetCDFGridWriter.makeFile(
