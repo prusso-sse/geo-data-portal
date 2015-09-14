@@ -2,26 +2,21 @@ package gov.usgs.cida.gdp.utilities;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import gov.usgs.cida.gdp.utilities.exception.GeoTiffUtilException;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.Formatter;
-import java.util.List;
-import java.util.Locale;
 
+import org.geotools.data.FeatureSource;
+import org.geotools.data.FileDataStore;
+import org.geotools.data.FileDataStoreFinder;
+import org.geotools.feature.FeatureCollection;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
 
 import ucar.nc2.constants.FeatureType;
 import ucar.nc2.dt.grid.GridDataset;
@@ -85,6 +80,7 @@ public class GeoTiffUtilsTest {
         assertThat(ssebopetaGridDataSet, is(notNullValue()));
     }
     
+    /*
     @Test
     public void writeSsebopetaGridToGeoTiffTest() {
         List<String> gridVariableList = Arrays.asList("et");     // SSEBOPETA
@@ -170,6 +166,14 @@ public class GeoTiffUtilsTest {
         } catch (GeoTiffUtilException e) {
             assertTrue(e.getMessage().contains("Exception: Unsupported projection"));
         }
+    }
+    */
+    
+    private FeatureCollection<SimpleFeatureType, SimpleFeature> getFeatureCollection(String ncLocation, String sfLocation) throws IOException {
+    	FileDataStore dataStore = FileDataStoreFinder.getDataStore(new File(sfLocation));
+        FeatureSource<SimpleFeatureType, SimpleFeature> featureSource = dataStore.getFeatureSource();
+        FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection = featureSource.getFeatures();
+        return featureCollection;
     }
 }
 
