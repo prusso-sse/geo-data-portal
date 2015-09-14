@@ -62,7 +62,7 @@ public class GeoTiffUtilsTest {
             ssebopetaGridDataSet = (GridDataset) ssebopetaFeatureDataSet;
         }
         
-        URL featurePath =  GeoTiffUtilsTest.class.getClassLoader().getResource("shp/colorado/CONUS_States.shp");
+        URL featurePath =  GeoTiffUtilsTest.class.getClassLoader().getResource("shp/Colorado/CONUS_States.shp");
         FileDataStore featureStore = FileDataStoreFinder.getDataStore(featurePath);
         featureCollection = featureStore.getFeatureSource().getFeatures();
     }
